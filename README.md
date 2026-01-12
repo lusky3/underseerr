@@ -159,7 +159,17 @@ Complete mock API server for testing without real Overseerr instance:
 - 21 API endpoints fully implemented
 - Realistic mock data with pagination
 - Fast, deterministic test execution
-- See [Mock Server Guide](docs/MOCK_SERVER_GUIDE.md) for details
+- See [Mock Server Guide](MOCK_SERVER_GUIDE.md) for details
+
+### Docker Overseerr Environment
+
+Complete Dockerized Overseerr setup for integration testing:
+
+- Real Overseerr server (v1.34.0)
+- Radarr and Sonarr integration
+- Mock Plex server for authentication
+- One-command setup: `./setup-overseerr-test.sh`
+- See [Quick Start](QUICK_START.md) or [Docker Guide](OVERSEERR_DOCKER_GUIDE.md)
 
 ## 📱 Device Compatibility
 

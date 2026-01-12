@@ -1,0 +1,14 @@
+FROM lscr.io/linuxserver/overseerr:latest
+
+# Add initialization script
+COPY overseerr-init.sh /custom-init.sh
+RUN chmod +x /custom-init.sh
+
+# Set environment variables
+ENV PUID=1000
+ENV PGID=1000
+ENV TZ=America/New_York
+
+EXPOSE 5055
+
+CMD ["/custom-init.sh"]

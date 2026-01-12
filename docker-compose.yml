@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr-test
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./overseerr-config:/config
+    ports:
+      - "5055:5055"
+    restart: unless-stopped
+    networks:
+      - overseerr-network
+
+  # Mock Plex server for authentication testing
+  plex-mock:
+    image: nginx:alpine
+    container_name: plex-mock
+    volumes:
+      - ./plex-mock/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./plex-mock/html:/usr/share/nginx/html:ro
+    ports:
+      - "32400:32400"
+    networks:
+      - overseerr-network
+
+  # Mock Radarr for movie management
+  radarr-mock:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr-mock
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./radarr-config:/config
+    ports:
+      - "7878:7878"
+    networks:
+      - overseerr-network
+
+  # Mock Sonarr for TV show management
+  sonarr-mock:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr-mock
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./sonarr-config:/config
+    ports:
+      - "8989:8989"
+    networks:
+      - overseerr-network
+
+networks:
+  overseerr-network:
+    driver: bridge
