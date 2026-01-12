@@ -83,6 +83,7 @@ lint-results.xml
 .DS_Store
 
 # LLMs
+.antigravity
 .kiro
 .claude
 
@@ -90,3 +91,10 @@ lint-results.xml
 .vscode
 
 .kotlin
+
+# Misc
+qa_evidence
+# Docker Overseerr test environment data
+overseerr-config/
+radarr-config/
+sonarr-config/
