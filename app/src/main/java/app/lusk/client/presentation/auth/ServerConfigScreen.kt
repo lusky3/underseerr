@@ -14,6 +14,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.flow.first
 
 /**
  * Server configuration screen for entering Overseerr server URL.
@@ -30,6 +31,14 @@ fun ServerConfigScreen(
     val authState by viewModel.authState.collectAsState()
     val serverValidationState by viewModel.serverValidationState.collectAsState()
     var serverUrl by remember { mutableStateOf("") }
+    var allowHttp by remember { mutableStateOf(false) }
+    
+    // Prefill server URL if already stored
+    LaunchedEffect(Unit) {
+        viewModel.getServerUrl().first()?.let {
+            serverUrl = it
+        }
+    }
     
     // Navigate when already authenticated (Session Persistence)
     LaunchedEffect(authState) {
@@ -43,6 +52,11 @@ fun ServerConfigScreen(
         if (serverValidationState is ServerValidationState.Valid) {
             onServerValidated()
         }
+    }
+    
+    // Reset allowHttp when URL changes
+    LaunchedEffect(serverUrl) {
+        allowHttp = false
     }
     
     Scaffold(
@@ -86,7 +100,7 @@ fun ServerConfigScreen(
                 keyboardActions = KeyboardActions(
                     onDone = {
                         if (serverUrl.isNotBlank()) {
-                            viewModel.validateServer(serverUrl)
+                            viewModel.validateServer(serverUrl, allowHttp)
                         }
                     }
                 ),
@@ -129,13 +143,38 @@ fun ServerConfigScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 8.dp)
             )
+
+            // Show secure risk option if HTTPS error or HTTP URL
+            val showRiskOption = (serverValidationState as? ServerValidationState.Invalid)?.message?.contains("HTTPS", ignoreCase = true) == true || 
+                               (serverUrl.startsWith("http://") && !serverUrl.contains("localhost") && !serverUrl.contains("127.0.0.1"))
+            
+            if (showRiskOption) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = allowHttp,
+                        onCheckedChange = { allowHttp = it }
+                    )
+                    Text(
+                        text = "I accept the risks of using an insecure connection",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
             
             Button(
                 onClick = {
                     if (serverUrl.isNotBlank()) {
-                        viewModel.validateServer(serverUrl)
+                        viewModel.validateServer(serverUrl, allowHttp)
                     }
                 },
                 enabled = serverUrl.isNotBlank() && 

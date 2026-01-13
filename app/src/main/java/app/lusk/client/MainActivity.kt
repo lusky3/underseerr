@@ -62,8 +62,9 @@ class MainActivity : FragmentActivity() {
                         }
                     )
                 } else {
+                    val startRouteByIntent = intent?.data?.let { Screen.parseDeepLink(it.toString()) }
                     MainScreen(
-                        startDestination = Screen.ServerConfig.route
+                        startDestination = startRouteByIntent ?: Screen.Splash.route
                     )
                 }
             }

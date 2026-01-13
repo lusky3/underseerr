@@ -13,6 +13,7 @@ import app.lusk.client.domain.repository.ServerConfig
 import app.lusk.client.domain.repository.ThemePreference
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -54,6 +55,7 @@ class PreferencesManager @Inject constructor(
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val CONFIGURED_SERVERS = stringPreferencesKey("configured_servers")
         val CURRENT_SERVER_URL = stringPreferencesKey("current_server_url")
+        val CLIENT_ID = stringPreferencesKey("client_id")
     }
     
     /**
@@ -344,5 +346,17 @@ class PreferencesManager @Inject constructor(
             
             preferences[PreferenceKeys.CONFIGURED_SERVERS] = Json.encodeToString(updatedServers)
         }
+    }
+    
+    suspend fun setClientId(clientId: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.CLIENT_ID] = clientId
+        }
+    }
+    
+    suspend fun getClientId(): String? {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.CLIENT_ID]
+        }.first()
     }
 }

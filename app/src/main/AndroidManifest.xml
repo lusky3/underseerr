@@ -43,6 +43,16 @@
                     android:scheme="lusk"
                     android:host="request" />
             </intent-filter>
+
+            <!-- Deep link support for authentication callback -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="lusk"
+                    android:host="auth" />
+            </intent-filter>
         </activity>
     </application>
 

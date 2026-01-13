@@ -1,5 +1,6 @@
 package app.lusk.client.presentation.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.lusk.client.domain.model.Result
@@ -41,10 +42,16 @@ class AuthViewModel @Inject constructor(
     private fun checkAuthStatus() {
         viewModelScope.launch {
             authRepository.isAuthenticated().collect { isAuthenticated ->
+                val currentState = _authState.value
                 if (isAuthenticated) {
-                    _authState.value = AuthState.Authenticated
+                    if (currentState != AuthState.Authenticated) {
+                        _authState.value = AuthState.Authenticated
+                    }
                 } else {
-                    _authState.value = AuthState.Unauthenticated
+                    // Only set to Unauthenticated if we aren't currently in a transitional state
+                    if (currentState == AuthState.Initial || currentState == AuthState.Authenticated || currentState == AuthState.LoggingOut) {
+                        _authState.value = AuthState.Unauthenticated
+                    }
                 }
             }
         }
@@ -54,32 +61,91 @@ class AuthViewModel @Inject constructor(
      * Validate server URL.
      * Property 1: URL Validation Correctness
      */
-    fun validateServer(url: String) {
+    /**
+     * Validate server URL.
+     * Property 1: URL Validation Correctness
+     */
+    fun validateServer(url: String, allowHttp: Boolean = false) {
         viewModelScope.launch {
-            _serverValidationState.value = ServerValidationState.Validating
-            
-            when (val result = authRepository.validateServerUrl(url)) {
-                is Result.Success -> {
-                    _serverValidationState.value = ServerValidationState.Valid(result.data)
+            if (url.contains("?apikey=")) {
+                val cleanUrl = url.substringBefore("?apikey=")
+                val apiKey = url.substringAfter("?apikey=")
+                // Store API key securely (bypassing normal login flow for testing/manual override)
+                securityManager.storeSecureData("overseerr_api_key", apiKey)
+                // Set the clean URL for validation
+                validateServerUrl(cleanUrl, allowHttp)
+            } else {
+                validateServerUrl(url, allowHttp)
+            }
+        }
+    }
+
+    private suspend fun validateServerUrl(url: String, allowHttp: Boolean) {
+        _serverValidationState.value = ServerValidationState.Validating
+        
+        when (val result = authRepository.validateServerUrl(url, allowHttp)) {
+            is Result.Success -> {
+                // Check if we pre-injected an API key
+                val apiKey = securityManager.retrieveSecureData("overseerr_api_key")
+                if (apiKey != null) {
+                    // Update interceptor with the key immediately so checkAuthStatus picks it up
+                    // We need to re-fetch isAuthenticated or rely on checkAuthStatus loop
+                    checkAuthStatus()
                 }
-                is Result.Error -> {
-                    _serverValidationState.value = ServerValidationState.Invalid(
-                        result.error.message
-                    )
-                }
-                is Result.Loading -> {
-                    _serverValidationState.value = ServerValidationState.Validating
-                }
+                _serverValidationState.value = ServerValidationState.Valid(result.data)
+            }
+            is Result.Error -> {
+                _serverValidationState.value = ServerValidationState.Invalid(
+                    result.error.message
+                )
+            }
+            is Result.Loading -> {
+                _serverValidationState.value = ServerValidationState.Validating
             }
         }
     }
     
     /**
-     * Initiate Plex authentication.
-     * This would typically open a browser or WebView for OAuth.
+     * Initiate Plex authentication and get redirect URL.
      */
-    fun initiateAuth() {
-        _authState.value = AuthState.AuthenticatingWithPlex
+    fun initiatePlexAuth() {
+        viewModelScope.launch {
+            Log.d("AuthViewModel", "Initiating Plex Auth...")
+            _authState.value = AuthState.AuthenticatingWithPlex
+            when (val result = authRepository.initiatePlexLogin()) {
+                is Result.Success -> {
+                    val (pinId, authUrl) = result.data
+                    Log.d("AuthViewModel", "Plex PIN obtained: $pinId, URL: $authUrl")
+                    _authState.value = AuthState.WaitingForPlex(pinId, authUrl)
+                }
+                is Result.Error -> {
+                    Log.e("AuthViewModel", "Plex Login Init Error: ${result.error.message}")
+                    _authState.value = AuthState.Error(result.error.message)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    /**
+     * Check Plex PIN status.
+     */
+    fun checkPlexStatus(pinId: Int) {
+        viewModelScope.launch {
+            Log.d("AuthViewModel", "Checking Plex PIN status for ID: $pinId")
+            when (val result = authRepository.checkPlexLoginStatus(pinId)) {
+                is Result.Success -> {
+                    result.data?.let { token ->
+                        Log.d("AuthViewModel", "Plex token obtained from PIN!")
+                        handleAuthCallback(token)
+                    }
+                }
+                is Result.Error -> {
+                    Log.e("AuthViewModel", "Error checking Plex PIN: ${result.error.message}")
+                }
+                else -> {}
+            }
+        }
     }
     
     /**
@@ -88,13 +154,16 @@ class AuthViewModel @Inject constructor(
      */
     fun handleAuthCallback(plexToken: String) {
         viewModelScope.launch {
+            Log.d("AuthViewModel", "Exchanging Plex token for Overseerr session... Token length: ${plexToken.length}")
             _authState.value = AuthState.ExchangingToken
             
             when (val result = authRepository.authenticateWithPlex(plexToken)) {
                 is Result.Success -> {
+                    Log.d("AuthViewModel", "Authentication successful! Navigating to Home.")
                     _authState.value = AuthState.Authenticated
                 }
                 is Result.Error -> {
+                    Log.e("AuthViewModel", "Authentication failed: ${result.error.message}")
                     _authState.value = AuthState.Error(result.error.message)
                 }
                 is Result.Loading -> {
@@ -125,6 +194,14 @@ class AuthViewModel @Inject constructor(
     }
     
     /**
+     * Get stored session information.
+     */
+    /**
+     * Get the server URL.
+     */
+    fun getServerUrl() = authRepository.getServerUrl()
+
+    /**
      * Clear server validation state.
      */
     fun clearServerValidation() {
@@ -139,6 +216,7 @@ sealed class AuthState {
     data object Initial : AuthState()
     data object Unauthenticated : AuthState()
     data object AuthenticatingWithPlex : AuthState()
+    data class WaitingForPlex(val pinId: Int, val authUrl: String) : AuthState()
     data object ExchangingToken : AuthState()
     data object Authenticated : AuthState()
     data object LoggingOut : AuthState()

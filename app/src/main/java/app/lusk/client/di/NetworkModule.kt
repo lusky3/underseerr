@@ -2,6 +2,7 @@ package app.lusk.client.di
 
 import app.lusk.client.data.remote.api.AuthApiService
 import app.lusk.client.data.remote.api.DiscoveryApiService
+import app.lusk.client.data.remote.api.PlexApiService
 import app.lusk.client.data.remote.api.RequestApiService
 import app.lusk.client.data.remote.api.UserApiService
 import app.lusk.client.data.remote.interceptor.AuthInterceptor
@@ -11,6 +12,9 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import app.lusk.client.data.remote.PersistentCookieJar
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -36,6 +40,13 @@ object NetworkModule {
     @Qualifier
     @Retention(AnnotationRetention.BINARY)
     annotation class BaseUrl
+
+    /**
+     * Qualifier for Plex-specific OkHttpClient.
+     */
+    @Qualifier
+    @Retention(AnnotationRetention.BINARY)
+    annotation class PlexClient
     
     /**
      * Provide base URL for API requests.
@@ -58,7 +69,7 @@ object NetworkModule {
         return Json {
             ignoreUnknownKeys = true
             isLenient = true
-            encodeDefaults = true
+            encodeDefaults = false
             prettyPrint = false
             coerceInputValues = true
         }
@@ -86,21 +97,29 @@ object NetworkModule {
      */
     @Provides
     @Singleton
+    fun provideCookieJar(@ApplicationContext context: Context): PersistentCookieJar {
+        return PersistentCookieJar(context)
+    }
+
+    @Provides
+    @Singleton
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
         retryInterceptor: RetryInterceptor,
         loggingInterceptor: HttpLoggingInterceptor,
         certificatePinningManager: CertificatePinningManager,
+        cookieJar: PersistentCookieJar,
         @BaseUrl baseUrl: String
     ): OkHttpClient {
         return certificatePinningManager.createSecureClient(baseUrl)
             .addInterceptor(authInterceptor)
             .addInterceptor(retryInterceptor)
             .addInterceptor(loggingInterceptor)
+            .cookieJar(cookieJar)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
-            .callTimeout(60, TimeUnit.SECONDS)
+            .callTimeout(30, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .build()
     }
@@ -158,5 +177,39 @@ object NetworkModule {
     @Singleton
     fun provideUserApiService(retrofit: Retrofit): UserApiService {
         return retrofit.create(UserApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @PlexClient
+    fun providePlexOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        cookieJar: PersistentCookieJar
+    ): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .cookieJar(cookieJar)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    /**
+     * Provide PlexApiService.
+     */
+    @Provides
+    @Singleton
+    fun providePlexApiService(
+        json: Json,
+        @PlexClient plexOkHttpClient: OkHttpClient
+    ): PlexApiService {
+        val contentType = "application/json".toMediaType()
+        
+        val plexRetrofit = Retrofit.Builder()
+            .baseUrl("https://plex.tv/")
+            .client(plexOkHttpClient)
+            .addConverterFactory(json.asConverterFactory(contentType))
+            .build()
+        return plexRetrofit.create(PlexApiService::class.java)
     }
 }

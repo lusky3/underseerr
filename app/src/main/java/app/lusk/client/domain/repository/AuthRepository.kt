@@ -17,13 +17,26 @@ interface AuthRepository {
      * Validate server URL and check connectivity.
      * Property 1: URL Validation Correctness
      */
-    suspend fun validateServerUrl(url: String): Result<ServerInfo>
+    suspend fun validateServerUrl(url: String, allowHttp: Boolean = false): Result<ServerInfo>
     
     /**
      * Authenticate with Plex token and exchange for Overseerr session.
      * Property 2: Token Exchange Integrity
      */
     suspend fun authenticateWithPlex(plexToken: String): Result<UserProfile>
+
+    /**
+     * Initiate Plex login by requesting a PIN.
+     * @return Pair of PIN ID and Auth URL
+     */
+    suspend fun initiatePlexLogin(): Result<Pair<Int, String>>
+
+    /**
+     * Check the status of a Plex PIN.
+     * @param pinId The ID of the PIN to check
+     * @return The auth token if completed, or null if still waiting
+     */
+    suspend fun checkPlexLoginStatus(pinId: Int): Result<String?>
     
     /**
      * Get stored session as a Flow.
@@ -50,4 +63,9 @@ interface AuthRepository {
      * Refresh session if needed.
      */
     suspend fun refreshSession(): Result<UserProfile>
+
+    /**
+     * Get the currently configured server URL.
+     */
+    fun getServerUrl(): Flow<String?>
 }

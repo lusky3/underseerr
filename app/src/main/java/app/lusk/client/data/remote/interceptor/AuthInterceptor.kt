@@ -62,8 +62,18 @@ class AuthInterceptor @Inject constructor() : Interceptor {
             request = request.newBuilder().url(newUrl).build()
         }
         
-        // If no API key is set, proceed without authentication header
-        val apiKey = this.apiKey ?: return chain.proceed(request)
+        // If no API key is set or it's a cookie session, proceed without X-Api-Key but with Accept header
+        val apiKey = this.apiKey
+        if (apiKey.isNullOrEmpty() || apiKey == "SESSION_COOKIE" || apiKey == "no_api_key" || apiKey.contains("@")) {
+            android.util.Log.d("AuthInterceptor", "Using session cookies (API Key placeholder: $apiKey).")
+            return chain.proceed(
+                request.newBuilder()
+                    .header("Accept", "application/json")
+                    .build()
+            )
+        }
+        
+        android.util.Log.d("AuthInterceptor", "Adding X-Api-Key to request: ${request.url}")
         
         // Add API key to request headers
         val authenticatedRequest = request.newBuilder()
