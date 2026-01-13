@@ -53,7 +53,12 @@ fun MediaRequest.toEntity(cachedAt: Long = System.currentTimeMillis()): MediaReq
         mediaId = mediaId,
         title = title,
         posterPath = posterPath,
-        status = status.ordinal,
+        status = when (status) {
+            RequestStatus.PENDING -> 1
+            RequestStatus.APPROVED -> 2
+            RequestStatus.DECLINED -> 3
+            RequestStatus.AVAILABLE -> 4
+        },
         requestedDate = requestedDate,
         seasons = seasons,
         cachedAt = cachedAt
@@ -80,6 +85,7 @@ private fun Int.toRequestStatus(): RequestStatus {
         2 -> RequestStatus.APPROVED
         3 -> RequestStatus.DECLINED
         4 -> RequestStatus.AVAILABLE
+        5 -> RequestStatus.AVAILABLE // Also map 5 (media status available) to AVAILABLE
         else -> RequestStatus.PENDING
     }
 }

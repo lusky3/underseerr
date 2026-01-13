@@ -21,7 +21,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val requestRepository: app.lusk.client.domain.repository.RequestRepository
 ) : ViewModel() {
     
     private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Loading)
@@ -34,6 +35,9 @@ class ProfileViewModel @Inject constructor(
     fun loadProfile() {
         viewModelScope.launch {
             _profileState.value = ProfileState.Loading
+            
+            // Refresh requests first to ensure statistics are accurate
+            requestRepository.refreshRequests()
             
             val profileResult = profileRepository.getUserProfile()
             val quotaResult = profileRepository.getUserQuota()

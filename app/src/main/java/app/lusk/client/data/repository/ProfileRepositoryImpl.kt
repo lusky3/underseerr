@@ -61,7 +61,7 @@ class ProfileRepositoryImpl @Inject constructor(
                 approvedRequests = allRequests.count { it.status == 2 }, // APPROVED
                 declinedRequests = allRequests.count { it.status == 3 }, // DECLINED
                 pendingRequests = allRequests.count { it.status == 1 }, // PENDING
-                availableRequests = allRequests.count { it.status == 4 } // AVAILABLE
+                availableRequests = allRequests.count { it.status == 4 || it.status == 5 } // AVAILABLE
             )
         }
     }

@@ -95,15 +95,12 @@ class DiscoveryRepositoryImpl @Inject constructor(
             
             // Check local request status to override if needed (e.g. offline queued)
             val localRequest = mediaRequestDao.getRequestByMediaId(movieId)
-            val finalMovie = if (localRequest != null) {
-                // If we have a local request, ensure MediaInfo reflects it
-                val requestStatus = app.lusk.client.domain.model.RequestStatus.values().firstOrNull { it.ordinal == localRequest.status } 
-                    ?: app.lusk.client.domain.model.RequestStatus.PENDING
-                
-                val newStatus = when (requestStatus) {
-                    app.lusk.client.domain.model.RequestStatus.PENDING -> app.lusk.client.domain.model.MediaStatus.PENDING
-                    app.lusk.client.domain.model.RequestStatus.APPROVED -> app.lusk.client.domain.model.MediaStatus.PROCESSING
-                    app.lusk.client.domain.model.RequestStatus.AVAILABLE -> app.lusk.client.domain.model.MediaStatus.AVAILABLE
+            val finalMovie = if (localRequest != null && movie.mediaInfo?.status != app.lusk.client.domain.model.MediaStatus.AVAILABLE) {
+                // If we have a local request AND media is not yet available, use request-derived status
+                val newStatus = when (localRequest.status) {
+                    1 -> app.lusk.client.domain.model.MediaStatus.PENDING    // PENDING
+                    2 -> app.lusk.client.domain.model.MediaStatus.PROCESSING // APPROVED
+                    4, 5 -> app.lusk.client.domain.model.MediaStatus.AVAILABLE // AVAILABLE
                     else -> app.lusk.client.domain.model.MediaStatus.UNKNOWN
                 }
                 
@@ -146,14 +143,11 @@ class DiscoveryRepositoryImpl @Inject constructor(
             val tvShow = result.data.toTvShow()
             
             val localRequest = mediaRequestDao.getRequestByMediaId(tvShowId)
-            val finalTvShow = if (localRequest != null) {
-                val requestStatus = app.lusk.client.domain.model.RequestStatus.values().firstOrNull { it.ordinal == localRequest.status } 
-                    ?: app.lusk.client.domain.model.RequestStatus.PENDING
-                
-                val newStatus = when (requestStatus) {
-                    app.lusk.client.domain.model.RequestStatus.PENDING -> app.lusk.client.domain.model.MediaStatus.PENDING
-                    app.lusk.client.domain.model.RequestStatus.APPROVED -> app.lusk.client.domain.model.MediaStatus.PROCESSING
-                    app.lusk.client.domain.model.RequestStatus.AVAILABLE -> app.lusk.client.domain.model.MediaStatus.AVAILABLE
+            val finalTvShow = if (localRequest != null && tvShow.mediaInfo?.status != app.lusk.client.domain.model.MediaStatus.AVAILABLE) {
+                val newStatus = when (localRequest.status) {
+                    1 -> app.lusk.client.domain.model.MediaStatus.PENDING    // PENDING
+                    2 -> app.lusk.client.domain.model.MediaStatus.PROCESSING // APPROVED
+                    4, 5 -> app.lusk.client.domain.model.MediaStatus.AVAILABLE // AVAILABLE
                     else -> app.lusk.client.domain.model.MediaStatus.UNKNOWN
                 }
                 

@@ -70,7 +70,7 @@ interface MediaRequestDao {
      * Get media requests by status.
      */
     @Query("SELECT * FROM user_requests WHERE status = :status ORDER BY id DESC")
-    fun getByStatus(status: String): Flow<List<MediaRequestEntity>>
+    fun getByStatus(status: Int): Flow<List<MediaRequestEntity>>
     
     /**
      * Get media requests by media type.
@@ -100,7 +100,7 @@ interface MediaRequestDao {
      * Get the count of media requests by status.
      */
     @Query("SELECT COUNT(*) FROM user_requests WHERE status = :status")
-    suspend fun getCountByStatus(status: String): Int
+    suspend fun getCountByStatus(status: Int): Int
     
     /**
      * Get all media requests.
@@ -112,7 +112,7 @@ interface MediaRequestDao {
      * Get requests by status.
      */
     @Query("SELECT * FROM user_requests WHERE status = :status ORDER BY id DESC")
-    fun getRequestsByStatus(status: String): Flow<List<MediaRequestEntity>>
+    fun getRequestsByStatus(status: Int): Flow<List<MediaRequestEntity>>
     
     /**
      * Get request by media ID.

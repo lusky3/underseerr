@@ -21,10 +21,11 @@ fun ApiMediaInfo.toDomain(): MediaInfo {
  */
 private fun Int.toMediaStatus(): MediaStatus {
     return when (this) {
-        1 -> MediaStatus.AVAILABLE
+        1 -> MediaStatus.UNKNOWN
         2 -> MediaStatus.PENDING
         3 -> MediaStatus.PROCESSING
         4 -> MediaStatus.PARTIALLY_AVAILABLE
+        5 -> MediaStatus.AVAILABLE
         else -> MediaStatus.UNKNOWN
     }
 }

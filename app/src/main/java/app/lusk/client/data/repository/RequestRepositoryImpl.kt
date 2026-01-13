@@ -194,7 +194,13 @@ class RequestRepositoryImpl @Inject constructor(
      * Property 14: Request Grouping Correctness
      */
     override fun getRequestsByStatus(status: RequestStatus): Flow<List<MediaRequest>> {
-        return mediaRequestDao.getRequestsByStatus(status.name)
+        val statusCode = when (status) {
+            RequestStatus.PENDING -> 1
+            RequestStatus.APPROVED -> 2
+            RequestStatus.DECLINED -> 3
+            RequestStatus.AVAILABLE -> 4
+        }
+        return mediaRequestDao.getRequestsByStatus(statusCode)
             .map { entities -> entities.map { it.toDomain() } }
     }
     

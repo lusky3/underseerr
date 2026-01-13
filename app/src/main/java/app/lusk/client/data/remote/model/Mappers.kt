@@ -88,11 +88,12 @@ fun ApiMediaRequest.toMediaRequest(): MediaRequest {
         mediaId = finalMediaId,
         title = "Title Unavailable", // API response in this env is missing title
         posterPath = null,
-        status = when (status) {
-            1 -> RequestStatus.PENDING
-            2 -> RequestStatus.APPROVED
-            3 -> RequestStatus.DECLINED
-            4 -> RequestStatus.AVAILABLE
+        status = when {
+            media?.status == 5 -> RequestStatus.AVAILABLE
+            status == 1 -> RequestStatus.PENDING
+            status == 2 -> RequestStatus.APPROVED
+            status == 3 -> RequestStatus.DECLINED
+            status == 4 -> RequestStatus.AVAILABLE
             else -> RequestStatus.PENDING
         },
         requestedDate = requestedDate,
