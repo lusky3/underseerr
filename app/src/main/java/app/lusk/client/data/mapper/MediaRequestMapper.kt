@@ -12,15 +12,18 @@ import java.util.*
  * Maps API media request model to domain media request model.
  */
 fun ApiMediaRequest.toDomain(): MediaRequest {
+    val finalMediaId = media?.tmdbId ?: media?.tvdbId ?: media?.id ?: id
+    val finalMediaType = media?.mediaType ?: type
+    
     return MediaRequest(
         id = id,
-        mediaType = mediaType.toMediaType(),
-        mediaId = mediaId,
-        title = title,
-        posterPath = posterPath,
+        mediaType = finalMediaType.toMediaType(),
+        mediaId = finalMediaId,
+        title = "Title Unavailable",
+        posterPath = null,
         status = status.toRequestStatus(),
-        requestedDate = createdAt.toTimestamp(),
-        seasons = seasons
+        requestedDate = createdAt?.toTimestamp() ?: System.currentTimeMillis(),
+        seasons = seasons?.map { it.seasonNumber }
     )
 }
 

@@ -9,20 +9,20 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ApiSearchResults(
     val page: Int,
-    @SerialName("total_pages") val totalPages: Int,
-    @SerialName("total_results") val totalResults: Int,
+    val totalPages: Int = 1,
+    val totalResults: Int = 0,
     val results: List<ApiSearchResult>
 )
 
 @Serializable
 data class ApiSearchResult(
     val id: Int,
-    @SerialName("media_type") val mediaType: String,
+    val mediaType: String? = null,
     val title: String? = null,
     val name: String? = null,
-    val overview: String,
-    @SerialName("poster_path") val posterPath: String? = null,
-    @SerialName("release_date") val releaseDate: String? = null,
-    @SerialName("first_air_date") val firstAirDate: String? = null,
-    @SerialName("vote_average") val voteAverage: Double
+    val overview: String? = null,
+    val posterPath: String? = null,
+    val releaseDate: String? = null,
+    val firstAirDate: String? = null,
+    val voteAverage: Double? = null
 )

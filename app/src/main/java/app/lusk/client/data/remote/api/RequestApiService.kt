@@ -3,6 +3,9 @@ package app.lusk.client.data.remote.api
 import app.lusk.client.data.remote.model.ApiMediaRequest
 import app.lusk.client.data.remote.model.ApiRequestBody
 import app.lusk.client.data.remote.model.ApiRequestResponse
+import app.lusk.client.data.remote.model.ApiSystemSettings
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -17,6 +20,9 @@ import retrofit2.http.Query
  */
 interface RequestApiService {
     
+    @GET("/api/v1/settings/main")
+    suspend fun getSystemSettings(): ApiSystemSettings
+    
     /**
      * Submit a new media request.
      * 
@@ -26,7 +32,7 @@ interface RequestApiService {
     @POST("/api/v1/request")
     suspend fun submitRequest(
         @Body body: ApiRequestBody
-    ): ApiRequestResponse
+    ): ApiMediaRequest
     
     /**
      * Get all requests (filtered by permissions).
@@ -123,15 +129,31 @@ interface RequestApiService {
     /**
      * Get quality profiles.
      */
-    @GET("/api/v1/settings/radarr/profiles")
-    suspend fun getQualityProfiles(): List<ApiQualityProfile>
+    @GET("/api/v1/service/radarr")
+    suspend fun getRadarrServers(): List<ApiMediaServer>
+
+    @GET("/api/v1/service/sonarr")
+    suspend fun getSonarrServers(): List<ApiMediaServer>
     
-    /**
-     * Get root folders.
-     */
-    @GET("/api/v1/settings/radarr/folders")
-    suspend fun getRootFolders(): List<ApiRootFolder>
+    @GET("/api/v1/service/radarr/{id}")
+    suspend fun getRadarrService(@Path("id") id: Int): ApiServiceSettings
+
+    @GET("/api/v1/service/sonarr/{id}")
+    suspend fun getSonarrService(@Path("id") id: Int): ApiServiceSettings
 }
+
+@Serializable
+data class ApiMediaServer(
+    val id: Int,
+    val name: String,
+    val isDefault: Boolean = false
+)
+
+@Serializable
+data class ApiServiceSettings(
+    val profiles: List<ApiQualityProfile>,
+    val rootFolders: List<ApiRootFolder>
+)
 
 /**
  * API request status response.

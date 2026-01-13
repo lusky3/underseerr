@@ -13,11 +13,11 @@ fun ApiMovie.toDomain(): Movie {
     return Movie(
         id = id,
         title = title,
-        overview = overview,
+        overview = overview ?: "",
         posterPath = posterPath,
         backdropPath = backdropPath,
         releaseDate = releaseDate,
-        voteAverage = voteAverage,
+        voteAverage = voteAverage ?: 0.0,
         mediaInfo = mediaInfo?.toDomain()
     )
 }

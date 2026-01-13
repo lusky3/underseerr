@@ -8,11 +8,11 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ApiRequestBody(
-    @SerialName("media_id") val mediaId: Int,
-    @SerialName("media_type") val mediaType: String,
+    val mediaId: Int,
+    val mediaType: String,
     val seasons: List<Int>? = null,
     @SerialName("is4k") val is4k: Boolean = false,
     @SerialName("serverId") val serverId: Int? = null,
-    @SerialName("profileId") val profileId: Int? = null,
+    @SerialName("profileId") val qualityProfile: Int? = null,
     @SerialName("rootFolder") val rootFolder: String? = null
 )

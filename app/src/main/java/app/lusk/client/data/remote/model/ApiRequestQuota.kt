@@ -7,8 +7,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ApiRequestQuota(
-    val movie: ApiQuotaInfo?,
-    val tv: ApiQuotaInfo?
+    val movie: ApiQuotaInfo? = null,
+    val tv: ApiQuotaInfo? = null
 )
 
 /**
@@ -16,7 +16,7 @@ data class ApiRequestQuota(
  */
 @Serializable
 data class ApiQuotaInfo(
-    val limit: Int?,
-    val remaining: Int?,
-    val days: Int?
+    val limit: Int? = null,
+    val remaining: Int? = null,
+    val days: Int? = null
 )

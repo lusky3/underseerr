@@ -24,12 +24,12 @@ fun ApiSearchResults.toDomain(): SearchResults {
 fun ApiSearchResult.toDomain(): SearchResult {
     return SearchResult(
         id = id,
-        mediaType = mediaType.toMediaType(),
+        mediaType = mediaType?.toMediaType() ?: MediaType.MOVIE,
         title = title ?: name ?: "",
-        overview = overview,
+        overview = overview ?: "",
         posterPath = posterPath,
         releaseDate = releaseDate ?: firstAirDate,
-        voteAverage = voteAverage
+        voteAverage = voteAverage ?: 0.0
     )
 }
 

@@ -10,11 +10,11 @@ import kotlinx.serialization.Serializable
 data class ApiTvShow(
     val id: Int,
     val name: String,
-    val overview: String,
-    @SerialName("poster_path") val posterPath: String? = null,
-    @SerialName("backdrop_path") val backdropPath: String? = null,
-    @SerialName("first_air_date") val firstAirDate: String? = null,
-    @SerialName("vote_average") val voteAverage: Double,
-    @SerialName("number_of_seasons") val numberOfSeasons: Int,
-    @SerialName("media_info") val mediaInfo: ApiMediaInfo? = null
+    val overview: String? = null,
+    val posterPath: String? = null,
+    val backdropPath: String? = null,
+    val firstAirDate: String? = null,
+    val voteAverage: Double? = null,
+    val numberOfSeasons: Int? = null,
+    val mediaInfo: ApiMediaInfo? = null
 )

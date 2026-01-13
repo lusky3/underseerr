@@ -1,6 +1,5 @@
 package app.lusk.client.data.mapper
 
-import app.lusk.client.data.remote.model.ApiPermissions
 import app.lusk.client.data.remote.model.ApiUserProfile
 import app.lusk.client.domain.model.Permissions
 import app.lusk.client.domain.model.UserProfile
@@ -11,22 +10,24 @@ import app.lusk.client.domain.model.UserProfile
 fun ApiUserProfile.toDomain(): UserProfile {
     return UserProfile(
         id = id,
-        email = email,
-        displayName = displayName,
+        email = email ?: "",
+        displayName = displayName ?: username ?: "User $id",
         avatar = avatar,
         requestCount = requestCount,
-        permissions = permissions.toDomain()
+        permissions = decodePermissions(permissions)
     )
 }
 
-/**
- * Maps API permissions model to domain permissions model.
- */
-fun ApiPermissions.toDomain(): Permissions {
+private fun decodePermissions(bitmask: Long): Permissions {
+    // Overseerr Permission masks
+    val ADMIN = 2L
+    val MANAGE_REQUESTS = 16L
+    val REQUEST = 32L
+    
     return Permissions(
-        canRequest = canRequest,
-        canManageRequests = canManageRequests,
-        canViewRequests = canViewRequests,
-        isAdmin = isAdmin
+        canRequest = (bitmask and REQUEST) != 0L || (bitmask and ADMIN) != 0L,
+        canManageRequests = (bitmask and MANAGE_REQUESTS) != 0L || (bitmask and ADMIN) != 0L,
+        canViewRequests = true,
+        isAdmin = (bitmask and ADMIN) != 0L
     )
 }

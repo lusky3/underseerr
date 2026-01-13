@@ -10,10 +10,10 @@ import kotlinx.serialization.Serializable
 data class ApiMovie(
     val id: Int,
     val title: String,
-    val overview: String,
-    @SerialName("poster_path") val posterPath: String? = null,
-    @SerialName("backdrop_path") val backdropPath: String? = null,
-    @SerialName("release_date") val releaseDate: String? = null,
-    @SerialName("vote_average") val voteAverage: Double,
-    @SerialName("media_info") val mediaInfo: ApiMediaInfo? = null
+    val overview: String? = null,
+    val posterPath: String? = null,
+    val backdropPath: String? = null,
+    val releaseDate: String? = null,
+    val voteAverage: Double? = null,
+    val mediaInfo: ApiMediaInfo? = null
 )

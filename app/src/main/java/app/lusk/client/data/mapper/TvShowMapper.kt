@@ -13,12 +13,12 @@ fun ApiTvShow.toDomain(): TvShow {
     return TvShow(
         id = id,
         name = name,
-        overview = overview,
+        overview = overview ?: "",
         posterPath = posterPath,
         backdropPath = backdropPath,
         firstAirDate = firstAirDate,
-        voteAverage = voteAverage,
-        numberOfSeasons = numberOfSeasons,
+        voteAverage = voteAverage ?: 0.0,
+        numberOfSeasons = numberOfSeasons ?: 0,
         mediaInfo = mediaInfo?.toDomain()
     )
 }

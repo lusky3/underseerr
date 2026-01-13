@@ -8,9 +8,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ApiUserStatistics(
-    @SerialName("total") val totalRequests: Int,
-    @SerialName("approved") val approvedRequests: Int,
-    @SerialName("declined") val declinedRequests: Int,
-    @SerialName("pending") val pendingRequests: Int,
-    @SerialName("available") val availableRequests: Int
+    @SerialName("total") val totalRequests: Int = 0,
+    @SerialName("approved") val approvedRequests: Int = 0,
+    @SerialName("declined") val declinedRequests: Int = 0,
+    @SerialName("pending") val pendingRequests: Int = 0,
+    @SerialName("available") val availableRequests: Int = 0
 )
