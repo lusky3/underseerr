@@ -11,7 +11,7 @@ data class ApiMediaRequest(
     val id: Int,
     @SerialName("type") val type: String = "movie",
     val status: Int,
-    @SerialName("created_at") val createdAt: String? = null,
+    val createdAt: String? = null,
     val media: ApiRequestMedia? = null,
     val seasons: List<ApiRequestSeason>? = null
 )

@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ApiMediaInfo(
     val status: Int,
-    @SerialName("request_id") val requestId: Int? = null,
+    val requestId: Int? = null,
     val available: Boolean = false,
     val requests: List<ApiMediaRequest>? = null
 )

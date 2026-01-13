@@ -10,5 +10,5 @@ import kotlinx.serialization.Serializable
 data class ApiServerInfo(
     val version: String,
     val initialized: Boolean = true,
-    @SerialName("application_url") val applicationUrl: String = ""
+    val applicationUrl: String = ""
 )

@@ -11,8 +11,8 @@ data class ApiRequestBody(
     val mediaId: Int,
     val mediaType: String,
     val seasons: List<Int>? = null,
-    @SerialName("is4k") val is4k: Boolean = false,
-    @SerialName("serverId") val serverId: Int? = null,
-    @SerialName("profileId") val qualityProfile: Int? = null,
-    @SerialName("rootFolder") val rootFolder: String? = null
+    val is4k: Boolean = false,
+    val serverId: Int? = null,
+    val profileId: Int? = null,
+    val rootFolder: String? = null
 )

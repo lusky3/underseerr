@@ -10,10 +10,10 @@ import kotlinx.serialization.Serializable
 data class ApiUserProfile(
     val id: Int = -1,
     val email: String? = null,
-    @SerialName("username") val username: String? = null,
-    @SerialName("display_name") val displayName: String? = null,
+    val username: String? = null,
+    val displayName: String? = null,
     val avatar: String? = null,
-    @SerialName("request_count") val requestCount: Int = 0,
+    val requestCount: Int = 0,
     val permissions: Long = 0
 )
 

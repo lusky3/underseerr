@@ -16,7 +16,8 @@ import javax.inject.Inject
  * Validates: Requirements 5.1
  */
 class ProfileRepositoryImpl @Inject constructor(
-    private val userApiService: UserApiService
+    private val userApiService: UserApiService,
+    private val mediaRequestDao: app.lusk.client.data.local.dao.MediaRequestDao
 ) : ProfileRepository {
     
     override suspend fun getUserProfile(): Result<UserProfile> = safeApiCall {
@@ -41,14 +42,27 @@ class ProfileRepositoryImpl @Inject constructor(
     override suspend fun getUserStatistics(): Result<UserStatistics> = safeApiCall {
         val user = userApiService.getCurrentUser()
         
-        // The statistics endpoint often returns 404 or requires different permissions.
-        // For now, we use the basic request count from the user profile.
-        UserStatistics(
-            totalRequests = user.requestCount,
-            approvedRequests = 0,
-            declinedRequests = 0,
-            pendingRequests = 0,
-            availableRequests = 0
-        )
+        // Try actual stats first
+        try {
+            val apiStats = userApiService.getUserStatistics(user.id)
+            UserStatistics(
+                totalRequests = apiStats.totalRequests,
+                approvedRequests = apiStats.approvedRequests,
+                declinedRequests = apiStats.declinedRequests,
+                pendingRequests = apiStats.pendingRequests,
+                availableRequests = apiStats.availableRequests
+            )
+        } catch (e: Exception) {
+            // Fallback: calculate from local database which contains synced requests
+            val allRequests = mediaRequestDao.getAllSync()
+            
+            UserStatistics(
+                totalRequests = user.requestCount,
+                approvedRequests = allRequests.count { it.status == 2 }, // APPROVED
+                declinedRequests = allRequests.count { it.status == 3 }, // DECLINED
+                pendingRequests = allRequests.count { it.status == 1 }, // PENDING
+                availableRequests = allRequests.count { it.status == 4 } // AVAILABLE
+            )
+        }
     }
 }

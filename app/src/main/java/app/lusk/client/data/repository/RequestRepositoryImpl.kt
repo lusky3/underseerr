@@ -61,7 +61,7 @@ class RequestRepositoryImpl @Inject constructor(
                 app.lusk.client.data.remote.model.ApiRequestBody(
                     mediaId = movieId,
                     mediaType = "movie",
-                    qualityProfile = qualityProfile,
+                    profileId = qualityProfile,
                     rootFolder = rootFolder
                 )
             )
@@ -129,7 +129,7 @@ class RequestRepositoryImpl @Inject constructor(
                     mediaId = tvShowId,
                     mediaType = "tv",
                     seasons = seasons,
-                    qualityProfile = qualityProfile,
+                    profileId = qualityProfile,
                     rootFolder = rootFolder
                 )
             )
