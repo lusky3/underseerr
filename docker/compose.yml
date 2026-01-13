@@ -35,6 +35,12 @@ services:
       - "32400:32400"
     networks:
       - overseerr-network
+    healthcheck:
+      test: ["CMD-SHELL", "pidof nginx || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   # Mock Radarr for movie management
   radarr-mock:
@@ -50,6 +56,12 @@ services:
       - "7878:7878"
     networks:
       - overseerr-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7878/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Mock Sonarr for TV show management
   sonarr-mock:
@@ -65,6 +77,12 @@ services:
       - "8989:8989"
     networks:
       - overseerr-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8989/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 networks:
   overseerr-network:

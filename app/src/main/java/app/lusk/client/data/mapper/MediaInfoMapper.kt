@@ -11,7 +11,8 @@ fun ApiMediaInfo.toDomain(): MediaInfo {
     return MediaInfo(
         status = status.toMediaStatus(),
         requestId = requestId,
-        available = available
+        available = available,
+        requests = requests?.map { it.toDomain() } ?: emptyList()
     )
 }
 

@@ -7,9 +7,9 @@ import androidx.paging.cachedIn
 import app.lusk.client.domain.model.MediaType
 import app.lusk.client.domain.model.Movie
 import app.lusk.client.domain.model.Result
-import app.lusk.client.domain.model.SearchResults
 import app.lusk.client.domain.model.TvShow
 import app.lusk.client.domain.repository.DiscoveryRepository
+import app.lusk.client.domain.repository.RequestRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
@@ -24,7 +24,8 @@ import javax.inject.Inject
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class DiscoveryViewModel @Inject constructor(
-    private val discoveryRepository: DiscoveryRepository
+    private val discoveryRepository: DiscoveryRepository,
+    private val requestRepository: RequestRepository
 ) : ViewModel() {
     
     companion object {
@@ -50,7 +51,7 @@ class DiscoveryViewModel @Inject constructor(
     val searchState: StateFlow<SearchState> = _searchState.asStateFlow()
     
     // Paged Search results
-    val pagedSearchResults: kotlinx.coroutines.flow.Flow<PagingData<app.lusk.client.domain.model.SearchResult>> = _searchQuery
+    val pagedSearchResults: Flow<PagingData<app.lusk.client.domain.model.SearchResult>> = _searchQuery
         .debounce(SEARCH_DEBOUNCE_MS)
         .flatMapLatest { query ->
             if (query.isBlank()) {
@@ -64,8 +65,20 @@ class DiscoveryViewModel @Inject constructor(
     // Media details state
     private val _mediaDetailsState = MutableStateFlow<MediaDetailsState>(MediaDetailsState.Idle)
     val mediaDetailsState: StateFlow<MediaDetailsState> = _mediaDetailsState.asStateFlow()
+
+    // Partial requests setting
+    private val _partialRequestsEnabled = MutableStateFlow(false)
+    val partialRequestsEnabled: StateFlow<Boolean> = _partialRequestsEnabled.asStateFlow()
     
     init {
+        // Fetch partial requests setting
+        viewModelScope.launch {
+            val result = requestRepository.getPartialRequestsEnabled()
+            if (result.isSuccess) {
+                _partialRequestsEnabled.value = result.getOrDefault(false)
+            }
+        }
+
         // Set up search debouncing
         viewModelScope.launch {
             _searchQuery
@@ -136,7 +149,7 @@ class DiscoveryViewModel @Inject constructor(
             when (val result = discoveryRepository.getMovieDetails(movieId)) {
                 is Result.Success -> {
                     _mediaDetailsState.value = MediaDetailsState.Success(
-                        details = result.data.toMediaDetails()
+                        details = result.data.toMediaDetails(_partialRequestsEnabled.value)
                     )
                 }
                 is Result.Error -> {
@@ -160,7 +173,7 @@ class DiscoveryViewModel @Inject constructor(
             when (val result = discoveryRepository.getTvShowDetails(tvShowId)) {
                 is Result.Success -> {
                     _mediaDetailsState.value = MediaDetailsState.Success(
-                        details = result.data.toMediaDetails()
+                        details = result.data.toMediaDetails(_partialRequestsEnabled.value)
                     )
                 }
                 is Result.Error -> {
@@ -246,13 +259,17 @@ data class MediaDetails(
     val runtime: Int?,
     val status: String?,
     val isAvailable: Boolean,
-    val isRequested: Boolean
+    val isRequested: Boolean,
+    val numberOfSeasons: Int = 0,
+    val isPartiallyAvailable: Boolean = false,
+    val isPartialRequestsEnabled: Boolean = false,
+    val requestedSeasons: List<Int> = emptyList()
 )
 
 /**
  * Extension functions to convert domain models to MediaDetails.
  */
-private fun Movie.toMediaDetails() = MediaDetails(
+private fun Movie.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails(
     title = title,
     overview = overview,
     posterPath = posterPath,
@@ -264,10 +281,13 @@ private fun Movie.toMediaDetails() = MediaDetails(
     status = mediaInfo?.status?.name,
     isAvailable = mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.AVAILABLE,
     isRequested = mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.PENDING ||
-                  mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.PROCESSING
+                  mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.PROCESSING,
+    numberOfSeasons = 0,
+    isPartiallyAvailable = false,
+    isPartialRequestsEnabled = partialRequestsEnabled
 )
 
-private fun TvShow.toMediaDetails() = MediaDetails(
+private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails(
     title = name,
     overview = overview,
     posterPath = posterPath,
@@ -279,7 +299,18 @@ private fun TvShow.toMediaDetails() = MediaDetails(
     status = mediaInfo?.status?.name,
     isAvailable = mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.AVAILABLE,
     isRequested = mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.PENDING ||
-                  mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.PROCESSING
+                  mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.PROCESSING,
+    numberOfSeasons = numberOfSeasons,
+    isPartiallyAvailable = mediaInfo?.status == app.lusk.client.domain.model.MediaStatus.PARTIALLY_AVAILABLE,
+    isPartialRequestsEnabled = partialRequestsEnabled,
+    requestedSeasons = mediaInfo?.requests?.flatMap { request -> 
+        // Only include seasons from requests that are NOT declined
+        if (request.status != app.lusk.client.domain.model.RequestStatus.DECLINED) {
+            request.seasons ?: emptyList() 
+        } else {
+            emptyList()
+        }
+    } ?: emptyList()
 )
 
 /**

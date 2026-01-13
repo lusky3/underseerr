@@ -45,12 +45,29 @@ class RequestViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
+    // Partial requests enabled state
+    private val _partialRequestsEnabled = MutableStateFlow(false)
+    val partialRequestsEnabled: StateFlow<Boolean> = _partialRequestsEnabled.asStateFlow()
+    
     // Error state
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
     
     init {
-        loadUserRequests()
+        viewModelScope.launch {
+            requestRepository.getUserRequests().collect { requests ->
+                _userRequests.value = requests
+            }
+        }
+
+        refreshRequests()
+        
+        viewModelScope.launch {
+            val result = requestRepository.getPartialRequestsEnabled()
+            if (result.isSuccess) {
+                _partialRequestsEnabled.value = result.getOrDefault(false)
+            }
+        }
     }
     
     /**
@@ -198,9 +215,9 @@ class RequestViewModel @Inject constructor(
      * Load quality profiles.
      * Property 12: Advanced Options Availability
      */
-    fun loadQualityProfiles() {
+    fun loadQualityProfiles(isMovie: Boolean) {
         viewModelScope.launch {
-            when (val result = requestRepository.getQualityProfiles()) {
+            when (val result = requestRepository.getQualityProfiles(isMovie)) {
                 is Result.Success -> {
                     _qualityProfiles.value = result.data
                 }
@@ -218,9 +235,9 @@ class RequestViewModel @Inject constructor(
      * Load root folders.
      * Property 12: Advanced Options Availability
      */
-    fun loadRootFolders() {
+    fun loadRootFolders(isMovie: Boolean) {
         viewModelScope.launch {
-            when (val result = requestRepository.getRootFolders()) {
+            when (val result = requestRepository.getRootFolders(isMovie)) {
                 is Result.Success -> {
                     _rootFolders.value = result.data
                 }

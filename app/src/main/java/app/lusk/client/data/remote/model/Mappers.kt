@@ -12,11 +12,11 @@ fun ApiMovie.toMovie(): Movie {
     return Movie(
         id = id,
         title = title,
-        overview = overview,
+        overview = overview ?: "",
         posterPath = posterPath,
         backdropPath = backdropPath,
         releaseDate = releaseDate,
-        voteAverage = voteAverage,
+        voteAverage = voteAverage ?: 0.0,
         mediaInfo = mediaInfo?.toMediaInfo()
     )
 }
@@ -25,12 +25,12 @@ fun ApiTvShow.toTvShow(): TvShow {
     return TvShow(
         id = id,
         name = name,
-        overview = overview,
+        overview = overview ?: "",
         posterPath = posterPath,
         backdropPath = backdropPath,
         firstAirDate = firstAirDate,
-        voteAverage = voteAverage,
-        numberOfSeasons = numberOfSeasons,
+        voteAverage = voteAverage ?: 0.0,
+        numberOfSeasons = numberOfSeasons ?: 0,
         mediaInfo = mediaInfo?.toMediaInfo()
     )
 }
@@ -47,16 +47,16 @@ fun ApiSearchResults.toSearchResults(): SearchResults {
 fun ApiSearchResult.toSearchResult(): SearchResult {
     return SearchResult(
         id = id,
-        mediaType = when (mediaType.lowercase()) {
+        mediaType = when (mediaType?.lowercase()) {
             "movie" -> MediaType.MOVIE
             "tv" -> MediaType.TV
             else -> MediaType.MOVIE
         },
         title = title ?: name ?: "",
-        overview = overview,
+        overview = overview ?: "",
         posterPath = posterPath,
         releaseDate = releaseDate ?: firstAirDate,
-        voteAverage = voteAverage
+        voteAverage = voteAverage ?: 0.0
     )
 }
 
@@ -65,21 +65,29 @@ fun ApiMediaRequest.toMediaRequest(): MediaRequest {
     dateFormat.timeZone = TimeZone.getTimeZone("UTC")
     
     val requestedDate = try {
-        dateFormat.parse(createdAt)?.time ?: System.currentTimeMillis()
+        if (createdAt != null) {
+            dateFormat.parse(createdAt)?.time ?: System.currentTimeMillis()
+        } else {
+            System.currentTimeMillis()
+        }
     } catch (e: Exception) {
         System.currentTimeMillis()
     }
     
+    // Determine media ID (prefer tmdbId for movies, tvdbId for TV, fallback to media.id or top id)
+    val finalMediaId = media?.tmdbId ?: media?.tvdbId ?: media?.id ?: id
+    val finalMediaType = media?.mediaType ?: type
+    
     return MediaRequest(
         id = id,
-        mediaType = when (mediaType.lowercase()) {
+        mediaType = when (finalMediaType.lowercase()) {
             "movie" -> MediaType.MOVIE
             "tv" -> MediaType.TV
             else -> MediaType.MOVIE
         },
-        mediaId = mediaId,
-        title = title,
-        posterPath = posterPath,
+        mediaId = finalMediaId,
+        title = "Title Unavailable", // API response in this env is missing title
+        posterPath = null,
         status = when (status) {
             1 -> RequestStatus.PENDING
             2 -> RequestStatus.APPROVED
@@ -88,7 +96,7 @@ fun ApiMediaRequest.toMediaRequest(): MediaRequest {
             else -> RequestStatus.PENDING
         },
         requestedDate = requestedDate,
-        seasons = seasons
+        seasons = seasons?.map { it.seasonNumber }
     )
 }
 
@@ -103,16 +111,8 @@ fun ApiMediaInfo.toMediaInfo(): MediaInfo {
             else -> MediaStatus.UNKNOWN
         },
         requestId = requestId,
-        available = available
-    )
-}
-
-fun ApiPermissions.toPermissions(): Permissions {
-    return Permissions(
-        canRequest = canRequest,
-        canManageRequests = canManageRequests,
-        canViewRequests = canViewRequests,
-        isAdmin = isAdmin
+        available = available,
+        requests = requests?.map { it.toMediaRequest() } ?: emptyList()
     )
 }
 
@@ -121,11 +121,11 @@ fun ApiSearchResult.toMovie(): Movie {
     return Movie(
         id = id,
         title = title ?: name ?: "",
-        overview = overview,
+        overview = overview ?: "",
         posterPath = posterPath,
         backdropPath = null,
         releaseDate = releaseDate ?: firstAirDate,
-        voteAverage = voteAverage,
+        voteAverage = voteAverage ?: 0.0,
         mediaInfo = null
     )
 }
@@ -134,11 +134,11 @@ fun ApiSearchResult.toTvShow(): TvShow {
     return TvShow(
         id = id,
         name = name ?: title ?: "",
-        overview = overview,
+        overview = overview ?: "",
         posterPath = posterPath,
         backdropPath = null,
         firstAirDate = firstAirDate ?: releaseDate,
-        voteAverage = voteAverage,
+        voteAverage = voteAverage ?: 0.0,
         numberOfSeasons = 0, // Not available in search result
         mediaInfo = null
     )

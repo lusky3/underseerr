@@ -27,6 +27,7 @@ class RequestRepositoryImpl @Inject constructor(
     private val requestApiService: RequestApiService,
     private val mediaRequestDao: MediaRequestDao,
     private val offlineRequestDao: app.lusk.client.data.local.dao.OfflineRequestDao,
+    private val discoveryRepository: app.lusk.client.domain.repository.DiscoveryRepository,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : RequestRepository {
     
@@ -56,10 +57,13 @@ class RequestRepositoryImpl @Inject constructor(
         rootFolder: String?
     ): Result<MediaRequest> {
         val result = safeApiCall {
-            requestApiService.requestMovie(
-                movieId = movieId,
-                qualityProfile = qualityProfile,
-                rootFolder = rootFolder
+            requestApiService.submitRequest(
+                app.lusk.client.data.remote.model.ApiRequestBody(
+                    mediaId = movieId,
+                    mediaType = "movie",
+                    qualityProfile = qualityProfile,
+                    rootFolder = rootFolder
+                )
             )
         }
 
@@ -120,11 +124,14 @@ class RequestRepositoryImpl @Inject constructor(
         rootFolder: String?
     ): Result<MediaRequest> {
         val result = safeApiCall {
-            requestApiService.requestTvShow(
-                tvShowId = tvShowId,
-                seasons = seasons,
-                qualityProfile = qualityProfile,
-                rootFolder = rootFolder
+            requestApiService.submitRequest(
+                app.lusk.client.data.remote.model.ApiRequestBody(
+                    mediaId = tvShowId,
+                    mediaType = "tv",
+                    seasons = seasons,
+                    qualityProfile = qualityProfile,
+                    rootFolder = rootFolder
+                )
             )
         }
 
@@ -220,9 +227,40 @@ class RequestRepositoryImpl @Inject constructor(
         val response = requestApiService.getRequests(take = 100, skip = 0)
         val requests = response.results.map { it.toMediaRequest() }
         
+        // Parallel fetch details for requests missing data
+        val hydratedRequests = requests.map { request ->
+            if (request.title == "Title Unavailable" || request.posterPath == null) {
+                // Fetch details
+                val hydrated = try {
+                    if (request.mediaType == app.lusk.client.domain.model.MediaType.MOVIE) {
+                        val movieResult = discoveryRepository.getMovieDetails(request.mediaId)
+                        if (movieResult is Result.Success) {
+                            request.copy(
+                                title = movieResult.data.title,
+                                posterPath = movieResult.data.posterPath
+                            )
+                        } else request
+                    } else {
+                        val tvResult = discoveryRepository.getTvShowDetails(request.mediaId)
+                        if (tvResult is Result.Success) {
+                            request.copy(
+                                title = tvResult.data.name,
+                                posterPath = tvResult.data.posterPath
+                            )
+                        } else request
+                    }
+                } catch (e: Exception) {
+                    request
+                }
+                hydrated
+            } else {
+                request
+            }
+        }
+        
         // Clear old cache and insert fresh data
         mediaRequestDao.deleteAll()
-        requests.forEach { request ->
+        hydratedRequests.forEach { request ->
             mediaRequestDao.insert(request.toEntity())
         }
     }
@@ -240,17 +278,37 @@ class RequestRepositoryImpl @Inject constructor(
      * Get available quality profiles.
      * Property 12: Advanced Options Availability
      */
-    override suspend fun getQualityProfiles(): Result<List<QualityProfile>> = safeApiCall {
-        val response = requestApiService.getQualityProfiles()
-        response.map { QualityProfile(id = it.id, name = it.name) }
+    override suspend fun getQualityProfiles(isMovie: Boolean): Result<List<QualityProfile>> = safeApiCall {
+        val profiles = if (isMovie) {
+            val servers = requestApiService.getRadarrServers()
+            val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Radarr server configured")
+            requestApiService.getRadarrService(defaultServer.id).profiles
+        } else {
+            val servers = requestApiService.getSonarrServers()
+            val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Sonarr server configured")
+            requestApiService.getSonarrService(defaultServer.id).profiles
+        }
+        profiles.map { QualityProfile(id = it.id, name = it.name) }
     }
     
     /**
      * Get available root folders.
      * Property 12: Advanced Options Availability
      */
-    override suspend fun getRootFolders(): Result<List<RootFolder>> = safeApiCall {
-        val response = requestApiService.getRootFolders()
-        response.map { RootFolder(id = it.id, path = it.path) }
+    override suspend fun getRootFolders(isMovie: Boolean): Result<List<RootFolder>> = safeApiCall {
+        val folders = if (isMovie) {
+            val servers = requestApiService.getRadarrServers()
+            val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Radarr server configured")
+            requestApiService.getRadarrService(defaultServer.id).rootFolders
+        } else {
+            val servers = requestApiService.getSonarrServers()
+            val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Sonarr server configured")
+            requestApiService.getSonarrService(defaultServer.id).rootFolders
+        }
+        folders.map { RootFolder(id = it.id, path = it.path) }
+    }
+
+    override suspend fun getPartialRequestsEnabled(): Result<Boolean> = safeApiCall {
+        requestApiService.getSystemSettings().partialRequestsEnabled
     }
 }

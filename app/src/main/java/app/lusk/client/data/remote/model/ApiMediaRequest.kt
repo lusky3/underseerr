@@ -9,11 +9,25 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ApiMediaRequest(
     val id: Int,
-    @SerialName("media_type") val mediaType: String,
-    @SerialName("media_id") val mediaId: Int,
-    val title: String,
-    @SerialName("poster_path") val posterPath: String? = null,
+    @SerialName("type") val type: String = "movie",
     val status: Int,
-    @SerialName("created_at") val createdAt: String,
-    val seasons: List<Int>? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    val media: ApiRequestMedia? = null,
+    val seasons: List<ApiRequestSeason>? = null
+)
+
+@Serializable
+data class ApiRequestMedia(
+    @SerialName("mediaType") val mediaType: String? = null,
+    val tmdbId: Int? = null,
+    val tvdbId: Int? = null,
+    val status: Int? = null,
+    val id: Int? = null
+)
+
+@Serializable
+data class ApiRequestSeason(
+    val id: Int,
+    val seasonNumber: Int,
+    val status: Int
 )

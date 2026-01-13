@@ -6,5 +6,6 @@ package app.lusk.client.domain.model
 data class MediaInfo(
     val status: MediaStatus,
     val requestId: Int?,
-    val available: Boolean
+    val available: Boolean,
+    val requests: List<MediaRequest> = emptyList()
 )
