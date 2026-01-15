@@ -7,6 +7,8 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 /**
  * Property-based tests for adaptive layout responsiveness.
@@ -62,8 +64,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 2,
-                    contentPadding = androidx.compose.ui.unit.dp(16),
-                    itemSpacing = androidx.compose.ui.unit.dp(8),
+                    contentPadding = 16.dp,
+                    itemSpacing = 8.dp,
                     useNavigationRail = false,
                     showNavigationLabels = true
                 )
@@ -71,8 +73,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 3,
-                    contentPadding = androidx.compose.ui.unit.dp(24),
-                    itemSpacing = androidx.compose.ui.unit.dp(12),
+                    contentPadding = 24.dp,
+                    itemSpacing = 12.dp,
                     useNavigationRail = true,
                     showNavigationLabels = true
                 )
@@ -80,8 +82,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 4,
-                    contentPadding = androidx.compose.ui.unit.dp(32),
-                    itemSpacing = androidx.compose.ui.unit.dp(16),
+                    contentPadding = 32.dp,
+                    itemSpacing = 16.dp,
                     useNavigationRail = true,
                     showNavigationLabels = false
                 )
@@ -164,8 +166,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 2,
-                    contentPadding = androidx.compose.ui.unit.dp(16),
-                    itemSpacing = androidx.compose.ui.unit.dp(8),
+                    contentPadding = 16.dp,
+                    itemSpacing = 8.dp,
                     useNavigationRail = false,
                     showNavigationLabels = true
                 )
@@ -173,8 +175,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 3,
-                    contentPadding = androidx.compose.ui.unit.dp(24),
-                    itemSpacing = androidx.compose.ui.unit.dp(12),
+                    contentPadding = 24.dp,
+                    itemSpacing = 12.dp,
                     useNavigationRail = true,
                     showNavigationLabels = true
                 )
@@ -182,8 +184,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 4,
-                    contentPadding = androidx.compose.ui.unit.dp(32),
-                    itemSpacing = androidx.compose.ui.unit.dp(16),
+                    contentPadding = 32.dp,
+                    itemSpacing = 16.dp,
                     useNavigationRail = true,
                     showNavigationLabels = false
                 )
@@ -194,8 +196,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 2,
-                    contentPadding = androidx.compose.ui.unit.dp(16),
-                    itemSpacing = androidx.compose.ui.unit.dp(8),
+                    contentPadding = 16.dp,
+                    itemSpacing = 8.dp,
                     useNavigationRail = false,
                     showNavigationLabels = true
                 )
@@ -203,8 +205,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 3,
-                    contentPadding = androidx.compose.ui.unit.dp(24),
-                    itemSpacing = androidx.compose.ui.unit.dp(12),
+                    contentPadding = 24.dp,
+                    itemSpacing = 12.dp,
                     useNavigationRail = true,
                     showNavigationLabels = true
                 )
@@ -212,8 +214,8 @@ class AdaptiveLayoutPropertyTest : StringSpec({
                     windowSizeClass = sizeClass,
                     windowHeightClass = WindowHeightClass.MEDIUM,
                     columns = 4,
-                    contentPadding = androidx.compose.ui.unit.dp(32),
-                    itemSpacing = androidx.compose.ui.unit.dp(16),
+                    contentPadding = 32.dp,
+                    itemSpacing = 16.dp,
                     useNavigationRail = true,
                     showNavigationLabels = false
                 )

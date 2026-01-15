@@ -1,12 +1,9 @@
 package app.lusk.client.data.worker
 
 import android.content.Context
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import app.lusk.client.domain.repository.RequestRepository
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 
 /**
@@ -15,10 +12,9 @@ import kotlinx.coroutines.flow.first
  * Validates: Requirements 4.5
  * Property 17: Request Status Updates
  */
-@HiltWorker
-class RequestStatusWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted workerParams: WorkerParameters,
+class RequestStatusWorker(
+    context: Context,
+    workerParams: WorkerParameters,
     private val requestRepository: RequestRepository
 ) : CoroutineWorker(context, workerParams) {
 

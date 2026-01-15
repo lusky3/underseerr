@@ -8,6 +8,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ApiMediaInfo(
+    val id: Int? = null,
+    val tmdbId: Int? = null,
+    val mediaType: String? = null,
     val status: Int,
     val requestId: Int? = null,
     val available: Boolean = false,

@@ -1,8 +1,7 @@
 package app.lusk.client.data.security
 
 import android.util.Log
-import javax.inject.Inject
-import javax.inject.Singleton
+
 
 /**
  * Secure logging wrapper that redacts sensitive information from logs.
@@ -11,8 +10,7 @@ import javax.inject.Singleton
  * 
  * Automatically redacts tokens, passwords, API keys, and other sensitive data from logs.
  */
-@Singleton
-class SecureLogger @Inject constructor() {
+class SecureLogger {
     
     companion object {
         private const val REDACTED = "[REDACTED]"

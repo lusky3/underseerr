@@ -2,7 +2,7 @@ package app.lusk.client.data.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import app.lusk.client.data.remote.api.DiscoveryApiService
+import app.lusk.client.data.remote.api.DiscoveryKtorService
 import app.lusk.client.data.remote.model.toSearchResult
 import app.lusk.client.domain.model.SearchResult
 
@@ -10,14 +10,14 @@ import app.lusk.client.domain.model.SearchResult
  * PagingSource for search results.
  */
 class SearchPagingSource(
-    private val discoveryApiService: DiscoveryApiService,
+    private val discoveryKtorService: DiscoveryKtorService,
     private val query: String
 ) : PagingSource<Int, SearchResult>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, SearchResult> {
         val page = params.key ?: 1
         return try {
-            val response = discoveryApiService.search(query, page)
+            val response = discoveryKtorService.search(query, page)
             val results = response.results.map { it.toSearchResult() }
             
             LoadResult.Page(

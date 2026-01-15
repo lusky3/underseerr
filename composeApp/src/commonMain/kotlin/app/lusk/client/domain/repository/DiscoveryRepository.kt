@@ -6,6 +6,7 @@ import app.lusk.client.domain.model.Movie
 import app.lusk.client.domain.model.Result
 import app.lusk.client.domain.model.SearchResults
 import app.lusk.client.domain.model.TvShow
+import app.lusk.client.domain.model.Genre
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -16,16 +17,9 @@ import kotlinx.coroutines.flow.Flow
 interface DiscoveryRepository {
     
     /**
-     * Get trending movies with pagination.
-     * Property 8: Pagination Consistency
+     * Get combined trending content (movies and TV shows) with pagination.
      */
-    fun getTrendingMovies(): Flow<PagingData<Movie>>
-    
-    /**
-     * Get trending TV shows with pagination.
-     * Property 8: Pagination Consistency
-     */
-    fun getTrendingTvShows(): Flow<PagingData<TvShow>>
+    fun getTrending(): Flow<PagingData<app.lusk.client.domain.model.SearchResult>>
     
     /**
      * Search for media (movies and TV shows).
@@ -60,4 +54,49 @@ interface DiscoveryRepository {
      * Get popular TV shows with pagination.
      */
     fun getPopularTvShows(): Flow<PagingData<TvShow>>
+
+    /**
+     * Get upcoming movies with pagination.
+     */
+    fun getUpcomingMovies(): Flow<PagingData<Movie>>
+
+    /**
+     * Get upcoming TV shows with pagination.
+     */
+    fun getUpcomingTvShows(): Flow<PagingData<TvShow>>
+
+    /**
+     * Get user watchlist with paging.
+     */
+    fun getWatchlist(): Flow<PagingData<app.lusk.client.domain.model.SearchResult>>
+
+    /**
+     * Get movie genres.
+     */
+    suspend fun getMovieGenres(): Result<List<Genre>>
+
+    /**
+     * Get TV genres.
+     */
+    suspend fun getTvGenres(): Result<List<Genre>>
+
+    /**
+     * Get movies by genre.
+     */
+    fun getMoviesByGenre(genreId: Int): Flow<PagingData<Movie>>
+
+    /**
+     * Get TV shows by genre.
+     */
+    fun getTvByGenre(genreId: Int): Flow<PagingData<TvShow>>
+
+    /**
+     * Get movies by studio.
+     */
+    fun getMoviesByStudio(studioId: Int): Flow<PagingData<Movie>>
+
+    /**
+     * Get TV shows by network.
+     */
+    fun getTvByNetwork(networkId: Int): Flow<PagingData<TvShow>>
 }

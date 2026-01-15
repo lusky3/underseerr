@@ -1,41 +1,24 @@
 package app.lusk.client.data.preferences
 
-import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.preferences.core.*
 import app.lusk.client.domain.repository.NotificationSettings
 import app.lusk.client.domain.repository.ServerConfig
 import app.lusk.client.domain.repository.ThemePreference
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import javax.inject.Inject
-import javax.inject.Singleton
-
-/**
- * Extension property to create DataStore instance.
- */
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "overseerr_preferences")
 
 /**
  * Manages application preferences using DataStore.
  * Feature: overseerr-android-client
  * Validates: Requirements 5.2, 5.3
  */
-@Singleton
-class PreferencesManager @Inject constructor(
-    @ApplicationContext private val context: Context
+class PreferencesManager(
+    private val dataStore: DataStore<Preferences>
 ) {
-    
-    private val dataStore = context.dataStore
     
     /**
      * Preference keys.
@@ -285,15 +268,11 @@ class PreferencesManager @Inject constructor(
     }
     
     fun getCurrentServerUrl(): Flow<String?> {
-        return dataStore.data.map { preferences ->
-            preferences[PreferenceKeys.CURRENT_SERVER_URL]
-        }
+        return getServerUrl()
     }
     
     suspend fun setCurrentServerUrl(url: String) {
-        dataStore.edit { preferences ->
-            preferences[PreferenceKeys.CURRENT_SERVER_URL] = url
-        }
+        setServerUrl(url)
     }
     
     fun getConfiguredServers(): Flow<List<ServerConfig>> {

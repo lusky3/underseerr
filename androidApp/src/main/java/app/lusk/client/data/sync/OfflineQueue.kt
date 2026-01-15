@@ -12,8 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
+
 
 /**
  * Queue for actions that require network connectivity.
@@ -21,8 +20,7 @@ import javax.inject.Singleton
  * Validates: Requirements 7.5
  * Property 30: Offline Action Queueing
  */
-@Singleton
-class OfflineQueue @Inject constructor(
+class OfflineQueue(
     private val networkManager: NetworkManager
 ) {
     

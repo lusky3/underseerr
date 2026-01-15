@@ -3,7 +3,7 @@ package app.lusk.client.error
 import android.content.Context
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -97,19 +97,18 @@ class CrashLoggingPropertyTest : StringSpec({
         checkAll<Int>(100, Arb.int(1..10)) { logCount ->
             // Arrange
             val mockLogs = List(logCount) { index ->
-                mockk<File> {
-                    every { name } returns "crash_$index.log"
-                    every { lastModified() } returns System.currentTimeMillis() - index * 1000L
-                }
+                (System.currentTimeMillis() - index * 1000L) to "crash_$index.log"
             }
             
             // Act - Get crash logs
-            val logs = mockLogs.sortedByDescending { it.lastModified() }
+            val logs = mockLogs.sortedByDescending { it.first }
             
             // Assert - Logs should be retrievable and sorted
             logs.size shouldBe logCount
             if (logCount > 1) {
-                logs[0].lastModified() shouldBeGreaterThan logs[logCount - 1].lastModified()
+                val firstLogModified = logs[0].first
+                val lastLogModified = logs[logCount - 1].first
+                (firstLogModified > lastLogModified) shouldBe true
             }
         }
     }
@@ -120,14 +119,11 @@ class CrashLoggingPropertyTest : StringSpec({
             // Arrange
             val maxLogs = 10
             val mockLogs = List(totalLogs) { index ->
-                mockk<File> {
-                    every { name } returns "crash_$index.log"
-                    every { lastModified() } returns System.currentTimeMillis() - index * 1000L
-                }
+                (System.currentTimeMillis() - index * 1000L) to "crash_$index.log"
             }
             
             // Act - Keep only recent logs
-            val recentLogs = mockLogs.sortedByDescending { it.lastModified() }.take(maxLogs)
+            val recentLogs = mockLogs.sortedByDescending { it.first }.take(maxLogs)
             
             // Assert - Only max logs should remain
             recentLogs.size shouldBe maxLogs

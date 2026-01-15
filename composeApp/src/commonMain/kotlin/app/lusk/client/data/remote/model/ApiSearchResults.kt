@@ -8,10 +8,10 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ApiSearchResults(
-    val page: Int,
+    val page: Int = 1,
     val totalPages: Int = 1,
     val totalResults: Int = 0,
-    val results: List<ApiSearchResult>
+    val results: List<ApiSearchResult> = emptyList()
 )
 
 @Serializable

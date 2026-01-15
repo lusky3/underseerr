@@ -6,25 +6,20 @@ import android.security.keystore.KeyProperties
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import app.lusk.client.domain.security.SecurityManager
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.security.KeyStore
-import java.security.cert.X509Certificate
 import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Implementation of SecurityManager using Android Keystore and EncryptedSharedPreferences.
  */
-@Singleton
-class SecurityManagerImpl @Inject constructor(
-    @ApplicationContext private val context: Context
+class SecurityManagerImpl(
+    private val context: Context
 ) : SecurityManager {
 
     private val keyStore: KeyStore = KeyStore.getInstance("AndroidKeyStore").apply {
@@ -78,30 +73,22 @@ class SecurityManagerImpl @Inject constructor(
         String(decryptedBytes, Charsets.UTF_8)
     }
 
-    override suspend fun storeSecureData(key: String, value: String) = withContext(Dispatchers.IO) {
-        encryptedPrefs.edit().putString(key, value).apply()
+    override suspend fun storeSecureData(key: String, value: String) {
+        withContext(Dispatchers.IO) {
+            encryptedPrefs.edit().putString(key, value).apply()
+        }
     }
 
     override suspend fun retrieveSecureData(key: String): String? = withContext(Dispatchers.IO) {
         encryptedPrefs.getString(key, null)
     }
 
-    override suspend fun clearSecureData() = withContext(Dispatchers.IO) {
-        encryptedPrefs.edit().clear().apply()
-    }
-
-    override fun validateCertificate(hostname: String, certificate: X509Certificate): Boolean {
-        return try {
-            // Check if certificate is valid
-            certificate.checkValidity()
-            
-            // Check if hostname matches
-            val subjectDN = certificate.subjectX500Principal.name
-            subjectDN.contains(hostname, ignoreCase = true)
-        } catch (e: Exception) {
-            false
+    override suspend fun clearSecureData() {
+        withContext(Dispatchers.IO) {
+            encryptedPrefs.edit().clear().apply()
         }
     }
+
 
     private fun getOrCreateSecretKey(): SecretKey {
         return if (keyStore.containsAlias(KEY_ALIAS)) {

@@ -6,30 +6,31 @@ import androidx.paging.PagingData
 import app.lusk.client.data.remote.model.toMovie
 import app.lusk.client.data.remote.model.toSearchResults
 import app.lusk.client.data.remote.model.toTvShow
+import app.lusk.client.data.remote.model.toSearchResult
 import app.lusk.client.data.mapper.toEntity
 import app.lusk.client.data.mapper.toDomain
 import app.lusk.client.data.paging.SearchPagingSource
 import app.lusk.client.data.paging.TrendingMoviesPagingSource
 import app.lusk.client.data.paging.TrendingTvShowsPagingSource
-import app.lusk.client.data.remote.api.DiscoveryApiService
+import app.lusk.client.data.paging.DiscoveryPagingSource
+import app.lusk.client.data.remote.api.DiscoveryKtorService
+import app.lusk.client.data.remote.model.toGenre
 import app.lusk.client.data.remote.safeApiCall
 import app.lusk.client.domain.model.Movie
 import app.lusk.client.domain.model.Result
 import app.lusk.client.domain.model.SearchResults
 import app.lusk.client.domain.model.TvShow
+import app.lusk.client.domain.model.Genre
 import app.lusk.client.domain.repository.DiscoveryRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Implementation of DiscoveryRepository for media discovery operations.
  * Feature: overseerr-android-client
  * Validates: Requirements 2.1, 2.2, 2.4
  */
-@Singleton
-class DiscoveryRepositoryImpl @Inject constructor(
-    private val discoveryApiService: DiscoveryApiService,
+class DiscoveryRepositoryImpl(
+    private val discoveryKtorService: DiscoveryKtorService,
     private val movieDao: app.lusk.client.data.local.dao.MovieDao,
     private val tvShowDao: app.lusk.client.data.local.dao.TvShowDao,
     private val mediaRequestDao: app.lusk.client.data.local.dao.MediaRequestDao
@@ -40,35 +41,16 @@ class DiscoveryRepositoryImpl @Inject constructor(
         private const val PREFETCH_DISTANCE = 5
     }
     
-    override fun getTrendingMovies(): Flow<PagingData<Movie>> {
+    override fun getTrending(): Flow<PagingData<app.lusk.client.domain.model.SearchResult>> {
         return Pager(
-            config = PagingConfig(
-                pageSize = PAGE_SIZE,
-                prefetchDistance = PREFETCH_DISTANCE,
-                enablePlaceholders = false
-            ),
-            pagingSourceFactory = {
-                TrendingMoviesPagingSource(discoveryApiService)
-            }
-        ).flow
-    }
-    
-    override fun getTrendingTvShows(): Flow<PagingData<TvShow>> {
-        return Pager(
-            config = PagingConfig(
-                pageSize = PAGE_SIZE,
-                prefetchDistance = PREFETCH_DISTANCE,
-                enablePlaceholders = false
-            ),
-            pagingSourceFactory = {
-                TrendingTvShowsPagingSource(discoveryApiService)
-            }
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getTrending(it) }, { it.toSearchResult() }) }
         ).flow
     }
     
     override suspend fun searchMedia(query: String, page: Int): Result<SearchResults> {
         return safeApiCall {
-            val apiSearchResults = discoveryApiService.search(query, page)
+            val apiSearchResults = discoveryKtorService.search(query, page)
             apiSearchResults.toSearchResults()
         }
     }
@@ -81,14 +63,14 @@ class DiscoveryRepositoryImpl @Inject constructor(
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
-                SearchPagingSource(discoveryApiService, query)
+                SearchPagingSource(discoveryKtorService, query)
             }
         ).flow
     }
     
     override suspend fun getMovieDetails(movieId: Int): Result<Movie> {
         // 1. Try API
-        val result = safeApiCall { discoveryApiService.getMovieDetails(movieId) }
+        val result = safeApiCall { discoveryKtorService.getMovieDetails(movieId) }
         
         if (result is Result.Success) {
             val movie = result.data.toMovie()
@@ -105,7 +87,7 @@ class DiscoveryRepositoryImpl @Inject constructor(
                 }
                 
                 val currentInfo = movie.mediaInfo ?: app.lusk.client.domain.model.MediaInfo(
-                    status = newStatus, requestId = localRequest.id, available = false
+                    id = null, status = newStatus, requestId = localRequest.id, available = false
                 )
                 movie.copy(mediaInfo = currentInfo.copy(status = newStatus, requestId = localRequest.id))
             } else {
@@ -137,7 +119,7 @@ class DiscoveryRepositoryImpl @Inject constructor(
     
     override suspend fun getTvShowDetails(tvShowId: Int): Result<TvShow> {
         // 1. Try API
-        val result = safeApiCall { discoveryApiService.getTvShowDetails(tvShowId) }
+        val result = safeApiCall { discoveryKtorService.getTvShowDetails(tvShowId) }
         
         if (result is Result.Success) {
             val tvShow = result.data.toTvShow()
@@ -152,7 +134,7 @@ class DiscoveryRepositoryImpl @Inject constructor(
                 }
                 
                 val currentInfo = tvShow.mediaInfo ?: app.lusk.client.domain.model.MediaInfo(
-                    status = newStatus, requestId = localRequest.id, available = false
+                    id = null, status = newStatus, requestId = localRequest.id, available = false
                 )
                 tvShow.copy(mediaInfo = currentInfo.copy(status = newStatus, requestId = localRequest.id))
             } else {
@@ -179,10 +161,73 @@ class DiscoveryRepositoryImpl @Inject constructor(
     }
     
     override fun getPopularMovies(): Flow<PagingData<Movie>> {
-        return getTrendingMovies()
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getPopularMovies(it) }, { it.toMovie() }) }
+        ).flow
     }
     
     override fun getPopularTvShows(): Flow<PagingData<TvShow>> {
-        return getTrendingTvShows()
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getPopularTvShows(it) }, { it.toTvShow() }) }
+        ).flow
+    }
+
+    override fun getUpcomingMovies(): Flow<PagingData<Movie>> {
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getUpcomingMovies(it) }, { it.toMovie() }) }
+        ).flow
+    }
+
+    override fun getUpcomingTvShows(): Flow<PagingData<TvShow>> {
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getUpcomingTvShows(it) }, { it.toTvShow() }) }
+        ).flow
+    }
+
+    override fun getWatchlist(): Flow<PagingData<app.lusk.client.domain.model.SearchResult>> {
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getWatchlist(it) }, { it.toSearchResult() }) }
+        ).flow
+    }
+
+    override suspend fun getMovieGenres(): Result<List<Genre>> = safeApiCall {
+        discoveryKtorService.getMovieGenres().map { it.toGenre() }
+    }
+
+    override suspend fun getTvGenres(): Result<List<Genre>> = safeApiCall {
+        discoveryKtorService.getTvGenres().map { it.toGenre() }
+    }
+
+    override fun getMoviesByGenre(genreId: Int): Flow<PagingData<Movie>> {
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getMoviesByGenre(genreId, it) }, { it.toMovie() }) }
+        ).flow
+    }
+
+    override fun getTvByGenre(genreId: Int): Flow<PagingData<TvShow>> {
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getTvByGenre(genreId, it) }, { it.toTvShow() }) }
+        ).flow
+    }
+
+    override fun getMoviesByStudio(studioId: Int): Flow<PagingData<Movie>> {
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getStudioDetails(studioId, it) }, { it.toMovie() }) }
+        ).flow
+    }
+
+    override fun getTvByNetwork(networkId: Int): Flow<PagingData<TvShow>> {
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getNetworkDetails(networkId, it) }, { it.toTvShow() }) }
+        ).flow
     }
 }

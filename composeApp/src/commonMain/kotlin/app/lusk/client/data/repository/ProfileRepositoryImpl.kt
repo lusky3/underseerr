@@ -1,6 +1,6 @@
 package app.lusk.client.data.repository
 
-import app.lusk.client.data.remote.api.UserApiService
+import app.lusk.client.data.remote.api.UserKtorService
 import app.lusk.client.data.mapper.toDomain
 import app.lusk.client.data.remote.safeApiCall
 import app.lusk.client.domain.model.Result
@@ -8,26 +8,25 @@ import app.lusk.client.domain.model.UserProfile
 import app.lusk.client.domain.model.UserStatistics
 import app.lusk.client.domain.repository.ProfileRepository
 import app.lusk.client.domain.repository.RequestQuota
-import javax.inject.Inject
 
 /**
  * Implementation of ProfileRepository.
  * Feature: overseerr-android-client
  * Validates: Requirements 5.1
  */
-class ProfileRepositoryImpl @Inject constructor(
-    private val userApiService: UserApiService,
+class ProfileRepositoryImpl(
+    private val userKtorService: UserKtorService,
     private val mediaRequestDao: app.lusk.client.data.local.dao.MediaRequestDao
 ) : ProfileRepository {
     
     override suspend fun getUserProfile(): Result<UserProfile> = safeApiCall {
-        val apiProfile = userApiService.getCurrentUser()
+        val apiProfile = userKtorService.getCurrentUser()
         apiProfile.toDomain()
     }
     
     override suspend fun getUserQuota(): Result<RequestQuota> = safeApiCall {
-        val user = userApiService.getCurrentUser()
-        val apiQuota = userApiService.getUserQuota(user.id)
+        val user = userKtorService.getCurrentUser()
+        val apiQuota = userKtorService.getUserQuota(user.id)
         
         RequestQuota(
             movieLimit = apiQuota.movie?.limit,
@@ -40,29 +39,22 @@ class ProfileRepositoryImpl @Inject constructor(
     }
     
     override suspend fun getUserStatistics(): Result<UserStatistics> = safeApiCall {
-        val user = userApiService.getCurrentUser()
+        val user = userKtorService.getCurrentUser()
         
-        // Try actual stats first
-        try {
-            val apiStats = userApiService.getUserStatistics(user.id)
-            UserStatistics(
-                totalRequests = apiStats.totalRequests,
-                approvedRequests = apiStats.approvedRequests,
-                declinedRequests = apiStats.declinedRequests,
-                pendingRequests = apiStats.pendingRequests,
-                availableRequests = apiStats.availableRequests
-            )
-        } catch (e: Exception) {
-            // Fallback: calculate from local database which contains synced requests
-            val allRequests = mediaRequestDao.getAllSync()
-            
-            UserStatistics(
-                totalRequests = user.requestCount,
-                approvedRequests = allRequests.count { it.status == 2 }, // APPROVED
-                declinedRequests = allRequests.count { it.status == 3 }, // DECLINED
-                pendingRequests = allRequests.count { it.status == 1 }, // PENDING
-                availableRequests = allRequests.count { it.status == 4 || it.status == 5 } // AVAILABLE
-            )
-        }
+        // Use local database for statistics since /user/{id}/stats endpoint is 404
+        val allRequests = mediaRequestDao.getAllSync()
+
+        val approved = allRequests.count { it.status == 2 }
+        val declined = allRequests.count { it.status == 3 }
+        val pending = allRequests.count { it.status == 1 }
+        val available = allRequests.count { it.status == 4 || it.status == 5 }
+
+        UserStatistics(
+            totalRequests = if (user.requestCount > 0) user.requestCount else allRequests.size,
+            approvedRequests = approved,
+            declinedRequests = declined,
+            pendingRequests = pending,
+            availableRequests = available
+        )
     }
 }

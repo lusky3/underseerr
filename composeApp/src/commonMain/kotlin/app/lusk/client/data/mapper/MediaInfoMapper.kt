@@ -9,6 +9,7 @@ import app.lusk.client.domain.model.MediaStatus
  */
 fun ApiMediaInfo.toDomain(): MediaInfo {
     return MediaInfo(
+        id = id,
         status = status.toMediaStatus(),
         requestId = requestId,
         available = available,

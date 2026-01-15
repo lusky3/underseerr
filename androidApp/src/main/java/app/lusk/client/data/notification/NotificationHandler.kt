@@ -4,9 +4,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
 import app.lusk.client.MainActivity
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Handler for notification-related operations.
@@ -14,9 +11,8 @@ import javax.inject.Singleton
  * Validates: Requirements 6.4
  * Property 25: Notification Deep Link Navigation
  */
-@Singleton
-class NotificationHandler @Inject constructor(
-    @ApplicationContext private val context: Context
+class NotificationHandler(
+    private val context: Context
 ) {
     
     /**

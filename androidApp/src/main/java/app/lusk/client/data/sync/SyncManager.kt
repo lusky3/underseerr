@@ -11,8 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import javax.inject.Singleton
+
 
 /**
  * Manager for synchronizing cached data when connectivity is restored.
@@ -20,8 +19,7 @@ import javax.inject.Singleton
  * Validates: Requirements 7.3
  * Property 28: Cache Synchronization
  */
-@Singleton
-class SyncManager @Inject constructor(
+class SyncManager(
     private val networkManager: NetworkManager,
     private val cacheRepository: CacheRepository
 ) {

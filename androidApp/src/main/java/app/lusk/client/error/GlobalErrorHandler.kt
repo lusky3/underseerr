@@ -3,7 +3,6 @@ package app.lusk.client.error
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,8 +13,6 @@ import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.system.exitProcess
 
 /**
@@ -24,9 +21,8 @@ import kotlin.system.exitProcess
  * Validates: Requirements 10.5
  * Property 39: Crash Logging and Recovery
  */
-@Singleton
-class GlobalErrorHandler @Inject constructor(
-    @ApplicationContext private val context: Context
+class GlobalErrorHandler(
+    private val context: Context
 ) : Thread.UncaughtExceptionHandler {
     
     private val defaultHandler: Thread.UncaughtExceptionHandler? =

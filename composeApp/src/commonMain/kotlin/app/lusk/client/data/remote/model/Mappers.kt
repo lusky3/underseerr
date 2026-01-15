@@ -78,6 +78,10 @@ fun ApiMediaRequest.toMediaRequest(): MediaRequest {
     val finalMediaId = media?.tmdbId ?: media?.tvdbId ?: media?.id ?: id
     val finalMediaType = media?.mediaType ?: type
     
+    // Attempt to extract title from media object
+    val finalTitle = media?.title ?: media?.name ?: "Title Unavailable"
+    val finalPosterPath = media?.posterPath
+    
     return MediaRequest(
         id = id,
         mediaType = when (finalMediaType.lowercase()) {
@@ -86,8 +90,8 @@ fun ApiMediaRequest.toMediaRequest(): MediaRequest {
             else -> MediaType.MOVIE
         },
         mediaId = finalMediaId,
-        title = "Title Unavailable", // API response in this env is missing title
-        posterPath = null,
+        title = finalTitle,
+        posterPath = finalPosterPath,
         status = when {
             media?.status == 5 -> RequestStatus.AVAILABLE
             status == 1 -> RequestStatus.PENDING
@@ -103,6 +107,7 @@ fun ApiMediaRequest.toMediaRequest(): MediaRequest {
 
 fun ApiMediaInfo.toMediaInfo(): MediaInfo {
     return MediaInfo(
+        id = id,
         status = when (status) {
             1 -> MediaStatus.UNKNOWN
             2 -> MediaStatus.PENDING
@@ -142,5 +147,12 @@ fun ApiSearchResult.toTvShow(): TvShow {
         voteAverage = voteAverage ?: 0.0,
         numberOfSeasons = 0, // Not available in search result
         mediaInfo = null
+    )
+}
+
+fun ApiGenre.toGenre(): Genre {
+    return Genre(
+        id = id,
+        name = name
     )
 }

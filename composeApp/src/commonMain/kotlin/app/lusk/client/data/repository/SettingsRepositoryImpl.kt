@@ -6,14 +6,13 @@ import app.lusk.client.domain.repository.ServerConfig
 import app.lusk.client.domain.repository.SettingsRepository
 import app.lusk.client.domain.repository.ThemePreference
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
 
 /**
  * Implementation of SettingsRepository using DataStore.
  * Feature: overseerr-android-client
  * Validates: Requirements 5.2, 5.3, 5.5, 5.6
  */
-class SettingsRepositoryImpl @Inject constructor(
+class SettingsRepositoryImpl(
     private val preferencesManager: PreferencesManager
 ) : SettingsRepository {
     

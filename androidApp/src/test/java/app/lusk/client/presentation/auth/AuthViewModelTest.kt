@@ -7,7 +7,9 @@ import app.lusk.client.domain.model.ServerInfo
 import app.lusk.client.domain.model.UserProfile
 import app.lusk.client.domain.repository.AuthRepository
 import app.lusk.client.domain.security.SecurityManager
+import app.lusk.client.util.AppLogger
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -32,6 +34,7 @@ class AuthViewModelTest {
     
     private lateinit var authRepository: AuthRepository
     private lateinit var securityManager: SecurityManager
+    private lateinit var logger: AppLogger
     private lateinit var viewModel: AuthViewModel
     private val testDispatcher = StandardTestDispatcher()
     
@@ -40,6 +43,7 @@ class AuthViewModelTest {
         Dispatchers.setMain(testDispatcher)
         authRepository = mockk(relaxed = true)
         securityManager = mockk(relaxed = true)
+        logger = mockk(relaxed = true)
         
         // Default: not authenticated
         coEvery { authRepository.isAuthenticated() } returns flowOf(false)
@@ -54,10 +58,10 @@ class AuthViewModelTest {
     fun `when server URL is valid HTTPS, should validate successfully`() = runTest(testDispatcher) {
         // Arrange
         val serverUrl = "https://overseerr.example.com"
-        val serverInfo = ServerInfo(version = "1.0.0", status = "OK")
+        val serverInfo = ServerInfo(version = "1.0.0")
         coEvery { authRepository.validateServerUrl(serverUrl) } returns Result.success(serverInfo)
         
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Act
@@ -76,7 +80,7 @@ class AuthViewModelTest {
         val error = AppError.ValidationError("Server URL must use HTTPS for security.")
         coEvery { authRepository.validateServerUrl(serverUrl) } returns Result.error(error)
         
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Act
@@ -96,7 +100,7 @@ class AuthViewModelTest {
         val error = AppError.ValidationError("Invalid server URL format. Must be a valid HTTP/HTTPS URL.")
         coEvery { authRepository.validateServerUrl(serverUrl) } returns Result.error(error)
         
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Act
@@ -111,15 +115,17 @@ class AuthViewModelTest {
     @Test
     fun `when initiating auth, should transition to AuthenticatingWithPlex state`() = runTest(testDispatcher) {
         // Arrange
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Act
-        viewModel.initiateAuth()
+        coEvery { authRepository.initiatePlexLogin() } returns Result.success(1 to "ABCD")
+        viewModel.initiatePlexAuth()
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Assert
-        viewModel.authState.value shouldBe AuthState.AuthenticatingWithPlex
+        val state = viewModel.authState.value
+        state.shouldBeInstanceOf<AuthState.WaitingForPlex>()
     }
     
     @Test
@@ -136,7 +142,7 @@ class AuthViewModelTest {
         )
         coEvery { authRepository.authenticateWithPlex(plexToken) } returns Result.success(userProfile)
         
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Act
@@ -156,7 +162,7 @@ class AuthViewModelTest {
         val error = AppError.AuthError(errorMessage)
         coEvery { authRepository.authenticateWithPlex(plexToken) } returns Result.error(error)
         
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Act
@@ -182,7 +188,7 @@ class AuthViewModelTest {
         )
         coEvery { authRepository.authenticateWithPlex(plexToken) } returns Result.success(userProfile)
         
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Act & Assert
@@ -203,7 +209,7 @@ class AuthViewModelTest {
     @Test
     fun `when retrying after error, should reset to unauthenticated state`() = runTest(testDispatcher) {
         // Arrange
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Set error state
@@ -223,10 +229,10 @@ class AuthViewModelTest {
     fun `when clearing server validation, should reset to idle state`() = runTest(testDispatcher) {
         // Arrange
         val serverUrl = "https://overseerr.example.com"
-        val serverInfo = ServerInfo(version = "1.0.0", status = "OK")
+        val serverInfo = ServerInfo(version = "1.0.0")
         coEvery { authRepository.validateServerUrl(serverUrl) } returns Result.success(serverInfo)
         
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         viewModel.validateServer(serverUrl)
@@ -246,7 +252,7 @@ class AuthViewModelTest {
         coEvery { authRepository.isAuthenticated() } returns flowOf(true)
         
         // Act
-        viewModel = AuthViewModel(authRepository, securityManager)
+        viewModel = AuthViewModel(authRepository, securityManager, logger)
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Assert

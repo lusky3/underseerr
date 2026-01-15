@@ -2,18 +2,14 @@ package app.lusk.client.util
 
 import android.app.ActivityManager
 import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Memory optimization utility.
  * Feature: overseerr-android-client
  * Validates: Requirements 10.6, 10.7
  */
-@Singleton
-class MemoryOptimizer @Inject constructor(
-    @ApplicationContext private val context: Context
+class MemoryOptimizer(
+    private val context: Context
 ) {
 
     private val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager

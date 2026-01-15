@@ -1,11 +1,9 @@
 package app.lusk.client.data.repository
 
-import android.util.Log
 import app.lusk.client.data.preferences.PreferencesManager
-import app.lusk.client.data.remote.api.AuthApiService
+import app.lusk.client.data.remote.api.AuthKtorService
+import app.lusk.client.data.remote.api.PlexKtorService
 import app.lusk.client.data.remote.api.PlexAuthRequest
-import app.lusk.client.data.remote.interceptor.AuthInterceptor
-import app.lusk.client.data.remote.PersistentCookieJar
 import app.lusk.client.data.mapper.toDomain
 import app.lusk.client.data.remote.safeApiCall
 import app.lusk.client.data.remote.toAppError
@@ -15,26 +13,22 @@ import app.lusk.client.domain.model.Result
 import app.lusk.client.domain.model.ServerInfo
 import app.lusk.client.domain.model.UserProfile
 import app.lusk.client.domain.repository.AuthRepository
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.call.body
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.net.URL
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Implementation of AuthRepository for authentication operations.
  * Feature: overseerr-android-client
  * Validates: Requirements 1.2, 1.3, 1.4, 1.5, 1.6
  */
-@Singleton
-class AuthRepositoryImpl @Inject constructor(
-    private val authApiService: AuthApiService,
-    private val plexApiService: app.lusk.client.data.remote.api.PlexApiService,
+class AuthRepositoryImpl(
+    private val authKtorService: AuthKtorService,
+    private val plexKtorService: PlexKtorService,
     private val securityManager: SecurityManager,
-    private val preferencesManager: PreferencesManager,
-    private val authInterceptor: AuthInterceptor,
-    private val cookieJar: PersistentCookieJar
+    private val preferencesManager: PreferencesManager
 ) : AuthRepository {
     
     companion object {
@@ -65,16 +59,25 @@ class AuthRepositoryImpl @Inject constructor(
             
             // Store server URL
             preferencesManager.setServerUrl(url)
-            authInterceptor.setServerUrl(url)
             
             // Try to fetch server info to validate connectivity
             val result = safeApiCall {
-                authApiService.getServerInfo()
+                authKtorService.getServerInfo()
             }
             
             when (result) {
                 is Result.Success -> {
                     val apiServerInfo = result.data
+                    
+                    // Add to configured servers list
+                    preferencesManager.addServer(
+                        app.lusk.client.domain.repository.ServerConfig(
+                            url = url,
+                            name = "Server ${url.replace("https://", "").replace("http://", "").substringBefore("/")}",
+                            isActive = true
+                        )
+                    )
+                    
                     Result.success(
                         ServerInfo(
                             version = apiServerInfo.version,
@@ -99,12 +102,22 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             // Call Plex authentication endpoint
             val result = safeApiCall {
-                authApiService.authenticateWithPlex(PlexAuthRequest(plexToken))
+                authKtorService.authenticateWithPlex(plexToken)
             }
             
             when (result) {
                 is Result.Success -> {
-                    val apiUserProfile = result.data
+                    val response = result.data
+                    val apiUserProfile: app.lusk.client.data.remote.model.ApiUserProfile = response.body()
+                    
+                    // Manually extract session cookie if present
+                    val setCookieHeader = response.headers["Set-Cookie"]
+                    if (setCookieHeader != null) {
+                        val cookieValue = setCookieHeader.split(";").firstOrNull()
+                        if (cookieValue != null) {
+                             securityManager.storeSecureData("cookie_auth_token", cookieValue)
+                        }
+                    }
                     
                     // Overseerr typically returns session cookie, so we don't always have an API key
                     // We use a placeholder to indicate a valid session exists for getStoredSession()
@@ -112,10 +125,6 @@ class AuthRepositoryImpl @Inject constructor(
                     
                     // Store session marker
                     securityManager.storeSecureData(API_KEY_STORAGE_KEY, sessionMarker)
-                    
-                    // Update auth interceptor with placeholder (it will know to use cookies only)
-                    authInterceptor.setApiKey(sessionMarker)
-                    preferencesManager.getServerUrl().first()?.let { authInterceptor.setServerUrl(it) }
                     
                     // Store user ID
                     preferencesManager.setUserId(apiUserProfile.id)
@@ -139,9 +148,8 @@ class AuthRepositoryImpl @Inject constructor(
     
     override suspend fun initiatePlexLogin(): Result<Pair<Int, String>> {
         return try {
-            val clientId = java.util.UUID.randomUUID().toString()
-            preferencesManager.setClientId(clientId)
-            val response = plexApiService.getPin(clientId = clientId)
+            val clientId = preferencesManager.getClientId() ?: "default-client-id" // Placeholder
+            val response = plexKtorService.getPin(clientId = clientId)
             val authUrl = "https://app.plex.tv/auth/#!?clientID=${clientId}&code=${response.code}&context[device][product]=Lusk%20Overseerr%20Client"
             Result.success(response.id to authUrl)
         } catch (e: Exception) {
@@ -151,8 +159,8 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun checkPlexLoginStatus(pinId: Int): Result<String?> {
         return try {
-            val clientId = preferencesManager.getClientId() ?: java.util.UUID.randomUUID().toString()
-            val response = plexApiService.checkPin(id = pinId, clientId = clientId)
+            val clientId = preferencesManager.getClientId() ?: "default-client-id"
+            val response = plexKtorService.checkPin(id = pinId, clientId = clientId)
             Result.success(response.authToken)
         } catch (e: Exception) {
             Result.error(e.toAppError())
@@ -167,15 +175,13 @@ class AuthRepositoryImpl @Inject constructor(
                 // If we have the legacy "no_api_key" placeholder, force a re-login
                 // because we need to properly establish session cookies.
                 if (apiKey == "no_api_key") {
-                    Log.d("AuthRepositoryImpl", "Found legacy 'no_api_key' placeholder. Forcing logout to refresh session.")
+                    // Log.d("AuthRepositoryImpl", "Found legacy 'no_api_key' placeholder. Forcing logout to refresh session.")
                     logout() 
                     return@map null
                 }
 
                 val serverUrl = preferencesManager.getServerUrl().first()
                 if (apiKey != null && serverUrl != null) {
-                    authInterceptor.setApiKey(apiKey)
-                    authInterceptor.setServerUrl(serverUrl)
                     OverseerrSession(
                         userId = userId,
                         apiKey = apiKey,
@@ -203,13 +209,9 @@ class AuthRepositoryImpl @Inject constructor(
                 )
             }
             
-            // Update auth interceptor
-            authInterceptor.setApiKey(apiKey)
-            preferencesManager.getServerUrl().first()?.let { authInterceptor.setServerUrl(it) }
-            
             // Fetch current user
             val result = safeApiCall {
-                authApiService.getCurrentUser()
+                authKtorService.getCurrentUser()
             }
             
             when (result) {
@@ -234,7 +236,7 @@ class AuthRepositoryImpl @Inject constructor(
         try {
             // Call logout endpoint (best effort)
             safeApiCall {
-                authApiService.logout()
+                authKtorService.logout()
             }
         } catch (e: Exception) {
             // Ignore errors during logout API call
@@ -243,12 +245,6 @@ class AuthRepositoryImpl @Inject constructor(
         // Clear stored credentials
         securityManager.clearSecureData()
         preferencesManager.clearAuthData()
-        
-        // Clear auth interceptor
-        authInterceptor.clearApiKey()
-        
-        // Clear cookies
-        cookieJar.clear()
     }
     
     override fun isAuthenticated(): Flow<Boolean> {
@@ -269,24 +265,8 @@ class AuthRepositoryImpl @Inject constructor(
      * Validate URL format.
      */
     private fun isValidUrl(url: String): Boolean {
-        return try {
-            val parsedUrl = URL(url)
-            val scheme = parsedUrl.protocol
-            val host = parsedUrl.host
-            
-            // Must have http or https scheme
-            if (scheme != "http" && scheme != "https") {
-                return false
-            }
-            
-            // Must have a host
-            if (host.isNullOrBlank()) {
-                return false
-            }
-            
-            true
-        } catch (e: Exception) {
-            false
-        }
+        // Simple regex for URL validation in KMP
+        val regex = "^(http|https)://.*".toRegex()
+        return url.isNotBlank() && regex.matches(url)
     }
 }

@@ -19,10 +19,18 @@ data class ApiMediaRequest(
 @Serializable
 data class ApiRequestMedia(
     @SerialName("mediaType") val mediaType: String? = null,
-    val tmdbId: Int? = null,
-    val tvdbId: Int? = null,
-    val status: Int? = null,
-    val id: Int? = null
+    @SerialName("tmdbId") val tmdbId: Int? = null,
+    @SerialName("tvdbId") val tvdbId: Int? = null,
+    @SerialName("status") val status: Int? = null,
+    @SerialName("id") val id: Int? = null,
+    @SerialName("status4k") val status4k: Int? = null,
+    @SerialName("imdbId") val imdbId: String? = null,
+    // Metadata often included in expanded responses
+    @SerialName("title") val title: String? = null,
+    @SerialName("name") val name: String? = null,
+    @SerialName("posterPath") val posterPath: String? = null,
+    @SerialName("backdropPath") val backdropPath: String? = null,
+    @SerialName("overview") val overview: String? = null
 )
 
 @Serializable

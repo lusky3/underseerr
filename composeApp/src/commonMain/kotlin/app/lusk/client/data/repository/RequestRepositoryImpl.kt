@@ -4,7 +4,7 @@ import app.lusk.client.data.local.dao.MediaRequestDao
 import app.lusk.client.data.mapper.toDomain
 import app.lusk.client.data.mapper.toEntity
 import app.lusk.client.data.remote.model.toMediaRequest
-import app.lusk.client.data.remote.api.RequestApiService
+import app.lusk.client.data.remote.api.RequestKtorService
 import app.lusk.client.data.remote.safeApiCall
 import app.lusk.client.domain.model.MediaRequest
 import app.lusk.client.domain.model.RequestStatus
@@ -12,39 +12,25 @@ import app.lusk.client.domain.model.Result
 import app.lusk.client.domain.repository.QualityProfile
 import app.lusk.client.domain.repository.RequestRepository
 import app.lusk.client.domain.repository.RootFolder
+import app.lusk.client.domain.sync.SyncScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Implementation of RequestRepository.
  * Feature: overseerr-android-client
  * Validates: Requirements 3.1, 3.2, 4.1, 4.4
  */
-@Singleton
-class RequestRepositoryImpl @Inject constructor(
-    private val requestApiService: RequestApiService,
+class RequestRepositoryImpl(
+    private val requestKtorService: RequestKtorService,
     private val mediaRequestDao: MediaRequestDao,
     private val offlineRequestDao: app.lusk.client.data.local.dao.OfflineRequestDao,
     private val discoveryRepository: app.lusk.client.domain.repository.DiscoveryRepository,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
+    private val syncScheduler: SyncScheduler
 ) : RequestRepository {
     
     private fun scheduleSync() {
-        val workRequest = androidx.work.OneTimeWorkRequestBuilder<app.lusk.client.worker.OfflineRequestWorker>()
-            .setConstraints(
-                androidx.work.Constraints.Builder()
-                    .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
-                    .build()
-            )
-            .build()
-            
-        androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
-            "sync_requests",
-            androidx.work.ExistingWorkPolicy.APPEND,
-            workRequest
-        )
+        syncScheduler.scheduleOfflineSync()
     }
     
     /**
@@ -57,7 +43,7 @@ class RequestRepositoryImpl @Inject constructor(
         rootFolder: String?
     ): Result<MediaRequest> {
         val result = safeApiCall {
-            requestApiService.submitRequest(
+            requestKtorService.submitRequest(
                 app.lusk.client.data.remote.model.ApiRequestBody(
                     mediaId = movieId,
                     mediaType = "movie",
@@ -124,7 +110,7 @@ class RequestRepositoryImpl @Inject constructor(
         rootFolder: String?
     ): Result<MediaRequest> {
         val result = safeApiCall {
-            requestApiService.submitRequest(
+            requestKtorService.submitRequest(
                 app.lusk.client.data.remote.model.ApiRequestBody(
                     mediaId = tvShowId,
                     mediaType = "tv",
@@ -209,7 +195,7 @@ class RequestRepositoryImpl @Inject constructor(
      * Property 16: Permission-Based Cancellation
      */
     override suspend fun cancelRequest(requestId: Int): Result<Unit> = safeApiCall {
-        requestApiService.cancelRequest(requestId)
+        requestKtorService.deleteRequest(requestId)
         
         // Remove from local cache
         mediaRequestDao.deleteById(requestId)
@@ -220,7 +206,7 @@ class RequestRepositoryImpl @Inject constructor(
      * Property 17: Request Status Updates
      */
     override suspend fun getRequestStatus(requestId: Int): Result<RequestStatus> = safeApiCall {
-        val response = requestApiService.getRequestStatus(requestId)
+        val response = requestKtorService.getRequestStatus(requestId)
         RequestStatus.valueOf(response.status.uppercase())
     }
     
@@ -230,7 +216,7 @@ class RequestRepositoryImpl @Inject constructor(
      */
     override suspend fun refreshRequests(): Result<Unit> = safeApiCall {
         // Get current user's requests (would need user ID from auth)
-        val response = requestApiService.getRequests(take = 100, skip = 0)
+        val response = requestKtorService.getRequests(take = 100, skip = 0)
         val requests = response.results.map { it.toMediaRequest() }
         
         // Parallel fetch details for requests missing data
@@ -266,9 +252,7 @@ class RequestRepositoryImpl @Inject constructor(
         
         // Clear old cache and insert fresh data
         mediaRequestDao.deleteAll()
-        hydratedRequests.forEach { request ->
-            mediaRequestDao.insert(request.toEntity())
-        }
+        mediaRequestDao.insertAll(hydratedRequests.map { it.toEntity() })
     }
     
     /**
@@ -286,14 +270,15 @@ class RequestRepositoryImpl @Inject constructor(
      */
     override suspend fun getQualityProfiles(isMovie: Boolean): Result<List<QualityProfile>> = safeApiCall {
         val profiles = if (isMovie) {
-            val servers = requestApiService.getRadarrServers()
+            val servers = requestKtorService.getRadarrServers()
             val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Radarr server configured")
-            requestApiService.getRadarrService(defaultServer.id).profiles
+            requestKtorService.getRadarrService(defaultServer.id).profiles
         } else {
-            val servers = requestApiService.getSonarrServers()
+            val servers = requestKtorService.getSonarrServers()
             val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Sonarr server configured")
-            requestApiService.getSonarrService(defaultServer.id).profiles
+            requestKtorService.getSonarrService(defaultServer.id).profiles
         }
+        println("REPO_DEBUG: Profiles for ${if(isMovie) "Movie" else "TV"}: ${profiles.map { "'${it.name}' (id=${it.id})" }}")
         profiles.map { QualityProfile(id = it.id, name = it.name) }
     }
     
@@ -303,18 +288,19 @@ class RequestRepositoryImpl @Inject constructor(
      */
     override suspend fun getRootFolders(isMovie: Boolean): Result<List<RootFolder>> = safeApiCall {
         val folders = if (isMovie) {
-            val servers = requestApiService.getRadarrServers()
+            val servers = requestKtorService.getRadarrServers()
             val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Radarr server configured")
-            requestApiService.getRadarrService(defaultServer.id).rootFolders
+            requestKtorService.getRadarrService(defaultServer.id).rootFolders
         } else {
-            val servers = requestApiService.getSonarrServers()
+            val servers = requestKtorService.getSonarrServers()
             val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Sonarr server configured")
-            requestApiService.getSonarrService(defaultServer.id).rootFolders
+            requestKtorService.getSonarrService(defaultServer.id).rootFolders
         }
-        folders.map { RootFolder(id = it.id, path = it.path) }
+        println("REPO_DEBUG: Folders for ${if(isMovie) "Movie" else "TV"}: ${folders.map { "'${it.path}' (id=${it.id})" }}")
+        folders.map { RootFolder(id = it.id.toString(), path = it.path) }
     }
 
     override suspend fun getPartialRequestsEnabled(): Result<Boolean> = safeApiCall {
-        requestApiService.getSystemSettings().partialRequestsEnabled
+        requestKtorService.getSystemSettings().partialRequestsEnabled
     }
 }

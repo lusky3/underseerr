@@ -1,21 +1,29 @@
 package app.lusk.client
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+import app.lusk.client.di.initKoin
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.koin.workManagerFactory
 
 /**
  * Application class for Overseerr Android Client.
- * Annotated with @HiltAndroidApp to enable Hilt dependency injection.
  */
-@HiltAndroidApp
 class OverseerrApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // Start mock server in debug mode for testing
-        if (app.lusk.client.BuildConfig.DEBUG) {
-            startMockServer()
+        initKoin(this) {
+            androidLogger()
+            androidContext(this@OverseerrApplication)
+            workManagerFactory()
+            modules(app.lusk.client.di.androidAppModule)
         }
+        
+        // Mock server disabled to prevent confusion with real server connections
+        // if (app.lusk.client.BuildConfig.DEBUG) {
+        //     startMockServer()
+        // }
     }
     
     private fun startMockServer() {

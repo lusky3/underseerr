@@ -5,6 +5,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -15,20 +16,18 @@ import app.lusk.client.presentation.main.MainScreen
 import app.lusk.client.presentation.main.MainViewModel
 import app.lusk.client.presentation.security.LockScreen
 import app.lusk.client.ui.theme.OverseerrTheme
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
  * Main activity for the Overseerr Android Client.
  * Entry point for the application UI.
  */
-@AndroidEntryPoint
 class MainActivity : FragmentActivity() {
-    private val viewModel: MainViewModel by viewModels()
+    private val viewModel: MainViewModel by viewModel()
     
-    @Inject
-    lateinit var biometricAuthenticator: BiometricAuthenticator
+    private val biometricAuthenticator: BiometricAuthenticator by inject()
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

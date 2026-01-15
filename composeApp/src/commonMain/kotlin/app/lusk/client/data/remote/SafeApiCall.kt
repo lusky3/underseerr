@@ -2,11 +2,11 @@ package app.lusk.client.data.remote
 
 import app.lusk.client.domain.model.AppError
 import app.lusk.client.domain.model.Result
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import kotlinx.coroutines.TimeoutCancellationException
-import retrofit2.HttpException
-import java.io.IOException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 
 /**
  * Extension functions for safe API calls with error handling.
@@ -34,8 +34,8 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T> {
  */
 fun Throwable.toAppError(): AppError {
     return when (this) {
-        is HttpException -> {
-            val code = code()
+        is ResponseException -> {
+            val code = response.status.value
             when (code) {
                 401 -> AppError.AuthError(
                     message = "Authentication required",
@@ -51,34 +51,26 @@ fun Throwable.toAppError(): AppError {
                 )
                 in 400..499 -> AppError.HttpError(
                     code = code,
-                    message = message() ?: "Client error",
+                    message = "Client error: $code",
                     cause = this
                 )
                 in 500..599 -> AppError.ServerError(
-                    message = "Server error",
+                    message = "Server error: $code",
                     cause = this
                 )
                 else -> AppError.HttpError(
                     code = code,
-                    message = message() ?: "HTTP error",
+                    message = "HTTP error: $code",
                     cause = this
                 )
             }
         }
-        is UnknownHostException -> AppError.NetworkError(
-            message = "Unable to connect to server. Please check your internet connection.",
-            cause = this
-        )
-        is SocketTimeoutException -> AppError.TimeoutError(
+        is HttpRequestTimeoutException -> AppError.TimeoutError(
             message = "Request timed out. Please try again.",
             cause = this
         )
         is TimeoutCancellationException -> AppError.TimeoutError(
             message = "Request timed out. Please try again.",
-            cause = this
-        )
-        is IOException -> AppError.NetworkError(
-            message = "Network error occurred. Please check your connection.",
             cause = this
         )
         is kotlinx.serialization.SerializationException -> AppError.ParseError(

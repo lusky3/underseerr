@@ -38,6 +38,7 @@ fun TvShowEntity.toDomain(): TvShow {
         numberOfSeasons = numberOfSeasons,
         mediaInfo = if (mediaStatus != null) {
             MediaInfo(
+                id = null, // Not stored in local database
                 status = mediaStatus.toMediaStatus(),
                 requestId = requestId,
                 available = available

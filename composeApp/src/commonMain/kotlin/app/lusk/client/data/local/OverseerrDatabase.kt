@@ -1,19 +1,13 @@
 package app.lusk.client.data.local
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import androidx.room.*
 import app.lusk.client.data.local.converter.IntListConverter
-import app.lusk.client.data.local.dao.MediaRequestDao
-import app.lusk.client.data.local.dao.MovieDao
-import app.lusk.client.data.local.dao.NotificationDao
-import app.lusk.client.data.local.dao.OfflineRequestDao
-import app.lusk.client.data.local.dao.TvShowDao
-import app.lusk.client.data.local.entity.MediaRequestEntity
-import app.lusk.client.data.local.entity.MovieEntity
-import app.lusk.client.data.local.entity.NotificationEntity
-import app.lusk.client.data.local.entity.OfflineRequestEntity
-import app.lusk.client.data.local.entity.TvShowEntity
+import app.lusk.client.data.local.dao.*
+import app.lusk.client.data.local.entity.*
+import app.lusk.client.util.PlatformContext
+
+// Room KMP constructor
+expect object OverseerrDatabaseConstructor : RoomDatabaseConstructor<OverseerrDatabase>
 
 /**
  * Room database for the Overseerr Android Client.
@@ -32,6 +26,7 @@ import app.lusk.client.data.local.entity.TvShowEntity
     exportSchema = true
 )
 @TypeConverters(IntListConverter::class)
+@ConstructedBy(OverseerrDatabaseConstructor::class)
 abstract class OverseerrDatabase : RoomDatabase() {
     
     abstract fun movieDao(): MovieDao
@@ -44,3 +39,8 @@ abstract class OverseerrDatabase : RoomDatabase() {
         const val DATABASE_NAME = "overseerr_database"
     }
 }
+
+/**
+ * Base function to create the Room database builder.
+ */
+expect fun getDatabaseBuilder(context: PlatformContext): RoomDatabase.Builder<OverseerrDatabase>

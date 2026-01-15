@@ -3,8 +3,7 @@ package app.lusk.client.data.security
 import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import java.security.cert.X509Certificate
-import javax.inject.Inject
-import javax.inject.Singleton
+
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
@@ -13,8 +12,7 @@ import javax.net.ssl.X509TrustManager
 /**
  * Manages certificate pinning for secure HTTPS connections.
  */
-@Singleton
-class CertificatePinningManager @Inject constructor() {
+class CertificatePinningManager {
 
     /**
      * Creates an OkHttpClient with certificate pinning configured.

@@ -4,16 +4,13 @@ import android.os.SystemClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Performance monitoring utility.
  * Feature: overseerr-android-client
  * Validates: Requirements 10.1, 10.6, 10.7
  */
-@Singleton
-class PerformanceMonitor @Inject constructor() {
+class PerformanceMonitor {
 
     private val _metrics = MutableStateFlow<Map<String, PerformanceMetric>>(emptyMap())
     val metrics: StateFlow<Map<String, PerformanceMetric>> = _metrics.asStateFlow()

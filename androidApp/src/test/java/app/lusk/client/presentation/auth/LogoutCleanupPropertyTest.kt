@@ -7,6 +7,7 @@ import app.lusk.client.domain.model.UserProfile
 import app.lusk.client.domain.repository.AuthRepository
 import app.lusk.client.domain.security.SecurityManager
 import io.kotest.core.spec.style.StringSpec
+import app.lusk.client.util.AppLogger
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.int
@@ -48,12 +49,13 @@ class LogoutCleanupPropertyTest : StringSpec({
                 // Arrange
                 val authRepository = mockk<AuthRepository>(relaxed = true)
                 val securityManager = mockk<SecurityManager>(relaxed = true)
+                val logger = mockk<AppLogger>(relaxed = true)
                 
                 // Setup initial authenticated state
                 coEvery { authRepository.isAuthenticated() } returns flowOf(true, false)
                 coEvery { authRepository.logout() } returns Unit
                 
-                val viewModel = AuthViewModel(authRepository, securityManager)
+                val viewModel = AuthViewModel(authRepository, securityManager, logger)
                 testDispatcher.scheduler.advanceUntilIdle()
                 
                 // Act
@@ -74,11 +76,12 @@ class LogoutCleanupPropertyTest : StringSpec({
                 // Arrange
                 val authRepository = mockk<AuthRepository>(relaxed = true)
                 val securityManager = mockk<SecurityManager>(relaxed = true)
+                val logger = mockk<AppLogger>(relaxed = true)
                 
                 coEvery { authRepository.isAuthenticated() } returns flowOf(true)
                 coEvery { authRepository.logout() } returns Unit
                 
-                val viewModel = AuthViewModel(authRepository, securityManager)
+                val viewModel = AuthViewModel(authRepository, securityManager, logger)
                 testDispatcher.scheduler.advanceUntilIdle()
                 
                 // Act & Assert
@@ -106,11 +109,12 @@ class LogoutCleanupPropertyTest : StringSpec({
                 // Arrange
                 val authRepository = mockk<AuthRepository>(relaxed = true)
                 val securityManager = mockk<SecurityManager>(relaxed = true)
+                val logger = mockk<AppLogger>(relaxed = true)
                 
                 coEvery { authRepository.isAuthenticated() } returns flowOf(true)
                 coEvery { authRepository.logout() } returns Unit
                 
-                val viewModel = AuthViewModel(authRepository, securityManager)
+                val viewModel = AuthViewModel(authRepository, securityManager, logger)
                 testDispatcher.scheduler.advanceUntilIdle()
                 
                 // Act - logout multiple times
@@ -133,12 +137,13 @@ class LogoutCleanupPropertyTest : StringSpec({
                 // Arrange
                 val authRepository = mockk<AuthRepository>(relaxed = true)
                 val securityManager = mockk<SecurityManager>(relaxed = true)
+                val logger = mockk<AppLogger>(relaxed = true)
                 
                 // Start authenticated, then become unauthenticated after logout
                 coEvery { authRepository.isAuthenticated() } returns flowOf(true, false)
                 coEvery { authRepository.logout() } returns Unit
                 
-                val viewModel = AuthViewModel(authRepository, securityManager)
+                val viewModel = AuthViewModel(authRepository, securityManager, logger)
                 testDispatcher.scheduler.advanceUntilIdle()
                 
                 // Act
@@ -158,11 +163,12 @@ class LogoutCleanupPropertyTest : StringSpec({
                 // Arrange
                 val authRepository = mockk<AuthRepository>(relaxed = true)
                 val securityManager = mockk<SecurityManager>(relaxed = true)
+                val logger = mockk<AppLogger>(relaxed = true)
                 
                 coEvery { authRepository.isAuthenticated() } returns flowOf(true, false)
                 coEvery { authRepository.logout() } throws Exception(errorMessage)
                 
-                val viewModel = AuthViewModel(authRepository, securityManager)
+                val viewModel = AuthViewModel(authRepository, securityManager, logger)
                 testDispatcher.scheduler.advanceUntilIdle()
                 
                 // Act - should not throw exception

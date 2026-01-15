@@ -6,19 +6,15 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Schedules background workers for the app.
  * Feature: overseerr-android-client
  * Validates: Requirements 4.5
  */
-@Singleton
-class WorkerScheduler @Inject constructor(
-    @ApplicationContext private val context: Context
+class WorkerScheduler(
+    private val context: Context
 ) {
     private val workManager = WorkManager.getInstance(context)
 

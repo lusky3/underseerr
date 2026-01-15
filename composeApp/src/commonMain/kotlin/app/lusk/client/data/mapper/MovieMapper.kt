@@ -36,6 +36,7 @@ fun MovieEntity.toDomain(): Movie {
         voteAverage = voteAverage,
         mediaInfo = if (mediaStatus != null) {
             MediaInfo(
+                id = null, // Not stored in local database
                 status = mediaStatus.toMediaStatus(),
                 requestId = requestId,
                 available = available

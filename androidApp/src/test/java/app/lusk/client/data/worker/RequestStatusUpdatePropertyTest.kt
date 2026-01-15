@@ -1,20 +1,15 @@
 package app.lusk.client.data.worker
 
-import app.lusk.client.domain.model.MediaRequest
-import app.lusk.client.domain.model.MediaType
-import app.lusk.client.domain.model.RequestStatus
+import app.lusk.client.domain.model.*
 import app.lusk.client.domain.repository.RequestRepository
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.longs.*
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.enum
-import io.kotest.property.arbitrary.filter
-import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.list
-import io.kotest.property.arbitrary.long
-import io.kotest.property.arbitrary.orNull
-import io.kotest.property.arbitrary.string
+import io.kotest.property.arbitrary.*
 import io.kotest.property.checkAll
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -40,7 +35,7 @@ class RequestStatusUpdatePropertyTest : StringSpec({
             }
             
             // Assert - should poll status for each pending/approved request
-            pendingApprovedRequests.size >= 0 shouldBe true
+            pendingApprovedRequests.size shouldBeGreaterThanOrEqual 0
         }
     }
 
@@ -77,7 +72,7 @@ class RequestStatusUpdatePropertyTest : StringSpec({
             
             // Simulate failure for first request
             coEvery { repository.getRequestStatus(requests.first().id) } returns 
-                Result.failure(Exception("Network error"))
+                Result.Error(AppError.HttpError(500, "Network error"))
             
             // Other requests should still be processed
             requests.drop(1).forEach { request ->
@@ -86,7 +81,7 @@ class RequestStatusUpdatePropertyTest : StringSpec({
             }
             
             // Act & Assert - should continue despite individual failures
-            requests.size > 1 shouldBe true
+            requests.size shouldBeGreaterThan 1
         }
     }
 
@@ -129,10 +124,14 @@ class RequestStatusUpdatePropertyTest : StringSpec({
     "Property 17.7: Polling interval should be configurable" {
         checkAll(100, Arb.long(5L..60L)) { intervalMinutes ->
             // Arrange & Assert - interval should be within reasonable bounds
-            intervalMinutes in 5L..60L shouldBe true
+            val interval = intervalMinutes
+            (interval >= 5L) shouldBe true
+            (interval <= 60L) shouldBe true
             
             // Default interval should be reasonable
-            RequestStatusWorker.POLLING_INTERVAL_MINUTES in 5L..60L shouldBe true
+            val defaultInterval = RequestStatusWorker.POLLING_INTERVAL_MINUTES
+            (defaultInterval >= 5L) shouldBe true
+            (defaultInterval <= 60L) shouldBe true
         }
     }
 })
@@ -140,24 +139,16 @@ class RequestStatusUpdatePropertyTest : StringSpec({
 /**
  * Arbitrary generator for MediaRequest.
  */
-private fun arbMediaRequest(): Arb<MediaRequest> = Arb.bind(
-    Arb.int(1..100000),
-    Arb.enum<MediaType>(),
-    Arb.int(1..100000),
-    Arb.string(5..50),
-    Arb.string().orNull(),
-    Arb.enum<RequestStatus>(),
-    Arb.long(0..System.currentTimeMillis()),
-    Arb.list(Arb.int(1..20), 0..10).orNull()
-) { id, mediaType, mediaId, title, posterPath, status, requestedDate, seasons ->
+private fun arbMediaRequest(): Arb<MediaRequest> = arbitrary {
     MediaRequest(
-        id = id,
-        mediaType = mediaType,
-        mediaId = mediaId,
-        title = title,
-        posterPath = posterPath,
-        status = status,
-        requestedDate = requestedDate,
-        seasons = seasons
+        id = Arb.int(1..100000).bind(),
+        mediaType = Arb.enum<MediaType>().bind(),
+        mediaId = Arb.int(1..100000).bind(),
+        title = Arb.string(5..50).bind(),
+        posterPath = Arb.string().orNull().bind(),
+        status = Arb.enum<RequestStatus>().bind(),
+        requestedDate = Arb.long(0..System.currentTimeMillis()).bind(),
+        seasons = Arb.list(Arb.int(1..20), 0..10).orNull().bind(),
+        isOfflineQueued = Arb.boolean().bind()
     )
 }

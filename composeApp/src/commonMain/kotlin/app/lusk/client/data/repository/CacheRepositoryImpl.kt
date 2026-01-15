@@ -9,16 +9,13 @@ import app.lusk.client.domain.model.TvShow
 import app.lusk.client.domain.repository.CacheRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Implementation of CacheRepository for managing cached media data.
  * Feature: overseerr-android-client, Property 29: Cache Eviction Policy
  * Validates: Requirements 7.1, 7.4
  */
-@Singleton
-class CacheRepositoryImpl @Inject constructor(
+class CacheRepositoryImpl(
     private val movieDao: MovieDao,
     private val tvShowDao: TvShowDao
 ) : CacheRepository {
