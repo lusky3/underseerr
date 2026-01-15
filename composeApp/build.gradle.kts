@@ -30,6 +30,14 @@ kotlin {
             isStatic = true
         }
     }
+
+    targets.all {
+        compilations.all {
+            compilerOptions.configure {
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+            }
+        }
+    }
     
     sourceSets {
         commonMain.dependencies {
