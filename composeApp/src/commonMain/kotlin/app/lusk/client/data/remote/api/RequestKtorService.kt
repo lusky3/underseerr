@@ -4,23 +4,14 @@ import app.lusk.client.data.remote.model.*
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.*
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 
 /**
- * Ktor implementation of media request endpoints.
+ * Interface for media request endpoints.
  */
-class RequestKtorService(private val client: HttpClient) {
+interface RequestKtorService {
+    suspend fun getSystemSettings(): ApiSystemSettings
     
-    suspend fun getSystemSettings(): ApiSystemSettings {
-        return client.get("/api/v1/settings/main").body()
-    }
-    
-    suspend fun submitRequest(body: ApiRequestBody): ApiMediaRequest {
-        return client.post("/api/v1/request") {
-            setBody(body)
-        }.body()
-    }
+    suspend fun submitRequest(body: ApiRequestBody): ApiMediaRequest
     
     suspend fun getRequests(
         take: Int = 20,
@@ -28,6 +19,50 @@ class RequestKtorService(private val client: HttpClient) {
         filter: String = "all",
         sort: String = "added",
         requestedBy: Int? = null
+    ): RequestsResponse
+    
+    suspend fun getRequest(requestId: Int): ApiMediaRequest
+    
+    suspend fun deleteRequest(requestId: Int)
+    
+    suspend fun getUserRequests(
+        userId: Int,
+        take: Int = 20,
+        skip: Int = 0
+    ): RequestsResponse
+    
+    suspend fun getRequestStatus(requestId: Int): ApiRequestStatus
+    
+    suspend fun getRadarrServers(): List<ApiMediaServer>
+    
+    suspend fun getSonarrServers(): List<ApiMediaServer>
+    
+    suspend fun getRadarrService(id: Int): ApiServiceSettings
+    
+    suspend fun getSonarrService(id: Int): ApiServiceSettings
+}
+
+/**
+ * Ktor implementation of media request endpoints.
+ */
+open class RequestServiceImpl(private val client: HttpClient) : RequestKtorService {
+    
+    override suspend fun getSystemSettings(): ApiSystemSettings {
+        return client.get("/api/v1/settings/main").body()
+    }
+    
+    override suspend fun submitRequest(body: ApiRequestBody): ApiMediaRequest {
+        return client.post("/api/v1/request") {
+            setBody(body)
+        }.body()
+    }
+    
+    override suspend fun getRequests(
+        take: Int,
+        skip: Int,
+        filter: String,
+        sort: String,
+        requestedBy: Int?
     ): RequestsResponse {
         return client.get("/api/v1/request") {
             parameter("take", take)
@@ -38,18 +73,18 @@ class RequestKtorService(private val client: HttpClient) {
         }.body()
     }
     
-    suspend fun getRequest(requestId: Int): ApiMediaRequest {
+    override suspend fun getRequest(requestId: Int): ApiMediaRequest {
         return client.get("/api/v1/request/$requestId").body()
     }
     
-    suspend fun deleteRequest(requestId: Int) {
+    override suspend fun deleteRequest(requestId: Int) {
         client.delete("/api/v1/request/$requestId")
     }
     
-    suspend fun getUserRequests(
+    override suspend fun getUserRequests(
         userId: Int,
-        take: Int = 20,
-        skip: Int = 0
+        take: Int,
+        skip: Int
     ): RequestsResponse {
         return client.get("/api/v1/user/$userId/requests") {
             parameter("take", take)
@@ -57,23 +92,23 @@ class RequestKtorService(private val client: HttpClient) {
         }.body()
     }
     
-    suspend fun getRequestStatus(requestId: Int): ApiRequestStatus {
+    override suspend fun getRequestStatus(requestId: Int): ApiRequestStatus {
         return client.get("/api/v1/request/$requestId/status").body()
     }
     
-    suspend fun getRadarrServers(): List<ApiMediaServer> {
+    override suspend fun getRadarrServers(): List<ApiMediaServer> {
         return client.get("/api/v1/service/radarr").body()
     }
 
-    suspend fun getSonarrServers(): List<ApiMediaServer> {
+    override suspend fun getSonarrServers(): List<ApiMediaServer> {
         return client.get("/api/v1/service/sonarr").body()
     }
     
-    suspend fun getRadarrService(id: Int): ApiServiceSettings {
+    override suspend fun getRadarrService(id: Int): ApiServiceSettings {
         return client.get("/api/v1/service/radarr/$id").body()
     }
 
-    suspend fun getSonarrService(id: Int): ApiServiceSettings {
+    override suspend fun getSonarrService(id: Int): ApiServiceSettings {
         return client.get("/api/v1/service/sonarr/$id").body()
     }
 }

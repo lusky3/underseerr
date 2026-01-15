@@ -138,7 +138,8 @@ class AuthViewModelTest {
             displayName = "Test User",
             avatar = null,
             requestCount = 0,
-            permissions = mockk()
+            permissions = mockk(),
+            isPlexUser = false
         )
         coEvery { authRepository.authenticateWithPlex(plexToken) } returns Result.success(userProfile)
         
@@ -184,7 +185,8 @@ class AuthViewModelTest {
             displayName = "Test User",
             avatar = null,
             requestCount = 0,
-            permissions = mockk()
+            permissions = mockk(),
+            isPlexUser = false
         )
         coEvery { authRepository.authenticateWithPlex(plexToken) } returns Result.success(userProfile)
         
@@ -213,6 +215,7 @@ class AuthViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         
         // Set error state
+        coEvery { authRepository.authenticateWithPlex(any()) } returns Result.Error(AppError.AuthError("Error"))
         viewModel.handleAuthCallback("invalid-token")
         testDispatcher.scheduler.advanceUntilIdle()
         

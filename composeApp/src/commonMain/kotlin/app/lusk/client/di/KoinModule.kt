@@ -23,7 +23,7 @@ fun sharedModule(context: PlatformContext) = module {
     single { DiscoveryKtorService(get()) }
     single { UserKtorService(get()) }
     single { PlexKtorService(get()) }
-    single { RequestKtorService(get()) }
+    single<RequestKtorService> { RequestServiceImpl(get()) }
     single<IssueService> { IssueKtorService(get()) }
     
     // Database

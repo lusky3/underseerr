@@ -36,6 +36,7 @@ android {
             isDebuggable = true
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            enableUnitTestCoverage = true
         }
         release {
             isMinifyEnabled = true
@@ -161,4 +162,60 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.mockk.android)
+}
+
+// JaCoCo Configuration
+apply(plugin = "jacoco")
+
+configure<JacocoPluginExtension> {
+    toolVersion = "0.8.11"
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+    
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    
+    val buildDir = layout.buildDirectory.get().asFile
+    
+    val classDirectoriesTree = fileTree("$buildDir/tmp/kotlin-classes/debug") {
+        exclude(
+            "**/R.class",
+            "**/R$*.class",
+            "**/BuildConfig.*",
+            "**/Manifest*.*",
+            "**/*Test*.*",
+            "android/**/*.*"
+        )
+    } + fileTree("${project(":composeApp").layout.buildDirectory.get().asFile}/intermediates/runtime_library_classes_dir/androidMain/bundleLibRuntimeToDirAndroidMain") {
+        exclude(
+            "**/R.class",
+            "**/R$*.class",
+            "**/BuildConfig.*",
+            "**/Manifest*.*",
+            "**/*Test*.*",
+            "lusk/composeapp/generated/**/*.*"
+        )
+    }
+    
+    val sourceDirectoriesTree = files(
+        "${project.projectDir}/src/main/java", 
+        "${project.projectDir}/src/main/kotlin",
+        "${project(":composeApp").projectDir}/src/commonMain/kotlin",
+        "${project(":composeApp").projectDir}/src/androidMain/kotlin"
+    )
+    
+    val executionDataTree = fileTree("$buildDir") {
+        include(
+            "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
+            "jacoco/testDebugUnitTest.exec"
+        )
+    } 
+    
+    sourceDirectories.setFrom(sourceDirectoriesTree)
+    classDirectories.setFrom(classDirectoriesTree)
+    executionData.setFrom(executionDataTree)
 }

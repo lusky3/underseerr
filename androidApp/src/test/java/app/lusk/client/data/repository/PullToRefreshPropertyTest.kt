@@ -70,7 +70,7 @@ class PullToRefreshPropertyTest : StringSpec({
                 }
                 
                 coEvery { mediaDao.getAllRequests() } returns flowOf(oldEntities)
-                coEvery { apiService.getRequests(any(), any()) } returns RequestsResponse(
+                coEvery { apiService.getRequests(any(), any(), any(), any(), any()) } returns RequestsResponse(
                     pageInfo = PageInfo(pages = 1, pageSize = 100, results = newApiRequests.size, page = 1),
                     results = newApiRequests
                 )
@@ -138,7 +138,7 @@ class PullToRefreshPropertyTest : StringSpec({
                     flowOf(oldEntities),
                     flowOf(newEntities)
                 )
-                coEvery { apiService.getRequests(any(), any()) } returns RequestsResponse(
+                coEvery { apiService.getRequests(any(), any(), any(), any(), any()) } returns RequestsResponse(
                     pageInfo = PageInfo(pages = 1, pageSize = 100, results = newApiRequests.size, page = 1),
                     results = newApiRequests
                 )
@@ -163,7 +163,7 @@ class PullToRefreshPropertyTest : StringSpec({
                 val discoveryRepo = mockk<DiscoveryRepository>(relaxed = true)
                 val syncScheduler = mockk<SyncScheduler>(relaxed = true)
                 
-                coEvery { apiService.getRequests(any(), any()) } throws Exception("Network unavailable")
+                coEvery { apiService.getRequests(any(), any(), any(), any(), any()) } throws Exception("Network unavailable")
                 
                 val repository = RequestRepositoryImpl(apiService, mediaDao, offlineDao, discoveryRepo, syncScheduler)
                 val result = repository.refreshRequests()
@@ -208,7 +208,7 @@ class PullToRefreshPropertyTest : StringSpec({
                 }
                 
                 coEvery { mediaDao.getAllRequests() } returns flowOf(entities)
-                coEvery { apiService.getRequests(any(), any()) } returns RequestsResponse(
+                coEvery { apiService.getRequests(any(), any(), any(), any(), any()) } returns RequestsResponse(
                     pageInfo = PageInfo(pages = 1, pageSize = 100, results = apiRequests.size, page = 1),
                     results = apiRequests
                 )

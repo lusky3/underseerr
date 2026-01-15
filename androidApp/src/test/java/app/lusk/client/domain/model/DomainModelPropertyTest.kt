@@ -28,6 +28,7 @@ class DomainModelPropertyTest : StringSpec({
             Arb.double(0.0..10.0)
         ) { id, title, overview, posterPath, backdropPath, releaseDate, voteAverage ->
             val mediaInfo = MediaInfo(
+                id = null,
                 status = MediaStatus.AVAILABLE,
                 requestId = null,
                 available = true
@@ -68,6 +69,7 @@ class DomainModelPropertyTest : StringSpec({
             Arb.int(1..20)
         ) { id, name, overview, posterPath, backdropPath, firstAirDate, voteAverage, numberOfSeasons ->
             val mediaInfo = MediaInfo(
+                id = 1,
                 status = MediaStatus.PENDING,
                 requestId = 123,
                 available = false
@@ -138,8 +140,9 @@ class DomainModelPropertyTest : StringSpec({
             Arb.string(5..50),
             Arb.string(1..50),
             Arb.string(1..100).orNull(),
-            Arb.int(0..1000)
-        ) { id, email, displayName, avatar, requestCount ->
+            Arb.int(0..1000),
+            Arb.boolean()
+        ) { id, email, displayName, avatar, requestCount, isPlexUser ->
             val permissions = Permissions(
                 canRequest = true,
                 canManageRequests = false,
@@ -153,7 +156,8 @@ class DomainModelPropertyTest : StringSpec({
                 displayName = displayName,
                 avatar = avatar,
                 requestCount = requestCount,
-                permissions = permissions
+                permissions = permissions,
+                isPlexUser = isPlexUser
             )
             
             // Verify all properties are preserved
@@ -163,6 +167,7 @@ class DomainModelPropertyTest : StringSpec({
             profile.avatar shouldBe avatar
             profile.requestCount shouldBe requestCount
             profile.permissions shouldBe permissions
+            profile.isPlexUser shouldBe isPlexUser
         }
     }
 
