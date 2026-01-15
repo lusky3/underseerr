@@ -13,3 +13,13 @@ plugins {
     alias(libs.plugins.buildkonfig) apply false
     alias(libs.plugins.google.services) apply false
 }
+
+buildscript {
+    dependencies {
+        constraints {
+            classpath("org.apache.commons:commons-compress:1.27.1") {
+                because("Fixes CVE-2024-25710 and CVE-2024-26308")
+            }
+        }
+    }
+}
