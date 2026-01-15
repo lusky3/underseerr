@@ -13,13 +13,13 @@ ksp = "2.3.4"
 coreKtx = "1.15.0"
 
 # Compose
-composeBom = "2024.12.01"
+composeBom = "2026.01.00"
 composeCompiler = "1.5.15"
 activityCompose = "1.9.3"
-navigationCompose = "2.8.5"
+navigationCompose = "2.9.6"
 
 # Lifecycle
-lifecycle = "2.8.7"
+lifecycle = "2.10.0"
 
 # Dependency Injection
 hilt = "2.57.2"
@@ -33,7 +33,7 @@ kotlinxSerialization = "1.7.3"
 
 # Database
 room = "2.8.4"
-datastore = "1.1.1"
+datastore = "1.2.0"
 workmanager = "2.9.1"
 
 # CMP & KMP
@@ -59,12 +59,12 @@ espresso = "3.6.1"
 kotest = "5.9.1"
 mockk = "1.13.14"
 turbine = "1.2.0"
-robolectric = "4.13"
+robolectric = "4.16"
 mockwebserver = "4.12.0"
 
 # Other
 splashscreen = "1.2.0-alpha02"
-paging = "3.3.5"
+paging = "3.3.6"
 
 [libraries]
 # Core
