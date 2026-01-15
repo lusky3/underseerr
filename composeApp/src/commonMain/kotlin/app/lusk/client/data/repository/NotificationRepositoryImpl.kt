@@ -23,10 +23,16 @@ class NotificationRepositoryImpl(
     
     override suspend fun registerForPushNotifications(token: String): Result<Unit> {
         return safeApiCall {
-            // In a real implementation, this would call the Overseerr API
-            // to register the FCM token
-            // For now, we'll just return success
-            Unit
+            // TODO: Properly implement Web Push crypto if targeting standard Overseerr
+            // For now, we attempt to send the token as the endpoint, hoping for a custom handler or future support
+            val subscription = app.lusk.client.data.remote.model.ApiPushSubscription(
+                endpoint = token,
+                keys = app.lusk.client.data.remote.model.ApiPushKeys(
+                    p256dh = "", // crypto keys needed for real Web Push
+                    auth = ""
+                )
+            )
+            userKtorService.addPushSubscription(subscription)
         }
     }
     

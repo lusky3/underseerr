@@ -1,5 +1,6 @@
 package app.lusk.client.data.remote.api
 
+import app.lusk.client.data.remote.model.ApiPushSubscription
 import app.lusk.client.data.remote.model.ApiRequestQuota
 import app.lusk.client.data.remote.model.ApiUserProfile
 import app.lusk.client.data.remote.model.ApiUserStatistics
@@ -26,5 +27,11 @@ class UserKtorService(private val client: HttpClient) {
     
     suspend fun getUserStatistics(userId: Int): ApiUserStatistics {
         return client.get("/api/v1/user/$userId/stats").body()
+    }
+
+    suspend fun addPushSubscription(subscription: ApiPushSubscription) {
+        client.post("/api/v1/user/push-subscription") {
+            setBody(subscription)
+        }
     }
 }
