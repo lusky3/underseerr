@@ -12,6 +12,15 @@ plugins {
     alias(libs.plugins.room) apply false
     alias(libs.plugins.buildkonfig) apply false
     alias(libs.plugins.google.services) apply false
+    id("org.sonarqube") version "7.2.2.6593"
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "lusky3_overseerr-requests")
+        property("sonar.organization", "lusk")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
 }
 
 buildscript {
