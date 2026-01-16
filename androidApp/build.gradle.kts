@@ -227,3 +227,17 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     classDirectories.setFrom(classDirectoriesTree)
     executionData.setFrom(executionDataTree)
 }
+
+// Sentry configuration for crash reporting
+sentry {
+    org.set(System.getenv("SENTRY_ORG") ?: "")
+    projectName.set(System.getenv("SENTRY_PROJECT") ?: "")
+    authToken.set(System.getenv("SENTRY_AUTH_TOKEN") ?: "")
+
+    // Upload source code to Sentry for better stack traces
+    // Only works when auth token is provided
+    includeSourceContext.set(!System.getenv("SENTRY_AUTH_TOKEN").isNullOrBlank())
+    
+    // Auto-install Sentry SDK (we already added it manually)
+    autoInstallation.enabled.set(false)
+}
