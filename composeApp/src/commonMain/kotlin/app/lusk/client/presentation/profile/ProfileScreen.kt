@@ -48,6 +48,7 @@ fun ProfileScreen(
     var pullRefreshing by remember { mutableStateOf(false) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("Profile") },
@@ -71,40 +72,44 @@ fun ProfileScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
                     when (val state = profileState) {
                         is ProfileState.Loading -> {
                             if (!pullRefreshing) {
-                                LoadingState()
+                                LoadingState(
+                                    modifier = Modifier.padding(vertical = 32.dp)
+                                )
                             }
                         }
                         
                         is ProfileState.Error -> {
                             ErrorState(
                                 message = state.message,
-                                onRetry = { viewModel.refresh() }
+                                onRetry = { viewModel.refresh() },
+                                modifier = Modifier.padding(vertical = 32.dp)
                             )
                         }
                         
                         is ProfileState.Success -> {
                             ProfileContent(
                                 state = state,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
                 }
 
-                // Actions are always visible
+                // Actions are now part of the scrollable content
                 ProfileActions(
                     onNavigateToSettings = onNavigateToSettings,
                     onLogout = { authViewModel.logout() },
@@ -122,8 +127,6 @@ private fun ProfileContent(
 ) {
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         // User Info Card

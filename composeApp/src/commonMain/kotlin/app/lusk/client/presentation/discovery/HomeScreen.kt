@@ -76,6 +76,7 @@ fun HomeScreen(
     var pullRefreshing by remember { mutableStateOf(false) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("Discover") },
@@ -106,13 +107,13 @@ fun HomeScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp)
                 ) {
                 item {
                     MediaSection(
@@ -216,6 +217,22 @@ fun HomeScreen(
                             colors = listOf(
                                 MaterialTheme.colorScheme.surface,
                                 Color.Transparent
+                            )
+                        )
+                    )
+            )
+
+            // Bottom fade gradient overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(32.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.background
                             )
                         )
                     )

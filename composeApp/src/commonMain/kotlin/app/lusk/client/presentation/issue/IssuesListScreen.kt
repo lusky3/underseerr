@@ -49,6 +49,7 @@ fun IssuesListScreen(
     var selectedTab by remember { mutableStateOf(0) }
     
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("Issues") },
@@ -66,7 +67,7 @@ fun IssuesListScreen(
             onRefresh = { viewModel.refresh() },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Issue counts summary
@@ -134,6 +135,22 @@ fun IssuesListScreen(
                                     colors = listOf(
                                         MaterialTheme.colorScheme.surface,
                                         Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+                    
+                    // Bottom fade gradient overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(32.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        MaterialTheme.colorScheme.background
                                     )
                                 )
                             )
@@ -229,7 +246,7 @@ private fun IssuesList(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 100.dp),
+        contentPadding = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(issues, key = { it.id }) { issue ->

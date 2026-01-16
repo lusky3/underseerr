@@ -1,7 +1,10 @@
 package app.lusk.client.presentation.request
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -35,6 +38,7 @@ fun RequestsListScreen(
     var pullRefreshing by remember { mutableStateOf(false) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("My Requests") },
@@ -56,7 +60,7 @@ fun RequestsListScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             Column(
                 modifier = Modifier.fillMaxSize()
@@ -109,11 +113,42 @@ fun RequestsListScreen(
                             modifier = Modifier.align(Alignment.TopCenter)
                         )
                     }
+                    // Top fade gradient overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(16.dp)
+                            .align(Alignment.TopCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.surface,
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+
+                    // Bottom fade gradient overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(32.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        MaterialTheme.colorScheme.background
+                                    )
+                                )
+                            )
+                    )
+                }
                 }
             }
         }
     }
-}
 
 @Composable
 private fun RequestsList(
@@ -123,7 +158,7 @@ private fun RequestsList(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 100.dp),
+        contentPadding = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(requests) { request ->

@@ -90,20 +90,7 @@ fun AdaptiveNavigation(
         }
     } else {
         Column(modifier = modifier) {
-            // Fade gradient above the navigation bar
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.surface
-                            )
-                        )
-                    )
-            )
+
             // Solid navigation bar
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
