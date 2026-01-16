@@ -16,4 +16,10 @@ actual fun platformModule(): Module = module {
     single<AppLogger> { AndroidLogger() }
     single { app.lusk.client.data.security.BiometricAuthenticator(get()) }
     single<app.lusk.client.domain.security.BiometricManager> { get<app.lusk.client.data.security.BiometricAuthenticator>() }
+    single<app.lusk.client.domain.permission.PermissionManager> { 
+        app.lusk.client.domain.permission.AndroidPermissionManager(
+            context = get(),
+            activityProvider = { app.lusk.client.util.CurrentActivityHolder.get() }
+        )
+    }
 }

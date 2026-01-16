@@ -75,4 +75,11 @@ class SettingsRepositoryImpl(
     override suspend fun removeServer(url: String) {
         preferencesManager.removeServer(url)
     }
+
+    override fun hasRequestedNotificationPermission(): Flow<Boolean> =
+        preferencesManager.hasRequestedNotificationPermission()
+
+    override suspend fun setHasRequestedNotificationPermission(hasRequested: Boolean) {
+        preferencesManager.setHasRequestedNotificationPermission(hasRequested)
+    }
 }

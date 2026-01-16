@@ -41,6 +41,7 @@ class PreferencesManager(
         val CONFIGURED_SERVERS = stringPreferencesKey("configured_servers")
         val CURRENT_SERVER_URL = stringPreferencesKey("current_server_url")
         val CLIENT_ID = stringPreferencesKey("client_id")
+        val HAS_REQUESTED_NOTIFICATIONS = booleanPreferencesKey("has_requested_notifications")
     }
     
     /**
@@ -374,5 +375,17 @@ class PreferencesManager(
         return dataStore.data.map { preferences ->
             preferences[PreferenceKeys.CLIENT_ID]
         }.first()
+    }
+
+    suspend fun setHasRequestedNotificationPermission(hasRequested: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.HAS_REQUESTED_NOTIFICATIONS] = hasRequested
+        }
+    }
+
+    fun hasRequestedNotificationPermission(): Flow<Boolean> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.HAS_REQUESTED_NOTIFICATIONS] ?: false
+        }
     }
 }

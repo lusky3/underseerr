@@ -105,6 +105,9 @@ interface SettingsRepository {
      * Property 23: Multi-Server Switching
      */
     suspend fun removeServer(url: String)
+    
+    fun hasRequestedNotificationPermission(): Flow<Boolean>
+    suspend fun setHasRequestedNotificationPermission(hasRequested: Boolean)
 }
 
 /**

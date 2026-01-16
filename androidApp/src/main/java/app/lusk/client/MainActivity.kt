@@ -29,10 +29,15 @@ class MainActivity : FragmentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        app.lusk.client.util.CurrentActivityHolder.set(this)
         enableEdgeToEdge()
         
         // Handle initial deep link if any
+        // Handle initial deep link if any
         handleIntent(intent)
+        
+        // Check for notification permission on startup
+        viewModel.requestNotificationPermission()
         
         setContent {
             val themePreference by viewModel.themePreference.collectAsState()
@@ -93,5 +98,16 @@ class MainActivity : FragmentActivity() {
         if (android.content.Intent.ACTION_VIEW == action && data != null) {
             // Logic to handle deep link
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        app.lusk.client.util.CurrentActivityHolder.set(this)
+        viewModel.syncNotificationState()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        app.lusk.client.util.CurrentActivityHolder.clear()
     }
 }

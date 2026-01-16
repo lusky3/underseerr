@@ -9,6 +9,7 @@ import app.lusk.client.domain.repository.ThemePreference
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -25,7 +26,8 @@ class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val authRepository: app.lusk.client.domain.repository.AuthRepository,
     private val requestRepository: app.lusk.client.domain.repository.RequestRepository,
-    private val biometricManager: app.lusk.client.domain.security.BiometricManager
+    private val biometricManager: app.lusk.client.domain.security.BiometricManager,
+    private val permissionManager: app.lusk.client.domain.permission.PermissionManager
 ) : ViewModel() {
     
     private val _themePreference = MutableStateFlow(ThemePreference.SYSTEM)
@@ -136,7 +138,40 @@ class SettingsViewModel(
     
     fun updateNotificationSettings(settings: NotificationSettings) {
         viewModelScope.launch {
-            settingsRepository.updateNotificationSettings(settings)
+            if (settings.enabled && !_notificationSettings.value.enabled) {
+                // Toggling ON
+                val permission = app.lusk.client.domain.permission.Permission.NOTIFICATIONS
+                
+                if (permissionManager.isPermissionGranted(permission)) {
+                     settingsRepository.updateNotificationSettings(settings)
+                } else {
+                    val shouldShowRationale = permissionManager.shouldShowRationale(permission)
+                    val hasRequested = settingsRepository.hasRequestedNotificationPermission().first()
+                    
+                    if (shouldShowRationale) {
+                        // User denied once. Requesting will show dialog.
+                        permissionManager.requestPermission(permission)
+                        settingsRepository.setHasRequestedNotificationPermission(true)
+                        settingsRepository.updateNotificationSettings(settings)
+                    } else {
+                        if (!hasRequested) {
+                            // First time. Requesting will show dialog.
+                            permissionManager.requestPermission(permission)
+                            settingsRepository.setHasRequestedNotificationPermission(true)
+                            settingsRepository.updateNotificationSettings(settings)
+                        } else {
+                            // User denied permanently (or "Don't ask again").
+                            // Dialog will NOT show. Open Settings.
+                            permissionManager.openAppSettings()
+                            // We don't update settings to true here, or we do and let sync handle it?
+                            // Better to set it true so the toggle reflects the intent while they go to settings.
+                            settingsRepository.updateNotificationSettings(settings)
+                        }
+                    }
+                }
+            } else {
+                 settingsRepository.updateNotificationSettings(settings)
+            }
         }
     }
     
