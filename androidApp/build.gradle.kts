@@ -148,6 +148,7 @@ dependencies {
 
     // Sentry - Error monitoring (optional, only active if DSN is configured)
     implementation("io.sentry:sentry-android:8.7.0")
+    implementation("io.sentry:sentry-compose-android:8.7.0")
 
     // Testing
     testImplementation(libs.junit)

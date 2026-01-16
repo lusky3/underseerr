@@ -42,6 +42,16 @@ class OverseerrApplication : Application() {
                 options.environment = if (BuildConfig.DEBUG) "debug" else "production"
                 // Set release version for tracking
                 options.release = "${BuildConfig.APPLICATION_ID}@${BuildConfig.VERSION_NAME}"
+                
+                // Enable Compose user interaction tracking
+                options.isEnableUserInteractionTracing = true
+                options.isEnableUserInteractionBreadcrumbs = true
+                
+                // Performance monitoring sample rate (10% in production, 100% in debug)
+                options.tracesSampleRate = if (BuildConfig.DEBUG) 1.0 else 0.1
+                
+                // Profile performance issues (10% in production, 100% in debug)
+                options.profilesSampleRate = if (BuildConfig.DEBUG) 1.0 else 0.1
             }
         }
     }
