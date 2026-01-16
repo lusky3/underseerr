@@ -95,6 +95,7 @@ android {
 dependencies {
     implementation(project(":composeApp"))
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.okhttp)
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
