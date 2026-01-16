@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
  * Validates: Requirements 5.2, 5.3, 5.5, 5.6
  */
 class SettingsViewModel(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val authRepository: app.lusk.client.domain.repository.AuthRepository
 ) : ViewModel() {
     
     private val _themePreference = MutableStateFlow(ThemePreference.SYSTEM)
@@ -111,6 +112,7 @@ class SettingsViewModel(
     
     fun switchServer(url: String) {
         viewModelScope.launch {
+            authRepository.logout()
             settingsRepository.setCurrentServerUrl(url)
         }
     }
