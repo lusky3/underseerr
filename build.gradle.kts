@@ -43,14 +43,15 @@ subprojects {
     configurations.configureEach {
         resolutionStrategy {
             // Netty vulnerabilities - upgrade to patched versions
-            force("io.netty:netty-codec:4.1.118.Final")
-            force("io.netty:netty-codec-http:4.1.118.Final")
-            force("io.netty:netty-codec-http2:4.1.118.Final")
-            force("io.netty:netty-common:4.1.118.Final")
-            force("io.netty:netty-handler:4.1.118.Final")
-            force("io.netty:netty-buffer:4.1.118.Final")
-            force("io.netty:netty-transport:4.1.118.Final")
-            force("io.netty:netty-resolver:4.1.118.Final")
+            // Netty vulnerabilities - upgrade to patched versions
+            force("io.netty:netty-codec:4.1.124.Final")
+            force("io.netty:netty-codec-http:4.1.124.Final")
+            force("io.netty:netty-codec-http2:4.1.124.Final")
+            force("io.netty:netty-common:4.1.124.Final")
+            force("io.netty:netty-handler:4.1.124.Final")
+            force("io.netty:netty-buffer:4.1.124.Final")
+            force("io.netty:netty-transport:4.1.124.Final")
+            force("io.netty:netty-resolver:4.1.124.Final")
             
             // Protobuf vulnerabilities - CVE for DoS
             force("com.google.protobuf:protobuf-java:4.29.3")
