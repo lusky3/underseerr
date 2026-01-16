@@ -27,7 +27,8 @@ import kotlinx.coroutines.launch
  * Validates: Requirements 3.1, 3.2, 3.3, 4.1, 4.4
  */
 class RequestViewModel(
-    private val requestRepository: RequestRepository
+    private val requestRepository: RequestRepository,
+    private val settingsRepository: app.lusk.client.domain.repository.SettingsRepository
 ) : ViewModel() {
     
     // User requests
@@ -55,8 +56,15 @@ class RequestViewModel(
     val partialRequestsEnabled: StateFlow<Boolean> = _partialRequestsEnabled.asStateFlow()
     
     // Error state
+    // Error state
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+    
+    val defaultMovieProfile = settingsRepository.getDefaultMovieQualityProfile()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        
+    val defaultTvProfile = settingsRepository.getDefaultTvQualityProfile()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     
     init {
         viewModelScope.launch {

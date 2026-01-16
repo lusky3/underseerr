@@ -33,10 +33,10 @@ fun RequestDialog(
     val requestState by viewModel.requestState.collectAsState()
     val qualityProfiles by viewModel.qualityProfiles.collectAsState()
     val rootFolders by viewModel.rootFolders.collectAsState()
+    val defaultMovieProfile by viewModel.defaultMovieProfile.collectAsState()
+    val defaultTvProfile by viewModel.defaultTvProfile.collectAsState()
 
-    println("UI_DEBUG: mediaId=$mediaId, profiles=${qualityProfiles.size}, folders=${rootFolders.size}")
-    qualityProfiles.forEachIndexed { i, p -> println("UI_DEBUG: Profile[$i]: id=${p.id}, name='${p.name}'") }
-    rootFolders.forEachIndexed { i, f -> println("UI_DEBUG: Folder[$i]: id=${f.id}, path='${f.path}'") }
+
     
     // If partial requests disabled, auto-select all
     var selectedSeasons by remember { 

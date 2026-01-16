@@ -278,7 +278,7 @@ class RequestRepositoryImpl(
             val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Sonarr server configured")
             requestKtorService.getSonarrService(defaultServer.id).profiles
         }
-        println("REPO_DEBUG: Profiles for ${if(isMovie) "Movie" else "TV"}: ${profiles.map { "'${it.name}' (id=${it.id})" }}")
+
         profiles.map { QualityProfile(id = it.id, name = it.name) }
     }
     
@@ -296,7 +296,7 @@ class RequestRepositoryImpl(
             val defaultServer = servers.find { it.isDefault } ?: servers.firstOrNull() ?: error("No Sonarr server configured")
             requestKtorService.getSonarrService(defaultServer.id).rootFolders
         }
-        println("REPO_DEBUG: Folders for ${if(isMovie) "Movie" else "TV"}: ${folders.map { "'${it.path}' (id=${it.id})" }}")
+
         folders.map { RootFolder(id = it.id.toString(), path = it.path) }
     }
 
