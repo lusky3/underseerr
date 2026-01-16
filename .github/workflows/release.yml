@@ -57,7 +57,7 @@ jobs:
       if: env.SENTRY_AUTH_TOKEN != ''
       with:
         environment: production
-        version: ${{ steps.version.outputs.VERSION }}
+        release: ${{ steps.version.outputs.VERSION }}
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
