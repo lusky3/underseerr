@@ -28,6 +28,15 @@ proguard/
 
 # Log Files
 *.log
+all_deps_basement.txt
+all_deps.txt
+build_env_proto_v2.txt
+build_env_proto.txt
+build_env_v2.txt
+deps_desktop.txt
+deps.txt
+build_env.txt
+deps_protobuf.txt
 
 # Android Studio Navigation editor temp files
 .navigation/
@@ -52,7 +61,6 @@ render.experimental.xml
 
 # Google Services (e.g. APIs or Firebase)
 **/google-services.json
-
 
 # Freeline
 freeline.py
@@ -83,7 +91,6 @@ lint-results.xml
 # Mac
 .DS_Store
 
-
 # IDE
 .vscode
 .antigravity
@@ -100,3 +107,8 @@ qa_evidence
 overseerr-config/
 radarr-config/
 sonarr-config/
+
+.env
+.env.local
+.env.production
+.env.staging
