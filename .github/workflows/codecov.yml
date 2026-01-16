@@ -16,6 +16,8 @@ jobs:
   coverage:
     name: Test & Coverage
     runs-on: ubuntu-latest
+    # Skip if Dependabot (no access to secrets for token upload)
+    if: ${{ github.actor != 'dependabot[bot]' }}
     
     steps:
       - name: Checkout repository

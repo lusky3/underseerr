@@ -3,7 +3,11 @@
 
 name: GitGuardian Scan
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -12,6 +16,8 @@ jobs:
   scanning:
     name: GitGuardian Secret Scan
     runs-on: ubuntu-latest
+    # Skip if no API key (e.g., Dependabot PRs don't have access to secrets)
+    if: ${{ github.actor != 'dependabot[bot]' && secrets.GITGUARDIAN_API_KEY != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
