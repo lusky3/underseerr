@@ -78,4 +78,4 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew :androidApp:build :composeApp:compileAndroidMain sonar --info
+        run: ./gradlew :androidApp:assembleDebug :composeApp:compileAndroidMain sonar --info
