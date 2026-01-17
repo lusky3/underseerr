@@ -26,7 +26,7 @@ For detailed setup instructions, please see the [Project Wiki](https://github.co
 
 ### Prerequisites
 
-* Android Studio Hedgehog or newer
+* Android Studio Ladybug or newer
 * JDK 24+
 * A running Overseerr instance
 
