@@ -90,29 +90,36 @@ fun RequestsListScreen(
                         else -> userRequests
                     }
                     
+                    val hasCachedData = filteredRequests.isNotEmpty()
+                    val isOffline = error != null
+
+                    // 1. Content Layer
                     when {
-                        error != null -> {
+                        hasCachedData -> {
+                            RequestsList(
+                                requests = filteredRequests,
+                                onRequestClick = onRequestClick,
+                                contentPadding = PaddingValues(top = if (isOffline) 48.dp else 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp)
+                            )
+                        }
+                        isOffline -> {
                             ErrorDisplay(
                                 message = error!!,
                                 onRetry = { viewModel.refreshRequests() }
                             )
                         }
-                        filteredRequests.isEmpty() && !isLoading -> {
+                        !isLoading -> {
                             EmptyRequestsDisplay(status = tabs[selectedTab])
-                        }
-                        else -> {
-                            RequestsList(
-                                requests = filteredRequests,
-                                onRequestClick = onRequestClick
-                            )
                         }
                     }
                     
+                    // 2. Overlays
                     if (isLoading && !pullRefreshing) {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.TopCenter)
                         )
                     }
+
                     // Top fade gradient overlay
                     Box(
                         modifier = Modifier
@@ -144,6 +151,12 @@ fun RequestsListScreen(
                                 )
                             )
                     )
+                    
+                    // Offline Banner
+                    app.lusk.client.ui.components.OfflineBanner(
+                        visible = isOffline && hasCachedData,
+                        modifier = Modifier.align(Alignment.TopCenter)
+                    )
                 }
                 }
             }
@@ -154,11 +167,12 @@ fun RequestsListScreen(
 private fun RequestsList(
     requests: List<MediaRequest>,
     onRequestClick: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp)
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
+        contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(requests) { request ->

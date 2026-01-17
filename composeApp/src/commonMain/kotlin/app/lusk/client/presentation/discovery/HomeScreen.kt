@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import app.lusk.client.domain.model.Genre
 import app.lusk.client.ui.components.PosterImage
 import app.lusk.client.ui.components.ImageError
 import app.lusk.client.ui.components.SimpleImagePlaceholder
+import app.lusk.client.ui.components.OfflineBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -237,6 +239,14 @@ fun HomeScreen(
                         )
                     )
             )
+
+            val hasOfflineError = trending.loadState.refresh is LoadState.Error ||
+                    popularMovies.loadState.refresh is LoadState.Error
+
+            OfflineBanner(
+                visible = hasOfflineError,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
         }
     }
@@ -316,8 +326,11 @@ private fun <T : Any> MediaSection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        when (items.loadState.refresh) {
-            is LoadState.Loading -> {
+        val loadState = items.loadState.refresh
+        val isListEmpty = items.itemCount == 0
+
+        when {
+            loadState is LoadState.Loading && isListEmpty -> {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -327,8 +340,8 @@ private fun <T : Any> MediaSection(
                     CircularProgressIndicator()
                 }
             }
-            is LoadState.Error -> {
-                val error = (items.loadState.refresh as LoadState.Error).error
+            loadState is LoadState.Error && isListEmpty -> {
+                val error = loadState.error
                 ErrorMessage(
                     message = error.message ?: "Failed to load content",
                     onRetry = { items.retry() }
@@ -367,6 +380,14 @@ private fun <T : Any> MediaSection(
                                 contentAlignment = Alignment.Center
                             ) {
                                 CircularProgressIndicator()
+                            }
+                        }
+                    }
+                    
+                    if (items.loadState.append is LoadState.Error) {
+                        item {
+                            IconButton(onClick = { items.retry() }) {
+                                Icon(Icons.Default.Refresh, "Retry")
                             }
                         }
                     }
