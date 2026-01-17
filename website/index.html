@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lusk - A beautiful, native Android client for Overseerr. Discover, request, and manage your media with a premium mobile experience.">
+    <meta name="keywords" content="Overseerr, Android, Plex, Media Requests, Kotlin, Jetpack Compose">
+    <meta name="author" content="Lusk Technologies">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Lusk - Overseerr Client for Android">
+    <meta property="og:description" content="A beautiful, native Android client for Overseerr. Discover, request, and manage your media.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://lusky3.github.io/overseerr-requests/">
+    
+    <title>Lusk - Overseerr Client for Android</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="logo">
+                <span class="logo-icon">🎬</span>
+                <span class="logo-text">Lusk</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#screenshots">Screenshots</a>
+                <a href="#download">Download</a>
+                <a href="https://github.com/lusky3/overseerr-requests" target="_blank" class="nav-github">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="hero-gradient"></div>
+            <div class="hero-orbs">
+                <div class="orb orb-1"></div>
+                <div class="orb orb-2"></div>
+                <div class="orb orb-3"></div>
+            </div>
+        </div>
+        <div class="container hero-content">
+            <div class="hero-text">
+                <div class="badge">
+                    <span class="badge-dot"></span>
+                    Open Source & Free
+                </div>
+                <h1>Your Media,<br><span class="gradient-text">Anywhere.</span></h1>
+                <p class="hero-description">
+                    A beautiful, native Android client for Overseerr. Discover trending content, 
+                    request your favorite movies and TV shows, and manage your media library 
+                    with a premium mobile experience.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#download" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.523 15.3414c-.5-.2-.5-.2-1.1-.2h-.5c-.4 0-.7.2-.8.6-.2.5-.4.9-.5 1.4-.1.3-.3.5-.6.5-.7 0-1.6-.4-2.3-.8-.8-.4-1.5-1-2.1-1.6-.7-.7-1.2-1.4-1.6-2.1-.4-.7-.7-1.4-.8-2.1 0-.3.2-.5.5-.6.5-.1.9-.3 1.4-.5.4-.1.6-.4.6-.8v-.5c0-.6 0-.6-.2-1.1-.3-.8-1.2-3.5-1.9-4.2-.4-.3-.7-.5-1.1-.5-.1 0-.2 0-.3.1-1.9.3-3.4 1.8-3.6 3.8 0 .2 0 .4-.1.6 0 .3.1.7.1 1 .1.9.4 2 .9 3.1.5 1.1 1.1 2.2 1.9 3.2 1.2 1.6 2.8 3 4.6 4.1 1.4.8 2.7 1.4 4 1.7.4.1.8.2 1.2.2.3 0 .5 0 .7-.1 1.9-.2 3.4-1.7 3.7-3.6 0-.1.1-.2.1-.3 0-.4-.2-.7-.5-1.1-.7-.7-3.4-1.6-4.2-1.9z"/>
+                        </svg>
+                        Download APK
+                    </a>
+                    <a href="https://github.com/lusky3/overseerr-requests" target="_blank" class="btn btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        View on GitHub
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-value">100%</span>
+                        <span class="stat-label">Open Source</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat">
+                        <span class="stat-value">Kotlin</span>
+                        <span class="stat-label">Multiplatform</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat">
+                        <span class="stat-value">Material 3</span>
+                        <span class="stat-label">Design System</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-phone">
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="mock-app">
+                            <div class="mock-header">
+                                <span>Discover</span>
+                                <div class="mock-search">🔍</div>
+                            </div>
+                            <div class="mock-section">
+                                <div class="mock-title">Trending</div>
+                                <div class="mock-cards">
+                                    <div class="mock-card"></div>
+                                    <div class="mock-card"></div>
+                                    <div class="mock-card"></div>
+                                </div>
+                            </div>
+                            <div class="mock-section">
+                                <div class="mock-title">Popular Movies</div>
+                                <div class="mock-cards">
+                                    <div class="mock-card"></div>
+                                    <div class="mock-card"></div>
+                                    <div class="mock-card"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Features</span>
+                <h2>Everything you need,<br>in one app.</h2>
+                <p>Built with modern Android technologies for the best possible experience.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card feature-highlight">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </div>
+                    <h3>Media Discovery</h3>
+                    <p>Browse trending movies and TV shows across platforms. Explore by genre, studio, or network with a beautiful interface.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
+                        </svg>
+                    </div>
+                    <h3>Request Management</h3>
+                    <p>Submit requests with custom quality profiles, select specific seasons, and track your request status in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <h3>Offline First</h3>
+                    <p>Built with local caching so you can browse your requests and saved media even without an internet connection.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                    </div>
+                    <h3>Push Notifications</h3>
+                    <p>Get instant alerts when your requests are approved or when your media becomes available.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                        </svg>
+                    </div>
+                    <h3>Material You</h3>
+                    <p>Dynamic theming that adapts to your wallpaper colors. Experience a truly personalized interface.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <h3>Biometric Security</h3>
+                    <p>Protect the app with fingerprint or face unlock for added privacy and security.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section id="screenshots" class="screenshots">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Screenshots</span>
+                <h2>Beautiful by design.</h2>
+                <p>A premium experience crafted with attention to every detail.</p>
+            </div>
+            <div class="screenshots-scroll">
+                <div class="screenshot-phone">
+                    <div class="screenshot-frame">
+                        <div class="screenshot-content screenshot-1">
+                            <div class="ss-header">Discover</div>
+                            <div class="ss-body">
+                                <div class="ss-trending">
+                                    <div class="ss-card-lg"></div>
+                                    <div class="ss-card-lg"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="screenshot-label">Discovery</span>
+                </div>
+                <div class="screenshot-phone">
+                    <div class="screenshot-frame">
+                        <div class="screenshot-content screenshot-2">
+                            <div class="ss-header">My Requests</div>
+                            <div class="ss-body">
+                                <div class="ss-list">
+                                    <div class="ss-item"><span class="ss-badge pending"></span></div>
+                                    <div class="ss-item"><span class="ss-badge approved"></span></div>
+                                    <div class="ss-item"><span class="ss-badge available"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="screenshot-label">Requests</span>
+                </div>
+                <div class="screenshot-phone">
+                    <div class="screenshot-frame">
+                        <div class="screenshot-content screenshot-3">
+                            <div class="ss-header">Movie Details</div>
+                            <div class="ss-body">
+                                <div class="ss-poster"></div>
+                                <div class="ss-info"></div>
+                                <div class="ss-btn">Request</div>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="screenshot-label">Details</span>
+                </div>
+                <div class="screenshot-phone">
+                    <div class="screenshot-frame">
+                        <div class="screenshot-content screenshot-4">
+                            <div class="ss-header">Settings</div>
+                            <div class="ss-body">
+                                <div class="ss-settings">
+                                    <div class="ss-setting"></div>
+                                    <div class="ss-setting"></div>
+                                    <div class="ss-setting"></div>
+                                    <div class="ss-setting"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="screenshot-label">Settings</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section class="tech-stack">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Built With</span>
+                <h2>Modern tech stack.</h2>
+                <p>Powered by the latest Android development technologies.</p>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="tech-logo">🧩</div>
+                    <span>Kotlin 2.3</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-logo">🎨</div>
+                    <span>Compose</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-logo">💉</div>
+                    <span>Koin</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-logo">🌐</div>
+                    <span>Ktor</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-logo">💾</div>
+                    <span>Room</span>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-logo">📱</div>
+                    <span>Material 3</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download">
+        <div class="container">
+            <div class="download-card">
+                <div class="download-content">
+                    <h2>Ready to get started?</h2>
+                    <p>Download the latest release and connect to your Overseerr instance in minutes.</p>
+                    <div class="download-buttons">
+                        <a href="https://github.com/lusky3/overseerr-requests/releases/latest" target="_blank" class="btn btn-primary btn-large">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                            </svg>
+                            Download from GitHub
+                        </a>
+                    </div>
+                    <p class="download-note">
+                        Requires Android 8.0 (Oreo) or later. 
+                        <a href="https://github.com/lusky3/overseerr-requests/wiki" target="_blank">View documentation →</a>
+                    </p>
+                </div>
+                <div class="download-visual">
+                    <div class="download-phone">
+                        <div class="download-screen">
+                            <div class="download-check">✓</div>
+                            <span>Ready to install</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <span class="logo-icon">🎬</span>
+                        <span class="logo-text">Lusk</span>
+                    </a>
+                    <p>A native Android client for Overseerr.<br>Open source and free forever.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <a href="https://github.com/lusky3/overseerr-requests/wiki" target="_blank">Documentation</a>
+                        <a href="https://github.com/lusky3/overseerr-requests/wiki/Setup" target="_blank">Setup Guide</a>
+                        <a href="https://github.com/lusky3/overseerr-requests/wiki/Contributing" target="_blank">Contributing</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Project</h4>
+                        <a href="https://github.com/lusky3/overseerr-requests" target="_blank">GitHub</a>
+                        <a href="https://github.com/lusky3/overseerr-requests/releases" target="_blank">Releases</a>
+                        <a href="https://github.com/lusky3/overseerr-requests/issues" target="_blank">Issues</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Legal</h4>
+                        <a href="https://github.com/lusky3/overseerr-requests/blob/main/LICENSE" target="_blank">License</a>
+                        <a href="https://github.com/lusky3/overseerr-requests/blob/main/SECURITY.md" target="_blank">Security</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 Lusk Technologies, Inc. Licensed under Apache 2.0.</p>
+                <p>Not affiliated with Overseerr.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
