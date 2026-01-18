@@ -32,10 +32,8 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     
-    // Determine if we should show navigation by checking if current destination is in default list
-    // matching by route class
+    // Determine if we should show navigation using hierarchy and hasRoute
     val processingDestination = defaultNavigationDestinations.find { dest ->
-         // Use wildcard import for hierarchy and hasRoute
          currentDestination?.hierarchy?.any { it.hasRoute(dest.screen::class) } == true
     }
     
@@ -96,12 +94,6 @@ fun MainScreen(
                 OverseerrNavHost(
                     navController = navController,
                     modifier = Modifier.fillMaxSize()
-                    // Use default startDestination (Screen.Splash) defined in OverseerrNavHost, 
-                    // or ideally pass 'startDestination' if we wanted to support overriding it.
-                    // But here MainScreen defaults to Screen.Home, while App defaults to Splash.
-                    // Let's pass Screen.Splash explicitly if startDestination is Home (default),
-                    // OR adhere to what MainViewController passed.
-                    // Actually, let's keep it simple: Use OverseerrNavHost default.
                 )
             }
         }

@@ -17,7 +17,7 @@ import app.lusk.client.presentation.discovery.DiscoveryViewModel
 import app.lusk.client.presentation.discovery.MediaDetailsScreen
 import app.lusk.client.presentation.discovery.CategoryResultsScreen
 import app.lusk.client.presentation.home.HomeScreen
-import app.lusk.client.presentation.issue.IssuesScreen
+import app.lusk.client.presentation.issue.IssuesListScreen
 import app.lusk.client.presentation.issue.IssueDetailsScreen
 import app.lusk.client.presentation.profile.ProfileScreen
 import app.lusk.client.presentation.request.RequestDetailsScreen
@@ -193,7 +193,7 @@ fun OverseerrNavHost(
         }
         
         composable<Screen.Issues> {
-            IssuesScreen(
+            IssuesListScreen(
                 onIssueClick = { issueId ->
                     navController.navigate(Screen.IssueDetails(issueId))
                 }
@@ -211,12 +211,12 @@ fun OverseerrNavHost(
         
         composable<Screen.Profile> {
             ProfileScreen(
-                onSettingsClick = {
+                onNavigateToSettings = {
                     navController.navigate(Screen.Settings)
                 },
-                onServerConfigClick = {
-                    navController.navigate(Screen.ServerConfig()) {
-                        // Clear stack
+                onLogout = {
+                     navController.navigate(Screen.PlexAuth) {
+                        popUpTo<Screen.Home> { inclusive = true }
                     }
                 }
             )
@@ -224,10 +224,10 @@ fun OverseerrNavHost(
         
         composable<Screen.Settings> {
             SettingsScreen(
-                onServerManagementClick = {
+                onNavigateToServerManagement = {
                     navController.navigate(Screen.ServerManagement)
                 },
-                onBackClick = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         
