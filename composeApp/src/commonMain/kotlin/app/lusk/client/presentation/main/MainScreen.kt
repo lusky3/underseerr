@@ -8,10 +8,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.*
+import androidx.navigation.NavDestination
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavDestination.Companion.hasRoute
 import app.lusk.client.navigation.OverseerrNavHost
 import app.lusk.client.navigation.Screen
 import app.lusk.client.ui.adaptive.AdaptiveNavigation
@@ -32,9 +33,15 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     
-    // Determine if we should show navigation using hierarchy and hasRoute
+    // Determine if we should show navigation using manual hierarchy check to avoid potential unresolved extension
     val processingDestination = defaultNavigationDestinations.find { dest ->
-         currentDestination?.hierarchy?.any { it.hasRoute(dest.screen::class) } == true
+        // Check current destination and its parents
+        var d: NavDestination? = currentDestination
+        while (d != null) {
+            if (d.hasRoute(dest.screen::class)) return@find true
+            d = d.parent
+        }
+        false
     }
     
     val showNavigation = processingDestination != null

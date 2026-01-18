@@ -2,13 +2,17 @@ package app.lusk.client.navigation
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import app.lusk.client.domain.model.MediaType
 import app.lusk.client.presentation.auth.AuthViewModel
@@ -35,6 +39,9 @@ fun OverseerrNavHost(
     modifier: Modifier = Modifier,
     startDestination: Screen = Screen.Splash
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -83,6 +90,11 @@ fun OverseerrNavHost(
                     navController.navigate(Screen.Home) {
                         popUpTo<Screen.ServerConfig> { inclusive = true }
                     }
+                },
+                onAuthError = { error ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(error)
+                    }
                 }
             )
         }
@@ -95,7 +107,7 @@ fun OverseerrNavHost(
             // Auto-trigger token exchange when arriving from deep link
             LaunchedEffect(token) {
                 if (token.isNotEmpty()) {
-                    viewModel.handleCallback(token)
+                    viewModel.handleAuthCallback(token)
                 }
             }
             
@@ -104,6 +116,11 @@ fun OverseerrNavHost(
                 onAuthSuccess = {
                     navController.navigate(Screen.Home) {
                         popUpTo<Screen.ServerConfig> { inclusive = true }
+                    }
+                },
+                onAuthError = { error ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(error)
                     }
                 }
             )
@@ -130,6 +147,8 @@ fun OverseerrNavHost(
             val args = backStackEntry.toRoute<Screen.CategoryResults>()
             val viewModel: DiscoveryViewModel = koinViewModel()
 
+            // type is MediaType (enum), we convert it to safe lowercase string for display/logic if needed, 
+            // but Screen.MediaDetails expects string type ("movie" or "tv")
             CategoryResultsScreen(
                 categoryType = args.categoryType,
                 categoryId = args.categoryId,
@@ -137,7 +156,7 @@ fun OverseerrNavHost(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onMediaClick = { type, id -> 
-                    // type is MediaType (enum)
+                    // type is MediaType enum
                     navController.navigate(Screen.MediaDetails(type.name.lowercase(), id))
                 }
             )
@@ -149,7 +168,7 @@ fun OverseerrNavHost(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onMediaClick = { type, id ->
-                    // type is MediaType (enum)
+                    // type is MediaType enum
                     navController.navigate(Screen.MediaDetails(type.name.lowercase(), id))
                 }
             )
