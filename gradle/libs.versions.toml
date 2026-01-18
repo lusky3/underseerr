@@ -114,7 +114,7 @@ androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version = "1
 # Image Loading
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
-coil-network-ktor = { group = "io.coil-kt.coil3", name = "coil-network-ktor", version.ref = "coil" }
+coil-network-ktor = { group = "io.coil-kt.coil3", name = "coil-network-ktor3", version.ref = "coil" }
 
 # Security
 androidx-biometric = { group = "androidx.biometric", name = "biometric-ktx", version.ref = "biometric" }
