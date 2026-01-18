@@ -15,9 +15,34 @@ targets:
       OTHER_LDFLAGS: "$(inherited) -framework ComposeApp"
     preBuildScripts:
       - script: |
+          set -e
           export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
           cd "$SRCROOT/.."
-          ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
+          
+          if [ "$PLATFORM_NAME" = "iphonesimulator" ]; then
+              TARGET_NAME="IosSimulatorArm64"
+              DIR_NAME="iosSimulatorArm64"
+          else
+              TARGET_NAME="IosArm64"
+              DIR_NAME="iosArm64"
+          fi
+          
+          if [ "$CONFIGURATION" = "Release" ]; then
+              CONFIG_NAME="Release"
+              TYPE_NAME="releaseFramework"
+          else
+              CONFIG_NAME="Debug"
+              TYPE_NAME="debugFramework"
+          fi
+          
+          ./gradlew ":composeApp:link${CONFIG_NAME}Framework${TARGET_NAME}"
+          
+          SRC_PATH="composeApp/build/bin/$DIR_NAME/$TYPE_NAME/ComposeApp.framework"
+          DEST_PATH="$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH/"
+          
+          mkdir -p "$DEST_PATH"
+          cp -R "$SRC_PATH" "$DEST_PATH"
+
         name: Embed and Sign Framework
         inputFiles:
           - $(SRCROOT)/../composeApp/src/commonMain/kotlin
