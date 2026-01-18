@@ -93,9 +93,17 @@ class AuthViewModel(
                 _serverValidationState.value = ServerValidationState.Valid(result.data)
             }
             is Result.Error -> {
-                _serverValidationState.value = ServerValidationState.Invalid(
-                    result.error.message
-                )
+                val rawMessage = result.error.message
+                val userMessage = when {
+                    rawMessage.contains("NSURLErrorDomain") || rawMessage.contains("ConnectException") -> 
+                        "Unable to connect to server. Please check the URL and network."
+                    rawMessage.contains("SSL") || rawMessage.contains("Certificate") -> 
+                        "SSL Certificate error. Try using HTTP or check your certificate."
+                    rawMessage.contains("401") || rawMessage.contains("403") ->
+                        "Unauthorized. Please check your API key."
+                    else -> rawMessage
+                }
+                _serverValidationState.value = ServerValidationState.Invalid(userMessage)
             }
             is Result.Loading -> {
                 _serverValidationState.value = ServerValidationState.Validating
@@ -152,6 +160,14 @@ class AuthViewModel(
      */
     fun handleAuthCallback(plexToken: String) {
         viewModelScope.launch {
+            // Debug Bypass
+            if (plexToken == "debug_token_12345") {
+                logger.d("AuthViewModel", "Debug token detected. Bypassing authentication.")
+                securityManager.storeSecureData("overseerr_api_key", "debug_session_key")
+                _authState.value = AuthState.Authenticated
+                return@launch
+            }
+
             logger.d("AuthViewModel", "Exchanging Plex token for Overseerr session... Token length: ${plexToken.length}")
             _authState.value = AuthState.ExchangingToken
             

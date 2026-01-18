@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import org.koin.compose.viewmodel.koinViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -28,6 +30,14 @@ fun PlexAuthScreen(
     val authState by viewModel.authState.collectAsState()
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
+    
+    // Auto-check on Resume
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        val state = authState
+        if (state is AuthState.WaitingForPlex) {
+             viewModel.checkPlexStatus(state.pinId)
+        }
+    }
     
     // Handle authentication state changes
     LaunchedEffect(authState) {
@@ -103,6 +113,15 @@ fun PlexAuthScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(onClick = { uriHandler.openUri(authState.let { (it as? AuthState.WaitingForPlex)?.authUrl ?: "" }) }) {
                         Text("Re-open Browser")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(onClick = { 
+                        val state = authState
+                        if (state is AuthState.WaitingForPlex) {
+                            viewModel.checkPlexStatus(state.pinId)
+                        }
+                    }) {
+                        Text("Check Status")
                     }
                 }
                 
