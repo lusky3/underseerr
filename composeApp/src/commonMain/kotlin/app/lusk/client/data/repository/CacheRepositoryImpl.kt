@@ -141,7 +141,7 @@ class CacheRepositoryImpl(
     }
     
     override suspend fun deleteOlderThan(ageMillis: Long) {
-        val cutoffTimestamp = Clock.System.now().toEpochMilliseconds() - ageMillis
+        val cutoffTimestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds() - ageMillis
         movieDao.deleteOlderThan(cutoffTimestamp)
         tvShowDao.deleteOlderThan(cutoffTimestamp)
     }

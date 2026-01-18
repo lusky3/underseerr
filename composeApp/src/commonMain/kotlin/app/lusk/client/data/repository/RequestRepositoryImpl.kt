@@ -83,7 +83,7 @@ class RequestRepositoryImpl(
                         title = "Queued Request",
                         posterPath = null,
                         status = RequestStatus.PENDING,
-                        requestedDate = Clock.System.now().toEpochMilliseconds(),
+                        requestedDate = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                         seasons = null,
                         isOfflineQueued = true
                     )
@@ -150,7 +150,7 @@ class RequestRepositoryImpl(
                         title = "Queued TV Request",
                         posterPath = null,
                         status = RequestStatus.PENDING,
-                        requestedDate = Clock.System.now().toEpochMilliseconds(),
+                        requestedDate = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                         seasons = seasons,
                         isOfflineQueued = true
                     )

@@ -8,7 +8,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.*
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -21,24 +21,26 @@ import app.lusk.client.ui.adaptive.defaultNavigationDestinations
 
 /**
  * Main screen with bottom navigation and content.
- * Refactored for KMP in commonMain.
+ * Refactored for KMP in commonMain with Type Safe Navigation.
  */
 @Composable
 fun MainScreen(
-    startDestination: String = Screen.Home.route,
+    startDestination: Screen = Screen.Home,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     
-    // Determine if we should show navigation
-    val showNavigation = currentDestination?.route in listOf(
-        Screen.Home.route,
-        Screen.Requests.route,
-        Screen.Issues.route,
-        Screen.Profile.route
-    )
+    // Determine if we should show navigation by checking if current destination is in default list
+    // matching by route class
+    val processingDestination = defaultNavigationDestinations.find { dest ->
+         // Use wildcard import for hierarchy and hasRoute
+         currentDestination?.hierarchy?.any { it.hasRoute(dest.screen::class) } == true
+    }
+    
+    val showNavigation = processingDestination != null
+    val currentScreen = processingDestination?.screen ?: Screen.Home
     
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val layoutConfig = calculateAdaptiveLayoutConfig(maxWidth, maxHeight)
@@ -48,19 +50,15 @@ fun MainScreen(
             bottomBar = {
                 if (showNavigation && !layoutConfig.useNavigationRail) {
                     AdaptiveNavigation(
-                        currentRoute = currentDestination?.route ?: Screen.Home.route,
+                        currentScreen = currentScreen,
                         layoutConfig = layoutConfig,
                         destinations = getNavigationDestinations(),
-                        onNavigate = { route ->
-                            navController.navigate(route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
+                        onNavigate = { screen ->
+                            navController.navigate(screen) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
-                                // Avoid multiple copies of the same destination
                                 launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
                                 restoreState = true
                             }
                         }
@@ -79,11 +77,11 @@ fun MainScreen(
                 // Navigation rail for larger screens
                 if (showNavigation && layoutConfig.useNavigationRail) {
                     AdaptiveNavigation(
-                        currentRoute = currentDestination?.route ?: Screen.Home.route,
+                        currentScreen = currentScreen,
                         layoutConfig = layoutConfig,
                         destinations = getNavigationDestinations(),
-                        onNavigate = { route ->
-                            navController.navigate(route) {
+                        onNavigate = { screen ->
+                            navController.navigate(screen) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -97,17 +95,19 @@ fun MainScreen(
                 // Main content
                 OverseerrNavHost(
                     navController = navController,
-                    startDestination = startDestination,
                     modifier = Modifier.fillMaxSize()
+                    // Use default startDestination (Screen.Splash) defined in OverseerrNavHost, 
+                    // or ideally pass 'startDestination' if we wanted to support overriding it.
+                    // But here MainScreen defaults to Screen.Home, while App defaults to Splash.
+                    // Let's pass Screen.Splash explicitly if startDestination is Home (default),
+                    // OR adhere to what MainViewController passed.
+                    // Actually, let's keep it simple: Use OverseerrNavHost default.
                 )
             }
         }
     }
 }
 
-/**
- * Get navigation destinations for the app.
- */
 private fun getNavigationDestinations(): List<NavigationDestination> {
     return defaultNavigationDestinations
 }

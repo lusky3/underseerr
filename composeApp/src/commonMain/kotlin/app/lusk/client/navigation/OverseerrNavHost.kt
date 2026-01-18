@@ -1,387 +1,239 @@
 package app.lusk.client.navigation
 
-import io.ktor.http.decodeURLQueryComponent
-import androidx.core.bundle.Bundle
-import androidx.core.bundle.*
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
+import androidx.navigation.toRoute
 import org.koin.compose.viewmodel.koinViewModel
 import app.lusk.client.domain.model.MediaType
 import app.lusk.client.presentation.auth.AuthViewModel
 import app.lusk.client.presentation.auth.PlexAuthScreen
-import app.lusk.client.presentation.auth.ServerConfigScreen
-import app.lusk.client.presentation.auth.SplashScreen
 import app.lusk.client.presentation.discovery.DiscoveryViewModel
-import app.lusk.client.presentation.discovery.HomeScreen
 import app.lusk.client.presentation.discovery.MediaDetailsScreen
-import app.lusk.client.presentation.discovery.SearchScreen
+import app.lusk.client.presentation.discovery.CategoryResultsScreen
+import app.lusk.client.presentation.home.HomeScreen
+import app.lusk.client.presentation.issue.IssuesScreen
+import app.lusk.client.presentation.issue.IssueDetailsScreen
 import app.lusk.client.presentation.profile.ProfileScreen
 import app.lusk.client.presentation.request.RequestDetailsScreen
-import app.lusk.client.presentation.request.RequestsListScreen
-import app.lusk.client.presentation.settings.ServerManagementScreen
+import app.lusk.client.presentation.request.RequestsScreen
+import app.lusk.client.presentation.request.RequestViewModel
+import app.lusk.client.presentation.search.SearchScreen
+import app.lusk.client.presentation.server.ServerConfigScreen
+import app.lusk.client.presentation.splash.SplashScreen
 import app.lusk.client.presentation.settings.SettingsScreen
-import app.lusk.client.ui.animation.backwardTransition
-import app.lusk.client.ui.animation.forwardTransition
-import app.lusk.client.ui.animation.popEnterTransition
-import app.lusk.client.ui.animation.popExitTransition
+import app.lusk.client.presentation.settings.ServerManagementScreen
 
-/**
- * Main navigation host for the app.
- * Refactored for KMP in commonMain.
- */
 @Composable
 fun OverseerrNavHost(
     navController: NavHostController,
-    startDestination: String = Screen.Splash.route,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startDestination: Screen = Screen.Splash
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier
+        modifier = modifier,
+        enterTransition = { fadeIn(animationSpec = tween(300)) },
+        exitTransition = { fadeOut(animationSpec = tween(300)) },
+        popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+        popExitTransition = { fadeOut(animationSpec = tween(300)) }
     ) {
-        // Initialization
-        composable(route = Screen.Splash.route) {
+        composable<Screen.Splash> {
             SplashScreen(
                 onNavigateToHome = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Splash> { inclusive = true }
                     }
                 },
                 onNavigateToServerConfig = {
-                    navController.navigate(Screen.ServerConfig.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    navController.navigate(Screen.ServerConfig()) {
+                        popUpTo<Screen.Splash> { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        composable<Screen.ServerConfig> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.ServerConfig>()
+            
+            ServerConfigScreen(
+                prefillServerUrl = args.serverUrl,
+                onConfigSaved = {
+                    navController.navigate(Screen.PlexAuth)
+                },
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.ServerConfig> { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        composable<Screen.PlexAuth> {
+            val viewModel: AuthViewModel = koinViewModel()
+            PlexAuthScreen(
+                viewModel = viewModel,
+                onAuthSuccess = {
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.ServerConfig> { inclusive = true }
                     }
                 }
             )
         }
 
-        // Authentication Flow
-        composable(
-            route = Screen.ServerConfig.route,
-            arguments = listOf(
-                navArgument("serverUrl") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            ),
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) { backStackEntry ->
-            val serverUrl = backStackEntry.arguments?.getString("serverUrl")
-                ?.let { it.decodeURLQueryComponent() }
-            
-            ServerConfigScreen(
-                onServerValidated = {
-                    navController.navigate(Screen.PlexAuth.route)
-                },
-                onAuthenticated = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.ServerConfig.BASE_ROUTE) { inclusive = true }
-                    }
-                },
-                prefillServerUrl = serverUrl
-            )
-        }
-        
-        composable(
-            route = Screen.PlexAuth.route,
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) {
-            PlexAuthScreen(
-                onAuthSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.ServerConfig.route) { inclusive = true }
-                    }
-                },
-                onAuthError = { error ->
-                    // Handle auth error - could navigate to error screen or show snackbar
-                    navController.popBackStack()
-                }
-            )
-        }
-        
-        composable(
-            route = Screen.PlexAuthCallback.route,
-            arguments = listOf(navArgument("token") { type = NavType.StringType }),
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) { backStackEntry ->
-            val token = backStackEntry.arguments?.getString("token") ?: ""
+        composable<Screen.PlexAuthCallback> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.PlexAuthCallback>()
+            val token = args.token
             val viewModel: AuthViewModel = koinViewModel()
             
             // Auto-trigger token exchange when arriving from deep link
             LaunchedEffect(token) {
                 if (token.isNotEmpty()) {
-                    viewModel.handleAuthCallback(token)
+                    viewModel.handleCallback(token)
                 }
             }
             
             PlexAuthScreen(
+                viewModel = viewModel,
                 onAuthSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.ServerConfig.route) { inclusive = true }
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.ServerConfig> { inclusive = true }
                     }
-                },
-                onAuthError = { error ->
-                    navController.popBackStack()
-                },
-                viewModel = viewModel
+                }
             )
         }
         
-        composable(
-            route = Screen.Home.route,
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) {
-            val viewModel: DiscoveryViewModel = koinViewModel()
+        composable<Screen.Home> {
             HomeScreen(
-                viewModel = viewModel,
                 onMovieClick = { movieId ->
-                    navController.navigate(Screen.MediaDetails.createRoute("movie", movieId))
+                    navController.navigate(Screen.MediaDetails("movie", movieId))
                 },
                 onTvShowClick = { tvShowId ->
-                    navController.navigate(Screen.MediaDetails.createRoute("tv", tvShowId))
+                    navController.navigate(Screen.MediaDetails("tv", tvShowId))
                 },
                 onSearchClick = {
-                    navController.navigate(Screen.Search.route)
+                    navController.navigate(Screen.Search)
                 },
                 onCategoryClick = { type, id, name ->
-                    navController.navigate(Screen.CategoryResults.createRoute(type.name, id, name))
+                    navController.navigate(Screen.CategoryResults(type, id, name))
                 }
             )
         }
-
-        composable(
-            route = Screen.CategoryResults.route,
-            arguments = listOf(
-                navArgument("categoryType") { type = NavType.StringType },
-                navArgument("categoryId") { type = NavType.IntType },
-                navArgument("categoryName") { type = NavType.StringType }
-            ),
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) { backStackEntry ->
-            val categoryType = backStackEntry.arguments?.getString("categoryType") ?: ""
-            val categoryId = backStackEntry.arguments?.getInt("categoryId") ?: 0
-            val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
+        
+        composable<Screen.CategoryResults> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.CategoryResults>()
             val viewModel: DiscoveryViewModel = koinViewModel()
 
-            app.lusk.client.presentation.discovery.CategoryResultsScreen(
+            CategoryResultsScreen(
+                categoryType = args.categoryType,
+                categoryId = args.categoryId,
+                categoryName = args.categoryName,
                 viewModel = viewModel,
-                categoryType = categoryType,
-                categoryId = categoryId,
-                categoryName = categoryName,
                 onBackClick = { navController.popBackStack() },
-                onMediaClick = { mediaType, mediaId ->
-                    navController.navigate(Screen.MediaDetails.createRoute(mediaType.name.lowercase(), mediaId))
+                onMediaClick = { type, id -> 
+                    val mediaTypeEnum = if (type.lowercase() == "tv") MediaType.TV else MediaType.MOVIE
+                    navController.navigate(Screen.MediaDetails(mediaTypeEnum.name.lowercase(), id))
                 }
             )
         }
-        
-        composable(
-            route = Screen.Search.route,
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) {
-            val viewModel: DiscoveryViewModel = koinViewModel()
+
+        composable<Screen.Search> {
             SearchScreen(
-                viewModel = viewModel,
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onMediaClick = { mediaType, mediaId ->
-                    navController.navigate(Screen.MediaDetails.createRoute(mediaType.name.lowercase(), mediaId))
+                onMediaClick = { type, id ->
+                    val mediaTypeEnum = if (type.lowercase() == "tv") MediaType.TV else MediaType.MOVIE
+                    navController.navigate(Screen.MediaDetails(mediaTypeEnum.name.lowercase(), id))
                 }
             )
         }
         
-        composable(
-            route = Screen.MediaDetails.route,
-            arguments = listOf(
-                navArgument("mediaType") { type = NavType.StringType },
-                navArgument("mediaId") { type = NavType.IntType },
-                navArgument("openRequest") { 
-                    type = NavType.BoolType
-                    defaultValue = false
-                }
-            ),
-            deepLinks = listOf(
-                navDeepLink { uriPattern = "lusk://media/{mediaType}/{mediaId}" }
-            ),
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) { backStackEntry ->
-            val mediaTypeString = backStackEntry.arguments?.getString("mediaType") ?: "movie"
-            val mediaId = backStackEntry.arguments?.getInt("mediaId") ?: 0
-            val openRequest = backStackEntry.arguments?.getBoolean("openRequest") ?: false
-            val mediaType = if (mediaTypeString == "tv") MediaType.TV else MediaType.MOVIE
+        composable<Screen.MediaDetails> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.MediaDetails>()
+            val mediaType = if (args.mediaType == "tv") MediaType.TV else MediaType.MOVIE
             val viewModel: DiscoveryViewModel = koinViewModel()
             
             MediaDetailsScreen(
-                viewModel = viewModel,
+                mediaId = args.mediaId,
                 mediaType = mediaType,
-                mediaId = mediaId,
-                openRequest = openRequest,
-                onBackClick = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        
-        // Requests Flow
-        composable(
-            route = Screen.Requests.route,
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) {
-            val viewModel: app.lusk.client.presentation.request.RequestViewModel = koinViewModel()
-            RequestsListScreen(
+                openRequest = args.openRequest,
                 viewModel = viewModel,
+                onBackClick = { navController.popBackStack() },
+                onRequestClick = {
+                    // Navigate to request not supported directly here, maybe dialog?
+                }
+            )
+        }
+
+        composable<Screen.Requests> {
+            RequestsScreen(
                 onRequestClick = { requestId ->
-                    navController.navigate(Screen.RequestDetails.createRoute(requestId))
+                    navController.navigate(Screen.RequestDetails(requestId))
                 }
             )
         }
         
-        // Issues Flow
-        composable(
-            route = Screen.Issues.route,
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) {
-            app.lusk.client.presentation.issue.IssuesListScreen(
-                onIssueClick = { issueId ->
-                    navController.navigate(Screen.IssueDetails.createRoute(issueId))
-                }
-            )
-        }
-        
-        composable(
-            route = Screen.IssueDetails.route,
-            arguments = listOf(
-                navArgument("issueId") { type = NavType.IntType }
-            ),
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) { backStackEntry ->
-            val issueId = backStackEntry.arguments?.getInt("issueId") ?: return@composable
+        composable<Screen.RequestDetails> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.RequestDetails>()
+            val viewModel: RequestViewModel = koinViewModel()
             
-            app.lusk.client.presentation.issue.IssueDetailsScreen(
-                issueId = issueId,
+            RequestDetailsScreen(
+                requestId = args.requestId,
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() },
+                onMediaClick = { type, id ->
+                    val mediaType = if (type == MediaType.TV) "tv" else "movie"
+                    navController.navigate(Screen.MediaDetails(mediaType, id, openRequest = true)) 
+                }
+            )
+        }
+        
+        composable<Screen.Issues> {
+            IssuesScreen(
+                onIssueClick = { issueId ->
+                    navController.navigate(Screen.IssueDetails(issueId))
+                }
+            )
+        }
+        
+        composable<Screen.IssueDetails> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.IssueDetails>()
+            
+            IssueDetailsScreen(
+                issueId = args.issueId,
                 onBackClick = { navController.popBackStack() }
             )
         }
         
-        composable(
-            route = Screen.RequestDetails.route,
-            arguments = listOf(
-                navArgument("requestId") { type = NavType.IntType }
-            ),
-            deepLinks = listOf(
-                navDeepLink { uriPattern = "lusk://request/{requestId}" }
-            ),
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) { backStackEntry ->
-            val requestId = backStackEntry.arguments?.getInt("requestId") ?: 0
-            val viewModel: app.lusk.client.presentation.request.RequestViewModel = koinViewModel()
-            
-            RequestDetailsScreen(
-                requestId = requestId,
-                viewModel = viewModel,
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onModifyRequest = { mediaId ->
-                    // Navigate to TV Show details with request dialog open
-                    navController.navigate(
-                        Screen.MediaDetails.createRoute("tv", mediaId, openRequest = true)
-                    )
-                }
-            )
-        }
-        
-        // Profile Flow
-        composable(
-            route = Screen.Profile.route,
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) {
+        composable<Screen.Profile> {
             ProfileScreen(
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings.route)
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings)
                 },
-                onLogout = {
-                    navController.navigate(Screen.ServerConfig.route) {
-                        popUpTo(0) { inclusive = true }
+                onServerConfigClick = {
+                    navController.navigate(Screen.ServerConfig()) {
+                        // Clear stack
                     }
                 }
             )
         }
         
-        composable(
-            route = Screen.Settings.route,
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) {
+        composable<Screen.Settings> {
             SettingsScreen(
-                onNavigateToServerManagement = {
-                    navController.navigate(Screen.ServerManagement.route)
+                onServerManagementClick = {
+                    navController.navigate(Screen.ServerManagement)
                 },
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onBackClick = { navController.popBackStack() }
             )
         }
         
-        composable(
-            route = Screen.ServerManagement.route,
-            enterTransition = { forwardTransition() },
-            exitTransition = { backwardTransition() },
-            popEnterTransition = { popEnterTransition() },
-            popExitTransition = { popExitTransition() }
-        ) {
+        composable<Screen.ServerManagement> {
             ServerManagementScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
