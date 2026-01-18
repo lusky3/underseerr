@@ -2,7 +2,7 @@
 set -euo pipefail
 source "$(dirname "$0")/../.env.ios"
 
-rsync -azv --delete \
+rsync -azv \
   --exclude .git \
   --filter=':- .gitignore' \
   ./ \

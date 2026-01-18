@@ -38,10 +38,18 @@ targets:
           ./gradlew ":composeApp:link${CONFIG_NAME}Framework${TARGET_NAME}"
           
           SRC_PATH="composeApp/build/bin/$DIR_NAME/$TYPE_NAME/ComposeApp.framework"
-          DEST_PATH="$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH/"
           
+          # Copy to Framework Search Path
+          SEARCH_PATH="composeApp/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME"
+          mkdir -p "$SEARCH_PATH"
+          rm -rf "$SEARCH_PATH/ComposeApp.framework"
+          cp -R "$SRC_PATH" "$SEARCH_PATH/"
+          
+          # Copy to Target Build Directory (Embedding)
+          DEST_PATH="$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH/"
           mkdir -p "$DEST_PATH"
-          cp -R "$SRC_PATH" "$DEST_PATH"
+          rm -rf "$DEST_PATH/ComposeApp.framework"
+          cp -R "$SRC_PATH" "$DEST_PATH/"
 
         name: Embed and Sign Framework
         inputFiles:
