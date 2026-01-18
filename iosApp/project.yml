@@ -1,0 +1,25 @@
+name: iOSApp
+options:
+  bundleIdPrefix: app.lusk
+targets:
+  iOSApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources: [iosApp]
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: app.lusk.iosApp
+      INFOPLIST_FILE: iosApp/Info.plist
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+      OTHER_LDFLAGS: "$(inherited) -framework ComposeApp"
+    preBuildScripts:
+      - script: |
+          cd "$SRCROOT/.."
+          ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
+        name: Embed and Sign Framework
+        inputFiles:
+          - $(SRCROOT)/../composeApp/src/commonMain/kotlin
+          - $(SRCROOT)/../composeApp/build.gradle.kts
+        outputFiles:
+          - $(SRCROOT)/../composeApp/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)/ComposeApp.framework
