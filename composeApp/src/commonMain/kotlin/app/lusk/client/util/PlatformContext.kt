@@ -3,4 +3,4 @@ package app.lusk.client.util
 /**
  * Platform-specific context.
  */
-expect class PlatformContext
+expect abstract class PlatformContext
