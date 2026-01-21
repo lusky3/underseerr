@@ -74,7 +74,6 @@ fun HomeScreen(
     )
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("Discover") },
@@ -98,7 +97,7 @@ fun HomeScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp)
+                contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
             ) {
 
 
