@@ -67,13 +67,6 @@ freeline.py
 freeline/
 freeline_project_description.json
 
-# fastlane
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots
-fastlane/test_output
-fastlane/readme.md
-
 # Version control
 vcs.xml
 
@@ -109,6 +102,7 @@ radarr-config/
 sonarr-config/
 
 .env
+.env.ios
 .env.local
 .env.production
 .env.staging
@@ -116,3 +110,53 @@ sonarr-config/
 # Sentry Config File
 sentry.properties
 wiki/
+
+####################################
+# iOS / Xcode
+####################################
+
+# Xcode user data
+*.xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Xcode workspaces
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# Xcode build outputs
+DerivedData/
+*.xcarchive
+*.ipa
+*.xcresult
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# iOS Simulator
+*.simruntime
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
+
+####################################
+# Apple signing artifacts (never commit)
+####################################
+
+*.p12
+*.cer
+*.mobileprovision

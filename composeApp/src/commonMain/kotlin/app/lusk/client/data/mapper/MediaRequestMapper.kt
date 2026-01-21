@@ -5,8 +5,8 @@ import app.lusk.client.data.remote.model.ApiMediaRequest
 import app.lusk.client.domain.model.MediaRequest
 import app.lusk.client.domain.model.MediaType
 import app.lusk.client.domain.model.RequestStatus
-import java.text.SimpleDateFormat
-import java.util.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 /**
  * Maps API media request model to domain media request model.
@@ -22,7 +22,7 @@ fun ApiMediaRequest.toDomain(): MediaRequest {
         title = "Title Unavailable",
         posterPath = null,
         status = status.toRequestStatus(),
-        requestedDate = createdAt?.toTimestamp() ?: System.currentTimeMillis(),
+        requestedDate = createdAt?.toTimestamp() ?: app.lusk.client.util.nowMillis(),
         seasons = seasons?.map { it.seasonNumber }
     )
 }
@@ -46,7 +46,7 @@ fun MediaRequestEntity.toDomain(): MediaRequest {
 /**
  * Maps domain media request model to database entity.
  */
-fun MediaRequest.toEntity(cachedAt: Long = System.currentTimeMillis()): MediaRequestEntity {
+fun MediaRequest.toEntity(cachedAt: Long = app.lusk.client.util.nowMillis()): MediaRequestEntity {
     return MediaRequestEntity(
         id = id,
         mediaType = mediaType.name.lowercase(),
@@ -95,10 +95,8 @@ private fun Int.toRequestStatus(): RequestStatus {
  */
 private fun String.toTimestamp(): Long {
     return try {
-        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-        format.timeZone = TimeZone.getTimeZone("UTC")
-        format.parse(this)?.time ?: System.currentTimeMillis()
+        Instant.parse(this).toEpochMilliseconds()
     } catch (e: Exception) {
-        System.currentTimeMillis()
+        app.lusk.client.util.nowMillis()
     }
 }

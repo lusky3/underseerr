@@ -1,8 +1,8 @@
 package app.lusk.client.data.remote.model
 
 import app.lusk.client.domain.model.*
-import java.text.SimpleDateFormat
-import java.util.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 /**
  * Mapper functions to convert API models to domain models.
@@ -61,17 +61,14 @@ fun ApiSearchResult.toSearchResult(): SearchResult {
 }
 
 fun ApiMediaRequest.toMediaRequest(): MediaRequest {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-    dateFormat.timeZone = TimeZone.getTimeZone("UTC")
-    
     val requestedDate = try {
         if (createdAt != null) {
-            dateFormat.parse(createdAt)?.time ?: System.currentTimeMillis()
+            Instant.parse(createdAt).toEpochMilliseconds()
         } else {
-            System.currentTimeMillis()
+            app.lusk.client.util.nowMillis()
         }
     } catch (e: Exception) {
-        System.currentTimeMillis()
+        app.lusk.client.util.nowMillis()
     }
     
     // Determine media ID (prefer tmdbId for movies, tvdbId for TV, fallback to media.id or top id)

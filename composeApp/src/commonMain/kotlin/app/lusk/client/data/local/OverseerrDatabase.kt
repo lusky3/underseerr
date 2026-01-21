@@ -6,7 +6,8 @@ import app.lusk.client.data.local.dao.*
 import app.lusk.client.data.local.entity.*
 import app.lusk.client.util.PlatformContext
 
-// Room KMP constructor
+// Room KMP constructor - Room KSP generates the actual implementation
+@Suppress("NO_ACTUAL_FOR_EXPECT", "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 expect object OverseerrDatabaseConstructor : RoomDatabaseConstructor<OverseerrDatabase>
 
 /**

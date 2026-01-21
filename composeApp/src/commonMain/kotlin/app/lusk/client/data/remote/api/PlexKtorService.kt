@@ -15,10 +15,12 @@ class PlexKtorService(private val client: HttpClient) {
     
     private val plexBaseUrl = "https://plex.tv"
 
-    suspend fun getPin(product: String = "Lusk Overseerr Client", clientId: String): PlexPinResponse {
+    suspend fun getPin(product: String = "Underseerr", clientId: String): PlexPinResponse {
         return client.post("$plexBaseUrl/api/v2/pins") {
             header("X-Plex-Product", product)
             header("X-Plex-Client-Identifier", clientId)
+            header("X-Plex-Device", "iPhone")
+            header("X-Plex-Platform", "iOS")
             parameter("strong", true)
             contentType(ContentType.Application.Json)
             header("Accept", "application/json")

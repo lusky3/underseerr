@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.pulltorefresh.*
 import androidx.paging.LoadState
+import kotlinx.coroutines.delay
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import app.lusk.client.domain.model.Movie
@@ -42,13 +43,10 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val trending = viewModel.trending.collectAsLazyPagingItems()
-    
     val popularMovies = viewModel.popularMovies.collectAsLazyPagingItems()
     val popularTvShows = viewModel.popularTvShows.collectAsLazyPagingItems()
-    
     val upcomingMovies = viewModel.upcomingMovies.collectAsLazyPagingItems()
     val upcomingTvShows = viewModel.upcomingTvShows.collectAsLazyPagingItems()
-    
     val watchlist = viewModel.watchlist.collectAsLazyPagingItems()
     
     val movieGenres by viewModel.movieGenres.collectAsState()
@@ -75,10 +73,7 @@ fun HomeScreen(
         43 to "FOX"
     )
 
-    var pullRefreshing by remember { mutableStateOf(false) }
-
     Scaffold(
-        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("Discover") },
@@ -94,29 +89,19 @@ fun HomeScreen(
         },
         modifier = modifier
     ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = pullRefreshing,
-            onRefresh = {
-                pullRefreshing = true
-                trending.refresh()
-                popularMovies.refresh()
-                popularTvShows.refresh()
-                upcomingMovies.refresh()
-                upcomingTvShows.refresh()
-                watchlist.refresh()
-                viewModel.refresh()
-                pullRefreshing = false
-            },
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp)
-                ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+            ) {
+
+
+
                 item {
                     MediaSection(
                         title = "Trending",
@@ -242,12 +227,11 @@ fun HomeScreen(
 
             val hasOfflineError = trending.loadState.refresh is LoadState.Error ||
                     popularMovies.loadState.refresh is LoadState.Error
-
+            
             OfflineBanner(
                 visible = hasOfflineError,
                 modifier = Modifier.align(Alignment.TopCenter)
             )
-        }
         }
     }
 }

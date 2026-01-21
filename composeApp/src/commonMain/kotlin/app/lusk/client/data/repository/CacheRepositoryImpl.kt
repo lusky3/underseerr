@@ -9,6 +9,7 @@ import app.lusk.client.domain.model.TvShow
 import app.lusk.client.domain.repository.CacheRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock as KClock
 
 /**
  * Implementation of CacheRepository for managing cached media data.
@@ -140,7 +141,7 @@ class CacheRepositoryImpl(
     }
     
     override suspend fun deleteOlderThan(ageMillis: Long) {
-        val cutoffTimestamp = System.currentTimeMillis() - ageMillis
+        val cutoffTimestamp = app.lusk.client.util.nowMillis() - ageMillis
         movieDao.deleteOlderThan(cutoffTimestamp)
         tvShowDao.deleteOlderThan(cutoffTimestamp)
     }

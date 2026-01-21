@@ -9,6 +9,6 @@ import okio.Path.Companion.toPath
 
 actual fun createDataStore(context: PlatformContext): DataStore<Preferences> {
     return PreferenceDataStoreFactory.create(
-        produceFile = { context.preferencesDataStoreFile("overseerr_preferences") }
+        produceFile = { context.context.preferencesDataStoreFile("overseerr_preferences") }
     )
 }

@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import app.lusk.client.navigation.Screen
 
 /**
  * Adaptive navigation components that adjust based on screen size.
@@ -27,7 +28,7 @@ import androidx.compose.ui.unit.dp
  * Navigation destination data class.
  */
 data class NavigationDestination(
-    val route: String,
+    val screen: Screen,
     val icon: ImageVector,
     val label: String
 )
@@ -37,22 +38,22 @@ data class NavigationDestination(
  */
 val defaultNavigationDestinations = listOf(
     NavigationDestination(
-        route = "home",
+        screen = Screen.Home,
         icon = Icons.Default.Home,
         label = "Home"
     ),
     NavigationDestination(
-        route = "requests",
+        screen = Screen.Requests,
         icon = Icons.Default.PlayArrow,
         label = "Requests"
     ),
     NavigationDestination(
-        route = "issues",
+        screen = Screen.Issues,
         icon = Icons.Default.Info,
         label = "Issues"
     ),
     NavigationDestination(
-        route = "profile",
+        screen = Screen.Profile,
         icon = Icons.Default.Person,
         label = "Profile"
     )
@@ -63,10 +64,10 @@ val defaultNavigationDestinations = listOf(
  */
 @Composable
 fun AdaptiveNavigation(
-    currentRoute: String,
+    currentScreen: Screen,
     layoutConfig: AdaptiveLayoutConfig,
     destinations: List<NavigationDestination> = defaultNavigationDestinations,
-    onNavigate: (String) -> Unit,
+    onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (layoutConfig.useNavigationRail) {
@@ -74,8 +75,8 @@ fun AdaptiveNavigation(
             Spacer(modifier = Modifier.height(16.dp))
             destinations.forEach { destination ->
                 NavigationRailItem(
-                    selected = currentRoute == destination.route,
-                    onClick = { onNavigate(destination.route) },
+                    selected = currentScreen == destination.screen,
+                    onClick = { onNavigate(destination.screen) },
                     icon = {
                         Icon(
                             imageVector = destination.icon,
@@ -98,8 +99,8 @@ fun AdaptiveNavigation(
             ) {
                 destinations.forEach { destination ->
                     NavigationBarItem(
-                        selected = currentRoute == destination.route,
-                        onClick = { onNavigate(destination.route) },
+                        selected = currentScreen == destination.screen,
+                        onClick = { onNavigate(destination.screen) },
                         icon = {
                             Icon(
                                 imageVector = destination.icon,
@@ -121,16 +122,16 @@ fun AdaptiveNavigation(
  */
 @Composable
 fun CompactNavigation(
-    currentRoute: String,
+    currentScreen: Screen,
     destinations: List<NavigationDestination> = defaultNavigationDestinations,
-    onNavigate: (String) -> Unit,
+    onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(modifier = modifier) {
         destinations.forEach { destination ->
             NavigationBarItem(
-                selected = currentRoute == destination.route,
-                onClick = { onNavigate(destination.route) },
+                selected = currentScreen == destination.screen,
+                onClick = { onNavigate(destination.screen) },
                 icon = {
                     Icon(
                         imageVector = destination.icon,
@@ -148,9 +149,9 @@ fun CompactNavigation(
  */
 @Composable
 fun ExpandedNavigation(
-    currentRoute: String,
+    currentScreen: Screen,
     destinations: List<NavigationDestination> = defaultNavigationDestinations,
-    onNavigate: (String) -> Unit,
+    onNavigate: (Screen) -> Unit,
     showLabels: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -158,8 +159,8 @@ fun ExpandedNavigation(
         Spacer(modifier = Modifier.height(16.dp))
         destinations.forEach { destination ->
             NavigationRailItem(
-                selected = currentRoute == destination.route,
-                onClick = { onNavigate(destination.route) },
+                selected = currentScreen == destination.screen,
+                onClick = { onNavigate(destination.screen) },
                 icon = {
                     Icon(
                         imageVector = destination.icon,

@@ -11,6 +11,8 @@ import app.lusk.client.util.PlatformContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.dsl.KoinAppDeclaration
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 
 fun sharedModule(context: PlatformContext) = module {
     // Preferences
@@ -27,7 +29,11 @@ fun sharedModule(context: PlatformContext) = module {
     single<IssueService> { IssueKtorService(get()) }
     
     // Database
-    single { app.lusk.client.data.local.getDatabaseBuilder(context).build() }
+    single { 
+        app.lusk.client.data.local.getDatabaseBuilder(context)
+            .setQueryCoroutineContext(Dispatchers.IO)
+            .build() 
+    }
     single { get<OverseerrDatabase>().movieDao() }
     single { get<OverseerrDatabase>().tvShowDao() }
     single { get<OverseerrDatabase>().mediaRequestDao() }

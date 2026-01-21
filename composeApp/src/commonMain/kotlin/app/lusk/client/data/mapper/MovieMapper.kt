@@ -48,7 +48,7 @@ fun MovieEntity.toDomain(): Movie {
 /**
  * Maps domain movie model to database entity.
  */
-fun Movie.toEntity(cachedAt: Long = System.currentTimeMillis()): MovieEntity {
+fun Movie.toEntity(cachedAt: Long = app.lusk.client.util.nowMillis()): MovieEntity {
     return MovieEntity(
         id = id,
         title = title,

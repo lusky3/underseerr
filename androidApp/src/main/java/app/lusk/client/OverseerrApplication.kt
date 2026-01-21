@@ -2,6 +2,7 @@ package app.lusk.client
 
 import android.app.Application
 import app.lusk.client.di.initKoin
+import app.lusk.client.util.PlatformContext
 import io.sentry.android.core.SentryAndroid
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -18,7 +19,7 @@ class OverseerrApplication : Application() {
         // This allows the open source version to run without Sentry
         initSentryIfConfigured()
         
-        initKoin(this) {
+        initKoin(PlatformContext(this)) {
             androidLogger()
             androidContext(this@OverseerrApplication)
             workManagerFactory()

@@ -94,15 +94,20 @@ class DiscoveryViewModel(
     val isPlexUser: StateFlow<Boolean> = _isPlexUser.asStateFlow()
 
     // Watchlist
-    val watchlist: Flow<PagingData<app.lusk.client.domain.model.SearchResult>> = _isPlexUser
+    val watchlist: StateFlow<PagingData<app.lusk.client.domain.model.SearchResult>> = _isPlexUser
         .flatMapLatest { isPlex ->
             if (isPlex) {
                 discoveryRepository.getWatchlist()
             } else {
-                flow { emit(PagingData.empty<app.lusk.client.domain.model.SearchResult>()) }
+                flowOf(PagingData.empty<app.lusk.client.domain.model.SearchResult>())
             }
         }
         .cachedIn(viewModelScope)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PagingData.empty()
+        )
     
     // Search state
     private val _searchQuery = MutableStateFlow("")

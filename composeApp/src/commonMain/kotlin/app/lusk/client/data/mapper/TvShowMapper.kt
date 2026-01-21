@@ -50,7 +50,7 @@ fun TvShowEntity.toDomain(): TvShow {
 /**
  * Maps domain TV show model to database entity.
  */
-fun TvShow.toEntity(cachedAt: Long = System.currentTimeMillis()): TvShowEntity {
+fun TvShow.toEntity(cachedAt: Long = app.lusk.client.util.nowMillis()): TvShowEntity {
     return TvShowEntity(
         id = id,
         name = name,

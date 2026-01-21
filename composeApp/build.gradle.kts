@@ -46,7 +46,7 @@ kotlin {
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
-            isStatic = true
+            isStatic = false
         }
     }
 
@@ -86,11 +86,13 @@ kotlin {
             
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.coil.compose)
             implementation(libs.androidx.paging.compose)
             implementation(libs.androidx.paging.common)
             implementation(libs.androidx.datastore)
             implementation(libs.androidx.navigation.compose)
+            implementation(libs.androidx.core.bundle)
         }
         
         androidMain.dependencies {
@@ -111,6 +113,7 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.coil.network.ktor)
+            implementation(libs.androidx.sqlite.bundled)
         }
     }
 }

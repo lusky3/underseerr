@@ -25,6 +25,7 @@ import app.lusk.client.presentation.request.RequestViewModel
 import app.lusk.client.ui.components.PosterImage
 import app.lusk.client.ui.components.BackdropImage
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -239,7 +240,7 @@ private fun MediaDetailsContent(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = String.format("%.1f", rating),
+                                text = "${(rating * 10.0).roundToInt() / 10.0}",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }

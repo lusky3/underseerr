@@ -15,6 +15,7 @@ import app.lusk.client.domain.repository.RootFolder
 import app.lusk.client.domain.sync.SyncScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock as KClock
 
 /**
  * Implementation of RequestRepository.
@@ -82,7 +83,7 @@ class RequestRepositoryImpl(
                         title = "Queued Request",
                         posterPath = null,
                         status = RequestStatus.PENDING,
-                        requestedDate = System.currentTimeMillis(),
+                        requestedDate = app.lusk.client.util.nowMillis(),
                         seasons = null,
                         isOfflineQueued = true
                     )
@@ -149,7 +150,7 @@ class RequestRepositoryImpl(
                         title = "Queued TV Request",
                         posterPath = null,
                         status = RequestStatus.PENDING,
-                        requestedDate = System.currentTimeMillis(),
+                        requestedDate = app.lusk.client.util.nowMillis(),
                         seasons = seasons,
                         isOfflineQueued = true
                     )
@@ -251,8 +252,13 @@ class RequestRepositoryImpl(
         }
         
         // Clear old cache and insert fresh data
-        mediaRequestDao.deleteAll()
-        mediaRequestDao.insertAll(hydratedRequests.map { it.toEntity() })
+        try {
+            mediaRequestDao.deleteAll()
+            mediaRequestDao.insertAll(hydratedRequests.map { it.toEntity() })
+        } catch (e: Exception) {
+            println("DB Error in refreshRequests: ${e.message}")
+            e.printStackTrace()
+        }
     }
     
     /**

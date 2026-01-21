@@ -29,6 +29,9 @@ class AuthViewModel(
     
     private val _serverValidationState = MutableStateFlow<ServerValidationState>(ServerValidationState.Idle)
     val serverValidationState: StateFlow<ServerValidationState> = _serverValidationState.asStateFlow()
+
+    private val _isCheckingStatus = MutableStateFlow(false)
+    val isCheckingStatus: StateFlow<Boolean> = _isCheckingStatus.asStateFlow()
     
     init {
         checkAuthStatus()
@@ -93,9 +96,17 @@ class AuthViewModel(
                 _serverValidationState.value = ServerValidationState.Valid(result.data)
             }
             is Result.Error -> {
-                _serverValidationState.value = ServerValidationState.Invalid(
-                    result.error.message
-                )
+                val rawMessage = result.error.message
+                val userMessage = when {
+                    rawMessage.contains("NSURLErrorDomain") || rawMessage.contains("ConnectException") -> 
+                        "Unable to connect to server. Please check the URL and network."
+                    rawMessage.contains("SSL") || rawMessage.contains("Certificate") -> 
+                        "SSL Certificate error. Try using HTTP or check your certificate."
+                    rawMessage.contains("401") || rawMessage.contains("403") ->
+                        "Unauthorized. Please check your API key."
+                    else -> rawMessage
+                }
+                _serverValidationState.value = ServerValidationState.Invalid(userMessage)
             }
             is Result.Loading -> {
                 _serverValidationState.value = ServerValidationState.Validating
@@ -129,7 +140,10 @@ class AuthViewModel(
      * Check Plex PIN status.
      */
     fun checkPlexStatus(pinId: Int) {
+        if (_isCheckingStatus.value) return
+        
         viewModelScope.launch {
+            _isCheckingStatus.value = true
             logger.d("AuthViewModel", "Checking Plex PIN status for ID: $pinId")
             when (val result = authRepository.checkPlexLoginStatus(pinId)) {
                 is Result.Success -> {
@@ -140,9 +154,12 @@ class AuthViewModel(
                 }
                 is Result.Error -> {
                     logger.e("AuthViewModel", "Error checking Plex PIN: ${result.error.message}")
+                    // Don't show error to user during auto-polling, only if manual?
+                    // For now, just log it.
                 }
                 else -> {}
             }
+            _isCheckingStatus.value = false
         }
     }
     

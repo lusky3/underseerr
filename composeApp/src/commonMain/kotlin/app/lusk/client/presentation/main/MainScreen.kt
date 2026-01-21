@@ -4,14 +4,15 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavDestination
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavDestination.Companion.hasRoute
 import app.lusk.client.navigation.OverseerrNavHost
 import app.lusk.client.navigation.Screen
 import app.lusk.client.ui.adaptive.AdaptiveNavigation
@@ -21,24 +22,33 @@ import app.lusk.client.ui.adaptive.defaultNavigationDestinations
 
 /**
  * Main screen with bottom navigation and content.
- * Refactored for KMP in commonMain.
+ * Refactored for KMP in commonMain with Type Safe Navigation.
  */
 @Composable
 fun MainScreen(
-    startDestination: String = Screen.Home.route,
+    startDestination: Screen = Screen.Home,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     
-    // Determine if we should show navigation
-    val showNavigation = currentDestination?.route in listOf(
-        Screen.Home.route,
-        Screen.Requests.route,
-        Screen.Issues.route,
-        Screen.Profile.route
-    )
+    // Simplified navigation visibility - just check if it's a main tab
+    val showNavigation = currentDestination?.let { dest ->
+        dest.hasRoute(Screen.Home::class) ||
+        dest.hasRoute(Screen.Requests::class) ||
+        dest.hasRoute(Screen.Issues::class) ||
+        dest.hasRoute(Screen.Profile::class)
+    } ?: false
+    
+    // Get current screen for highlighting nav item
+    val currentScreen = when {
+        currentDestination?.hasRoute(Screen.Home::class) == true -> Screen.Home
+        currentDestination?.hasRoute(Screen.Requests::class) == true -> Screen.Requests
+        currentDestination?.hasRoute(Screen.Issues::class) == true -> Screen.Issues
+        currentDestination?.hasRoute(Screen.Profile::class) == true -> Screen.Profile
+        else -> Screen.Home
+    }
     
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val layoutConfig = calculateAdaptiveLayoutConfig(maxWidth, maxHeight)
@@ -48,19 +58,15 @@ fun MainScreen(
             bottomBar = {
                 if (showNavigation && !layoutConfig.useNavigationRail) {
                     AdaptiveNavigation(
-                        currentRoute = currentDestination?.route ?: Screen.Home.route,
+                        currentScreen = currentScreen,
                         layoutConfig = layoutConfig,
-                        destinations = getNavigationDestinations(),
-                        onNavigate = { route ->
-                            navController.navigate(route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
+                        destinations = defaultNavigationDestinations,
+                        onNavigate = { screen ->
+                            navController.navigate(screen) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
-                                // Avoid multiple copies of the same destination
                                 launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
                                 restoreState = true
                             }
                         }
@@ -79,11 +85,11 @@ fun MainScreen(
                 // Navigation rail for larger screens
                 if (showNavigation && layoutConfig.useNavigationRail) {
                     AdaptiveNavigation(
-                        currentRoute = currentDestination?.route ?: Screen.Home.route,
+                        currentScreen = currentScreen,
                         layoutConfig = layoutConfig,
-                        destinations = getNavigationDestinations(),
-                        onNavigate = { route ->
-                            navController.navigate(route) {
+                        destinations = defaultNavigationDestinations,
+                        onNavigate = { screen ->
+                            navController.navigate(screen) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -97,7 +103,6 @@ fun MainScreen(
                 // Main content
                 OverseerrNavHost(
                     navController = navController,
-                    startDestination = startDestination,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -105,9 +110,6 @@ fun MainScreen(
     }
 }
 
-/**
- * Get navigation destinations for the app.
- */
 private fun getNavigationDestinations(): List<NavigationDestination> {
     return defaultNavigationDestinations
 }

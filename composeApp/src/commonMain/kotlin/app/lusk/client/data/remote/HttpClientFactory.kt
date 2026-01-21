@@ -60,71 +60,58 @@ class HttpClientFactory(
     }
 
     fun create(): HttpClient {
-        return createHttpClient(
-            json = json,
-            baseUrlProvider = { currentBaseUrl },
-            apiKeyProvider = { currentApiKey },
-            cookieProvider = { currentCookie }
-        )
-    }
-}
-
-/**
- * Internal creation function.
- */
-private fun createHttpClient(
-    json: Json,
-    baseUrlProvider: () -> String,
-    apiKeyProvider: () -> String?,
-    cookieProvider: () -> String?
-): HttpClient {
-    return HttpClient {
-        install(ContentNegotiation) {
-            json(json)
-        }
-        
-        install(Logging) {
-            logger = object : Logger {
-                override fun log(message: String) {
-                    println("HTTP: $message")
+        val client = HttpClient {
+            install(ContentNegotiation) {
+                json(json)
+            }
+            
+            install(Logging) {
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        // Logger disabled
+                    }
                 }
+                level = LogLevel.ALL
             }
-            level = LogLevel.ALL
-        }
-
-        install(io.ktor.client.plugins.HttpTimeout) {
-            requestTimeoutMillis = 15000
-            connectTimeoutMillis = 15000
-            socketTimeoutMillis = 15000
-        }
-
-        // install(io.ktor.client.plugins.cookies.HttpCookies) {
-        //    storage = io.ktor.client.plugins.cookies.AcceptAllCookiesStorage()
-        // }
-        
-        defaultRequest {
-            val baseUrl = baseUrlProvider()
-            if (baseUrl.isNotEmpty()) {
-                url(baseUrl)
+    
+            install(io.ktor.client.plugins.HttpTimeout) {
+                requestTimeoutMillis = 15000
+                connectTimeoutMillis = 15000
+                socketTimeoutMillis = 15000
             }
             
-            contentType(ContentType.Application.Json)
-            header("Accept", "application/json")
+            // Base URL configuration
+            defaultRequest {
+                val baseUrl = currentBaseUrl
+                if (baseUrl.isNotEmpty()) {
+                    url(baseUrl)
+                }
+                contentType(ContentType.Application.Json)
+                header("Accept", "application/json")
+            }
+        }
+
+        // Intercept requests to inject headers asynchronously
+        client.requestPipeline.intercept(io.ktor.client.request.HttpRequestPipeline.State) {
+            // Apply API Key if available
+            val apiKey = currentApiKey
             
-            val apiKey = apiKeyProvider()
             if (!apiKey.isNullOrEmpty() && 
                 apiKey != "SESSION_COOKIE" && 
                 apiKey != "no_api_key" && 
                 !apiKey.contains("@")
             ) {
-                header("X-Api-Key", apiKey)
+                context.headers["X-Api-Key"] = apiKey
             } else {
-                // If no API key, check for session cookie
-                val cookie = cookieProvider()
+                // If no API key, check for session cookie from SecurityManager
+                // This ensures we get the latest persisted cookie even after app restart
+                val cookie = securityManager.retrieveSecureData("cookie_auth_token")
                 if (!cookie.isNullOrEmpty()) {
-                     header("Cookie", cookie)
+                     context.headers["Cookie"] = cookie
                 }
             }
         }
+        
+        return client
     }
 }

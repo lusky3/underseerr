@@ -99,6 +99,31 @@ class AuthRepositoryImpl(
     }
     
     override suspend fun authenticateWithPlex(plexToken: String): Result<UserProfile> {
+        // Debug Bypass
+        if (plexToken == "debug_token_12345") {
+            println("AuthRepositoryImpl: Debug token detected. Bypassing authentication.")
+            val dummyUser = UserProfile(
+                id = 1,
+                email = "debug@example.com",
+                displayName = "Debug User",
+                avatar = null,
+                requestCount = 0,
+                permissions = app.lusk.client.domain.model.Permissions(
+                    canRequest = true,
+                    canManageRequests = true,
+                    canViewRequests = true,
+                    isAdmin = true
+                ),
+                isPlexUser = true
+            )
+            val debugKey = "debug_session_key_12345"
+            securityManager.storeSecureData(API_KEY_STORAGE_KEY, debugKey)
+            preferencesManager.setApiKey(debugKey)
+            preferencesManager.setUserId(1)
+            println("AuthRepositoryImpl: Stored dummy user ID 1 and debug API key.")
+            return Result.success(dummyUser)
+        }
+
         return try {
             // Call Plex authentication endpoint
             val result = safeApiCall {
@@ -112,11 +137,17 @@ class AuthRepositoryImpl(
                     
                     // Manually extract session cookie if present
                     val setCookieHeader = response.headers["Set-Cookie"]
+                    println("AuthRepositoryImpl: Set-Cookie Header: $setCookieHeader")
+                    
                     if (setCookieHeader != null) {
                         val cookieValue = setCookieHeader.split(";").firstOrNull()
                         if (cookieValue != null) {
+                             println("AuthRepositoryImpl: Storing cookie: $cookieValue")
                              securityManager.storeSecureData("cookie_auth_token", cookieValue)
                         }
+                    } else {
+                        println("AuthRepositoryImpl: WARNING - No Set-Cookie header found!")
+                        // Fallback: Check if we have a raw cookie list
                     }
                     
                     // Overseerr typically returns session cookie, so we don't always have an API key
@@ -125,6 +156,7 @@ class AuthRepositoryImpl(
                     
                     // Store session marker
                     securityManager.storeSecureData(API_KEY_STORAGE_KEY, sessionMarker)
+                    preferencesManager.setApiKey(sessionMarker)
                     
                     // Store user ID
                     preferencesManager.setUserId(apiUserProfile.id)
@@ -148,9 +180,14 @@ class AuthRepositoryImpl(
     
     override suspend fun initiatePlexLogin(): Result<Pair<Int, String>> {
         return try {
-            val clientId = preferencesManager.getClientId() ?: "default-client-id" // Placeholder
+            var clientId = preferencesManager.getClientId()
+            if (clientId == null) {
+                clientId = "native-client-${kotlin.random.Random.nextInt(100000, 999999)}"
+                preferencesManager.setClientId(clientId)
+            }
             val response = plexKtorService.getPin(clientId = clientId)
-            val authUrl = "https://app.plex.tv/auth/#!?clientID=${clientId}&code=${response.code}&context[device][product]=Lusk%20Overseerr%20Client"
+            val product = "Underseerr"
+            val authUrl = "https://app.plex.tv/auth#?clientID=$clientId&code=${response.code}&context%5Bdevice%5D%5Bproduct%5D=$product&context%5Bdevice%5D%5Bdevice%5D=iPhone&context%5Bdevice%5D%5Bplatform%5D=iOS"
             Result.success(response.id to authUrl)
         } catch (e: Exception) {
             Result.error(e.toAppError())
@@ -158,11 +195,15 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun checkPlexLoginStatus(pinId: Int): Result<String?> {
+        println("AuthRepositoryImpl: Checking Plex login status for PIN: $pinId")
         return try {
             val clientId = preferencesManager.getClientId() ?: "default-client-id"
+            println("AuthRepositoryImpl: Using ClientID: $clientId")
             val response = plexKtorService.checkPin(id = pinId, clientId = clientId)
+            println("AuthRepositoryImpl: CheckPin response: code=${response.code}, tokenPresent=${response.authToken != null}")
             Result.success(response.authToken)
         } catch (e: Exception) {
+            println("AuthRepositoryImpl: Exception in checkPlexLoginStatus: ${e.message}")
             Result.error(e.toAppError())
         }
     }
