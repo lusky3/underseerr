@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,12 +65,20 @@ fun MediaDetailsScreen(
         viewModel.loadMediaDetails(mediaType, mediaId)
     }
 
+    var isRefreshing by remember { mutableStateOf(false) }
+    
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
         containerColor = Color.Transparent
     ) { paddingValues ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                viewModel.loadMediaDetails(mediaType, mediaId)
+                isRefreshing = false
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)

@@ -42,7 +42,10 @@ fun RequestDetailsScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
+    var pullRefreshing by remember { mutableStateOf(false) }
+    
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("Request Details") },
@@ -63,7 +66,13 @@ fun RequestDetailsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier
     ) { paddingValues ->
-        Box(
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+            isRefreshing = pullRefreshing,
+            onRefresh = {
+                pullRefreshing = true
+                viewModel.refreshRequests()
+                pullRefreshing = false
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)

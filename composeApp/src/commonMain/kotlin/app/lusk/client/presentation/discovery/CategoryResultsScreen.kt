@@ -42,7 +42,10 @@ fun CategoryResultsScreen(
         viewModel.selectCategory(type, categoryId, categoryName)
     }
 
+    var pullRefreshing by remember { mutableStateOf(false) }
+    
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text(categoryName) },
@@ -55,7 +58,13 @@ fun CategoryResultsScreen(
         },
         modifier = modifier
     ) { paddingValues ->
-        Box(
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+            isRefreshing = pullRefreshing,
+            onRefresh = {
+                pullRefreshing = true
+                pagingItems.refresh()
+                pullRefreshing = false
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)

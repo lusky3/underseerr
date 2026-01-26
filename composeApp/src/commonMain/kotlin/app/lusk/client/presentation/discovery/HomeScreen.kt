@@ -52,6 +52,8 @@ fun HomeScreen(
     val movieGenres by viewModel.movieGenres.collectAsState()
     val tvGenres by viewModel.tvGenres.collectAsState()
     val isPlexUser by viewModel.isPlexUser.collectAsState()
+    
+    var isRefreshing by remember { mutableStateOf(false) }
 
     val studios = listOf(
         3 to "Pixar",
@@ -74,6 +76,7 @@ fun HomeScreen(
     )
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("Discover") },
@@ -89,16 +92,30 @@ fun HomeScreen(
         },
         modifier = modifier
     ) { paddingValues ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                trending.refresh()
+                popularMovies.refresh()
+                popularTvShows.refresh()
+                upcomingMovies.refresh()
+                upcomingTvShows.refresh()
+                watchlist.refresh()
+                isRefreshing = false
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+            Box(
+                modifier = Modifier.fillMaxSize()
             ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+                ) {
 
 
 
@@ -232,6 +249,7 @@ fun HomeScreen(
                 visible = hasOfflineError,
                 modifier = Modifier.align(Alignment.TopCenter)
             )
+            }
         }
     }
 }

@@ -205,7 +205,22 @@ fun IssueDetailsScreen(
         },
         modifier = modifier
     ) { paddingValues ->
-        Box(
+        var pullRefreshing by remember { mutableStateOf(false) }
+        
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+            isRefreshing = pullRefreshing,
+            onRefresh = {
+                pullRefreshing = true
+                scope.launch {
+                    issueRepository.getIssue(issueId).fold(
+                        onSuccess = { 
+                            issue = it
+                        },
+                        onFailure = { /* Error already handled */ }
+                    )
+                    pullRefreshing = false
+                }
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
