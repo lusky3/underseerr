@@ -204,19 +204,18 @@ fun ServerConfigScreen(
                 )
             }
             
-            // Mock server button disabled
-            // if (app.lusk.client.util.AppConfig.isDebug) {
-            //    Spacer(modifier = Modifier.height(8.dp))
-            //    OutlinedButton(
-            //        onClick = { 
-            //            serverUrl = "http://localhost:5055"
-            //            viewModel.validateServer(serverUrl, true)
-            //        },
-            //        modifier = Modifier.fillMaxWidth()
-            //    ) {
-            //        Text("Debug: Use Mock Server")
-            //    }
-            // }
+            if (app.lusk.client.util.AppConfig.isDebug) {
+               Spacer(modifier = Modifier.height(8.dp))
+               OutlinedButton(
+                   onClick = { 
+                       serverUrl = "http://10.0.2.2:5055"
+                       viewModel.validateServer(serverUrl, true)
+                   },
+                   modifier = Modifier.fillMaxWidth()
+               ) {
+                   Text("Debug: Use Mock Server")
+               }
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             
