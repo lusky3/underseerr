@@ -1,19 +1,26 @@
 package app.lusk.client.presentation.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.coroutines.launch
 
 /**
  * About screen displaying app information, version, and credits.
@@ -24,6 +31,15 @@ fun AboutScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val uriHandler = LocalUriHandler.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    
+    // Get current year dynamically
+    val currentYear = remember {
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -38,6 +54,7 @@ fun AboutScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier
     ) { paddingValues ->
         Column(
@@ -134,25 +151,39 @@ fun AboutScreen(
                     AboutLinkItem(
                         icon = Icons.Default.Code,
                         title = "Source Code",
-                        subtitle = "View on GitHub"
+                        subtitle = "View on GitHub",
+                        onClick = {
+                            uriHandler.openUri("https://github.com/lusky3/underseerr")
+                        }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AboutLinkItem(
                         icon = Icons.Default.BugReport,
                         title = "Report a Bug",
-                        subtitle = "Help us improve"
+                        subtitle = "Help us improve",
+                        onClick = {
+                            uriHandler.openUri("https://github.com/lusky3/underseerr/issues")
+                        }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AboutLinkItem(
                         icon = Icons.Default.Star,
                         title = "Rate the App",
-                        subtitle = "Leave a review"
+                        subtitle = "Leave a review",
+                        onClick = {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Coming soon!")
+                            }
+                        }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     AboutLinkItem(
                         icon = Icons.Default.Policy,
                         title = "Privacy Policy",
-                        subtitle = "Read our privacy policy"
+                        subtitle = "Read our privacy policy",
+                        onClick = {
+                            uriHandler.openUri("https://lusky3.github.io/underseerr/privacy")
+                        }
                     )
                 }
             }
@@ -197,8 +228,9 @@ fun AboutScreen(
             
             Spacer(modifier = Modifier.height(8.dp))
             
+            // Dynamic copyright year
             Text(
-                text = "© 2024 Underseerr Contributors",
+                text = "© $currentYear Underseerr Contributors",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -212,11 +244,13 @@ fun AboutScreen(
 private fun AboutLinkItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    subtitle: String
+    subtitle: String,
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -239,7 +273,7 @@ private fun AboutLinkItem(
             )
         }
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)

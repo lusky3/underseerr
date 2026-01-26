@@ -1,11 +1,11 @@
 package app.lusk.client.presentation.profile
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.pulltorefresh.*
 import org.koin.compose.viewmodel.koinViewModel
@@ -75,6 +74,7 @@ private fun maskEmail(email: String): String {
 fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAbout: () -> Unit = {},
+    onNavigateToRequests: (String?) -> Unit = {},
     onLogout: () -> Unit,
     viewModel: ProfileViewModel = koinViewModel(),
     authViewModel: AuthViewModel = koinViewModel()
@@ -148,6 +148,7 @@ fun ProfileScreen(
                             onNotificationsClick = { showNotificationsDialog = true },
                             onNavigateToSettings = onNavigateToSettings,
                             onNavigateToAbout = onNavigateToAbout,
+                            onNavigateToRequests = onNavigateToRequests,
                             onLogout = { authViewModel.logout() }
                         )
                     }
@@ -170,11 +171,12 @@ private fun ProfileContent(
     onNotificationsClick: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToAbout: () -> Unit,
+    onNavigateToRequests: (String?) -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        // User Info Card - Matching the mockup style
+        // User Info Card - Horizontal layout like the mockup
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
@@ -182,25 +184,25 @@ private fun ProfileContent(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         ) {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Avatar
+                // Avatar on the left
                 if (state.profile.avatar != null) {
                     AsyncImage(
                         imageUrl = state.profile.avatar,
                         contentDescription = "User avatar",
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(72.dp)
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Surface(
-                        modifier = Modifier.size(80.dp),
+                        modifier = Modifier.size(72.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
@@ -208,49 +210,52 @@ private fun ProfileContent(
                             Icon(
                                 imageVector = Icons.Default.Person,
                                 contentDescription = "Default avatar",
-                                modifier = Modifier.size(40.dp),
+                                modifier = Modifier.size(36.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.width(16.dp))
                 
-                // Display Name
-                Text(
-                    text = state.profile.displayName,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                // Email (masked for privacy)
-                Text(
-                    text = maskEmail(state.profile.email),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Role Badge
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
+                // User info on the right
+                Column {
                     Text(
-                        text = "Admin",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        text = state.profile.displayName,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = maskEmail(state.profile.email),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Role Badge
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = "Admin",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }
         
         Spacer(modifier = Modifier.height(20.dp))
         
-        // Statistics Cards Row - Like the mockup
+        // Statistics Cards Row - Clickable to navigate to Requests with filter
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -260,6 +265,7 @@ private fun ProfileContent(
                 value = state.statistics.totalRequests.toString(),
                 label = "Requests",
                 color = MaterialTheme.colorScheme.primary,
+                onClick = { onNavigateToRequests(null) }, // All requests
                 modifier = Modifier.weight(1f)
             )
             StatCard(
@@ -267,6 +273,7 @@ private fun ProfileContent(
                 value = state.statistics.availableRequests.toString(),
                 label = "Available",
                 color = Color(0xFF4CAF50),
+                onClick = { onNavigateToRequests("Available") },
                 modifier = Modifier.weight(1f)
             )
             StatCard(
@@ -274,6 +281,7 @@ private fun ProfileContent(
                 value = state.statistics.pendingRequests.toString(),
                 label = "Pending",
                 color = Color(0xFFFF9800),
+                onClick = { onNavigateToRequests("Pending") },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -344,10 +352,10 @@ private fun ProfileContent(
                     title = "Notifications",
                     onClick = onNotificationsClick,
                     trailing = {
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        Switch(
+                            checked = true,
+                            onCheckedChange = { onNotificationsClick() },
+                            modifier = Modifier.height(24.dp)
                         )
                     }
                 )
@@ -397,15 +405,18 @@ private fun ProfileContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StatCard(
     icon: ImageVector,
     value: String,
     label: String,
     color: Color,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -504,7 +515,7 @@ private fun NotificationsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text("Request Approved", style = MaterialTheme.typography.bodyLarge)
                         Text(
                             "Notify when request is approved",
@@ -525,7 +536,7 @@ private fun NotificationsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text("Media Available", style = MaterialTheme.typography.bodyLarge)
                         Text(
                             "Notify when media is available",
@@ -546,7 +557,7 @@ private fun NotificationsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text("Request Declined", style = MaterialTheme.typography.bodyLarge)
                         Text(
                             "Notify when request is declined",

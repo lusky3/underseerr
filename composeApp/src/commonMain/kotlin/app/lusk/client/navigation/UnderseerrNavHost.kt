@@ -261,6 +261,10 @@ fun UnderseerrNavHost(
                 onNavigateToAbout = {
                     navController.navigate(Screen.About)
                 },
+                onNavigateToRequests = { filter ->
+                    // Navigate to requests tab - the filter will be applied in the screen
+                    navController.navigate(Screen.Requests)
+                },
                 onLogout = {
                      navController.navigate(Screen.PlexAuth) {
                         popUpTo<Screen.Home> { inclusive = true }
