@@ -19,7 +19,7 @@ plugins {
 
 sonar {
     properties {
-        property("sonar.projectKey", "lusky3_overseerr-requests")
+        property("sonar.projectKey", "lusky3_underseerr")
         property("sonar.organization", "lusk")
         property("sonar.host.url", "https://sonarcloud.io")
     }
@@ -68,6 +68,12 @@ subprojects {
 
             // Play Services Basement - MAID vulnerability (CVE-2022-2390)
             force("com.google.android.gms:play-services-basement:18.5.0")
+            
+            // Kotlin stdlib - Information Exposure (SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744)
+            // Android Test Platform pulls old kotlin-stdlib, force to project version
+            force("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
+            force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0")
+            force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0")
         }
     }
 }

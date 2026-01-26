@@ -11,6 +11,9 @@ import java.util.concurrent.TimeUnit
 /**
  * Mock Overseerr server for testing using MockWebServer.
  * Provides realistic API responses for all Overseerr endpoints.
+ * 
+ * This mock server returns fictional content suitable for promotional
+ * screenshots and app store listings.
  */
 class MockOverseerrServer {
     private val server = MockWebServer()
@@ -78,21 +81,27 @@ class MockOverseerrServer {
             val method = request.method ?: "GET"
             
             return when {
+                // ============================================================
                 // Auth endpoints
+                // ============================================================
                 path == "/api/v1/auth/plex" && method == "POST" -> successResponse(json.encodeToString(MockResponses.userProfile()))
                 path == "/api/v1/auth/me" && method == "GET" -> successResponse(json.encodeToString(MockResponses.userProfile()))
                 path == "/api/v1/auth/logout" && method == "POST" -> handleLogout()
                 path == "/api/v1/status" && method == "GET" -> successResponse(json.encodeToString(MockResponses.serverInfo()))
                 
+                // ============================================================
                 // Discovery endpoints
+                // ============================================================
                 path.startsWith("/api/v1/discover/trending") -> handleGetTrending(request)
                 path.startsWith("/api/v1/discover/movies") -> handleGetTrendingMovies(request)
                 path.startsWith("/api/v1/discover/tv") -> handleGetTrendingTvShows(request)
                 path.startsWith("/api/v1/search") -> handleSearch(request)
-                path.startsWith("/api/v1/movie/") -> handleGetMovieDetails(request)
-                path.startsWith("/api/v1/tv/") -> handleGetTvShowDetails(request)
+                path.startsWith("/api/v1/movie/") && !path.contains("/request") -> handleGetMovieDetails(request)
+                path.startsWith("/api/v1/tv/") && !path.contains("/request") -> handleGetTvShowDetails(request)
                 
+                // ============================================================
                 // Request endpoints
+                // ============================================================
                 path.startsWith("/api/v1/request") && method == "POST" -> {
                     if (path.contains("mediaId=")) {
                         // Return ApiMediaRequest for requestMovie/requestTvShow
@@ -102,24 +111,46 @@ class MockOverseerrServer {
                         successResponse(json.encodeToString(MockResponses.requestResponse()))
                     }
                 }
-                path.startsWith("/api/v1/request") && method == "GET" -> handleGetRequests(request)
-                path.startsWith("/api/v1/request/") && method == "GET" -> handleGetRequest(request)
-                path.startsWith("/api/v1/request/") && method == "DELETE" -> successResponse("", 204)
+                path == "/api/v1/request" && method == "GET" -> handleGetRequests(request)
+                path.matches(Regex("/api/v1/request/\\d+")) && method == "GET" -> handleGetRequest(request)
+                path.matches(Regex("/api/v1/request/\\d+")) && method == "DELETE" -> successResponse("", 204)
                 path.contains("/requests") && path.contains("/user/") -> handleGetUserRequests(request)
                 path.contains("/status") && path.contains("/request/") -> handleGetRequestStatus(request)
                 path == "/api/v1/settings/radarr/profiles" -> successResponse(json.encodeToString(MockResponses.qualityProfiles()))
                 path == "/api/v1/settings/radarr/folders" -> successResponse(json.encodeToString(MockResponses.rootFolders()))
+                path == "/api/v1/settings/sonarr/profiles" -> successResponse(json.encodeToString(MockResponses.qualityProfiles()))
+                path == "/api/v1/settings/sonarr/folders" -> successResponse(json.encodeToString(MockResponses.rootFolders()))
                 
+                // ============================================================
+                // Issue endpoints
+                // ============================================================
+                path == "/api/v1/issue/count" && method == "GET" -> handleGetIssueCounts()
+                path == "/api/v1/issue" && method == "GET" -> handleGetIssues(request)
+                path == "/api/v1/issue" && method == "POST" -> handleCreateIssue(request)
+                path.matches(Regex("/api/v1/issue/\\d+")) && method == "GET" -> handleGetIssue(request)
+                path.matches(Regex("/api/v1/issue/\\d+")) && method == "DELETE" -> successResponse("", 204)
+                path.matches(Regex("/api/v1/issue/\\d+/comment")) && method == "POST" -> handleAddComment(request)
+                path.matches(Regex("/api/v1/issue/\\d+/(open|resolved)")) && method == "POST" -> handleUpdateIssueStatus(request)
+                path.matches(Regex("/api/v1/issueComment/\\d+")) && method == "PUT" -> handleUpdateComment(request)
+                
+                // ============================================================
                 // User endpoints
+                // ============================================================
                 path == "/api/v1/user/quota" -> successResponse(json.encodeToString(MockResponses.userQuota()))
                 path == "/api/v1/user/stats" -> successResponse(json.encodeToString(MockResponses.userStatistics()))
                 path == "/api/v1/user" -> successResponse(json.encodeToString(MockResponses.userProfile()))
-                path.startsWith("/api/v1/user/") && !path.contains("/requests") -> successResponse(json.encodeToString(MockResponses.userProfile()))
+                path.startsWith("/api/v1/user/") && !path.contains("/requests") -> {
+                    val userId = extractPathId(path)
+                    successResponse(json.encodeToString(MockResponses.userProfile(userId)))
+                }
                 
                 else -> errorResponse(404, "Endpoint not found: $path")
             }
         }
         
+        // ====================================================================
+        // Discovery Handlers
+        // ====================================================================
         
         private fun handleGetTrending(request: RecordedRequest): MockResponse {
             val page = extractQueryParam(request, "page")?.toIntOrNull() ?: 1
@@ -152,13 +183,18 @@ class MockOverseerrServer {
             return successResponse(json.encodeToString(MockResponses.tvShowDetails(tvId)))
         }
         
+        // ====================================================================
+        // Request Handlers
+        // ====================================================================
+        
         private fun handleSubmitRequest(request: RecordedRequest): MockResponse {
             return successResponse(json.encodeToString(MockResponses.requestResponse()))
         }
         
         private fun handleGetRequests(request: RecordedRequest): MockResponse {
-            val page = extractQueryParam(request, "skip")?.toIntOrNull()?.div(20) ?: 0
-            return successResponse(json.encodeToString(MockResponses.requestsList(page + 1)))
+            val skip = extractQueryParam(request, "skip")?.toIntOrNull() ?: 0
+            val page = (skip / 20) + 1
+            return successResponse(json.encodeToString(MockResponses.requestsList(page)))
         }
         
         private fun handleGetRequest(request: RecordedRequest): MockResponse {
@@ -167,14 +203,71 @@ class MockOverseerrServer {
         }
         
         private fun handleGetUserRequests(request: RecordedRequest): MockResponse {
-            val page = extractQueryParam(request, "skip")?.toIntOrNull()?.div(20) ?: 0
-            return successResponse(json.encodeToString(MockResponses.requestsList(page + 1)))
+            val skip = extractQueryParam(request, "skip")?.toIntOrNull() ?: 0
+            val page = (skip / 20) + 1
+            return successResponse(json.encodeToString(MockResponses.requestsList(page)))
         }
         
         private fun handleGetRequestStatus(request: RecordedRequest): MockResponse {
             val requestId = extractPathId(request.path!!)
             return successResponse(json.encodeToString(MockResponses.requestStatus(requestId)))
         }
+        
+        // ====================================================================
+        // Issue Handlers
+        // ====================================================================
+        
+        private fun handleGetIssues(request: RecordedRequest): MockResponse {
+            val take = extractQueryParam(request, "take")?.toIntOrNull() ?: 20
+            val skip = extractQueryParam(request, "skip")?.toIntOrNull() ?: 0
+            val filter = extractQueryParam(request, "filter") ?: "all"
+            return successResponse(json.encodeToString(MockResponses.issuesList(take, skip, filter)))
+        }
+        
+        private fun handleGetIssueCounts(): MockResponse {
+            return successResponse(json.encodeToString(MockResponses.issueCounts()))
+        }
+        
+        private fun handleGetIssue(request: RecordedRequest): MockResponse {
+            val issueId = extractPathId(request.path!!)
+            return successResponse(json.encodeToString(MockResponses.issue(issueId)))
+        }
+        
+        private fun handleCreateIssue(request: RecordedRequest): MockResponse {
+            // Parse the request body to get issue details
+            // For mock purposes, return a generic new issue
+            return successResponse(json.encodeToString(
+                MockResponses.createIssue(1, "Mock issue created", 1001)
+            ))
+        }
+        
+        private fun handleAddComment(request: RecordedRequest): MockResponse {
+            val issueId = extractPathIdFromPattern(request.path!!, "/api/v1/issue/(\\d+)/comment")
+            return successResponse(json.encodeToString(MockResponses.issue(issueId)))
+        }
+        
+        private fun handleUpdateIssueStatus(request: RecordedRequest): MockResponse {
+            val issueId = extractPathIdFromPattern(request.path!!, "/api/v1/issue/(\\d+)/")
+            return successResponse(json.encodeToString(MockResponses.issue(issueId)))
+        }
+        
+        private fun handleUpdateComment(request: RecordedRequest): MockResponse {
+            val commentId = extractPathId(request.path!!)
+            // Return a mock updated comment
+            return successResponse(json.encodeToString(
+                app.lusk.client.data.remote.model.ApiIssueComment(
+                    id = commentId,
+                    user = MockResponses.userProfile(1),
+                    message = "Updated comment text",
+                    createdAt = "2025-01-25T12:00:00.000Z",
+                    updatedAt = "2025-01-25T13:00:00.000Z"
+                )
+            ))
+        }
+        
+        // ====================================================================
+        // Helper Methods
+        // ====================================================================
         
         private fun successResponse(jsonBody: String, code: Int = 200): MockResponse {
             return MockResponse()
@@ -204,7 +297,13 @@ class MockOverseerrServer {
         
         private fun extractPathId(path: String): Int {
             val pathWithoutQuery = path.split("?").first()
-            return pathWithoutQuery.split("/").lastOrNull()?.toIntOrNull() ?: 1
+            return pathWithoutQuery.split("/").lastOrNull { it.isNotEmpty() && it.all { c -> c.isDigit() } }?.toIntOrNull() ?: 1
+        }
+        
+        private fun extractPathIdFromPattern(path: String, pattern: String): Int {
+            val regex = Regex(pattern)
+            val match = regex.find(path)
+            return match?.groupValues?.get(1)?.toIntOrNull() ?: 1
         }
     }
 }

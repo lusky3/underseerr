@@ -114,6 +114,18 @@ class MyApiTest : MockServerTest() {
 - `GET /api/v1/user/quota` - Get user quota
 - `GET /api/v1/user/stats` - Get user statistics
 
+### Issues
+
+- `GET /api/v1/issue` - Get issues list with filtering
+- `GET /api/v1/issue/count` - Get issue counts by type/status
+- `GET /api/v1/issue/{id}` - Get issue details
+- `POST /api/v1/issue` - Create a new issue
+- `DELETE /api/v1/issue/{id}` - Delete an issue
+- `POST /api/v1/issue/{id}/comment` - Add comment to issue
+- `POST /api/v1/issue/{id}/open` - Reopen an issue
+- `POST /api/v1/issue/{id}/resolved` - Mark issue as resolved
+- `PUT /api/v1/issueComment/{id}` - Update a comment
+
 ## Usage Examples
 
 ### Basic Test
@@ -412,3 +424,77 @@ When adding new endpoints:
 - [MockWebServer Documentation](https://github.com/square/okhttp/tree/master/mockwebserver)
 - [Overseerr API Documentation](https://api-docs.overseerr.dev/)
 - [Kotest Documentation](https://kotest.io/)
+
+---
+
+## Promotional Screenshots Mode
+
+The mock system also provides **fictional content** for promotional screenshots and app store listings. All titles are original and copyright-free.
+
+### Fictional Movies (IDs 1001-1012)
+
+| ID | Title | Genre | Status |
+|----|-------|-------|--------|
+| 1001 | Neon Horizons | Sci-Fi, AI consciousness | Available |
+| 1002 | The Last Cartographer | Adventure, parallel dimensions | Available |
+| 1003 | Midnight at the Velvet Club | 1940s Noir Thriller | Pending |
+| 1004 | Echoes of Tomorrow | Post-apocalyptic Drama | Available |
+| 1005 | The Quantum Thief | Heist, Sci-Fi | Pending |
+| 1006 | Garden of Stars | Space botanist drama | Requested |
+| 1007 | The Crimson Protocol | Cyber thriller | Available |
+| 1008 | Whispers in the Aurora | Iceland Sci-Fi | Available |
+| 1009 | The Memory Merchant | Memory trading drama | Pending |
+| 1010 | Titanfall Legacy | Mech action | Requested |
+| 1011 | Beneath Copper Skies | Mars detective story | Available |
+| 1012 | The Infinite Library | Fantasy mystery | Pending |
+
+### Fictional TV Shows (IDs 2001-2010)
+
+| ID | Title | Genre | Seasons | Status |
+|----|-------|-------|---------|--------|
+| 2001 | Chronicles of the Void | Space Opera | 3 | Available |
+| 2002 | The Alchemist's Daughter | Victorian Fantasy | 2 | Available |
+| 2003 | Harbor City | Crime Drama | 4 | Available |
+| 2004 | The Dreamweavers | Psychological Thriller | 1 | Pending |
+| 2005 | Stellar Academy | Sci-Fi Academy | 2 | Available |
+| 2006 | The Cipher | Historical Conspiracy | 1 | Available |
+| 2007 | Frostbound | Survival Drama | 2 | Pending |
+| 2008 | The Syndicate Files | Tech Thriller | 1 | Requested |
+| 2009 | Legends of Ashenvale | Epic Fantasy | 3 | Available |
+| 2010 | Pulse | Medical Drama | 2 | Available |
+
+### Fake Users
+
+| ID | Name | Role |
+|----|------|------|
+| 1 | Admin User | Admin |
+| 2 | Sarah Chen | User |
+| 3 | Marcus Johnson | User |
+| 4 | Emily Rodriguez | User |
+| 5 | James Wilson | User |
+| 6 | Olivia Park | User |
+
+### Sample Issues
+
+8 pre-configured issues with various types (Video, Audio, Subtitles, Other) and statuses (Open, Resolved) with realistic comment threads.
+
+### Additional Files
+
+| File | Purpose |
+|------|---------|
+| `MockImageUrls.kt` | Placeholder image URL generator |
+| `MockImageInterceptor.kt` | Coil interceptor for custom images |
+| `IMAGE_PROMPTS.md` | AI image generation prompts for all titles |
+
+### Adding Custom Poster Images
+
+To replace placeholder images with custom artwork:
+
+1. Generate images using the prompts in `IMAGE_PROMPTS.md`
+2. Place poster images (300x450 or 2:3 ratio) in:
+   `androidApp/src/debug/assets/mock_images/posters/`
+3. Place backdrop images (1280x720 or 16:9 ratio) in:
+   `androidApp/src/debug/assets/mock_images/backdrops/`
+4. Name format: `movie_<ID>.jpg` or `tv_<ID>.jpg`
+
+The `MockImageInterceptor` will automatically use local assets if found, otherwise falling back to colorful placehold.co images.
