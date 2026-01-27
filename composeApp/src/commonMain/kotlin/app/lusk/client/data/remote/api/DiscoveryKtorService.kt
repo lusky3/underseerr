@@ -111,7 +111,7 @@ class DiscoveryKtorService(private val client: HttpClient) {
     
     suspend fun search(query: String, page: Int = 1, language: String = "en"): ApiSearchResults {
         return client.get("/api/v1/search") {
-            parameter("query", query)
+            parameter("query", query.trim())
             parameter("page", page)
             parameter("language", language)
         }.body()

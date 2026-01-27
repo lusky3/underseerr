@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base theme that uses DayNight for automatic light/dark switching -->
-    <style name="Theme.OverseerrClient" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- Dark theme variant -->
+    <style name="Theme.OverseerrClient" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowBackground">@android:color/black</item>
     </style>
     
-    <!-- Splash screen theme using the SplashScreen library -->
+    <!-- Splash screen theme - dark variant -->
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/app_icon_transparent</item>

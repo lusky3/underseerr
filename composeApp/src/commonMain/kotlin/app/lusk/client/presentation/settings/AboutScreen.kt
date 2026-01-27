@@ -21,7 +21,11 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
 import app.lusk.client.ui.components.AsyncImage
+import app.lusk.client.util.getAppIcon
 
 /**
  * About screen displaying app information, version, and credits.
@@ -56,29 +60,33 @@ fun AboutScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = modifier
+        modifier = modifier,
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(32.dp))
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(paddingValues.calculateTopPadding()))
+                Spacer(modifier = Modifier.height(32.dp))
             
-            // App Icon
             Surface(
                 modifier = Modifier.size(100.dp),
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
                     AsyncImage(
-                        imageUrl = "https://raw.githubusercontent.com/sct/overseerr/develop/public/logo.png",
-                        contentDescription = null,
-                        modifier = Modifier.size(56.dp)
+                        imageUrl = getAppIcon(),
+                        contentDescription = "Underseerr Logo",
+                        modifier = Modifier.fillMaxSize(),
+                        showPlaceholder = false
                     )
                 }
             }
@@ -230,13 +238,31 @@ fun AboutScreen(
             
             // Dynamic copyright year
             Text(
-                text = "© $currentYear Underseerr Contributors",
+                text = "© $currentYear lusky3 (Lusk Technologies) + Contributors",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
             Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
         }
+        
+        // Bottom Fade
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+        )
+    }
     }
 }
 

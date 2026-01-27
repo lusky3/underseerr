@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import app.lusk.client.domain.repository.ServerConfig
+import androidx.compose.foundation.background
 
 /**
  * Server management screen for multi-server configuration.
@@ -55,19 +56,22 @@ fun ServerManagementScreen(
                     }
                 }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
-        if (configuredServers.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (configuredServers.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
                     Text(
                         text = "No servers configured",
                         style = MaterialTheme.typography.titleMedium,
@@ -85,12 +89,14 @@ fun ServerManagementScreen(
                     }
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 64.dp,
+                        bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 80.dp
+                    )
+                ) {
                 items(configuredServers) { server ->
                     val isPrimary = server.url == currentServerUrl
                     val isOnlyServer = configuredServers.size <= 1
@@ -108,6 +114,25 @@ fun ServerManagementScreen(
                     )
                     HorizontalDivider()
                 }
+            }
+            }
+        
+            // Bottom Fade
+            if (configuredServers.isNotEmpty()) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                colors = listOf(
+                                    androidx.compose.ui.graphics.Color.Transparent,
+                                    MaterialTheme.colorScheme.background
+                                )
+                            )
+                        )
+                )
             }
         }
     }

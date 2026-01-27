@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.pulltorefresh.*
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import app.lusk.client.ui.components.AsyncImage
 import app.lusk.client.presentation.auth.AuthState
@@ -100,9 +101,13 @@ fun ProfileScreen(
     
     var pullRefreshing by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
+    
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Profile") },
@@ -137,9 +142,12 @@ fun ProfileScreen(
                 when (val state = profileState) {
                     is ProfileState.Loading -> {
                         if (!pullRefreshing) {
-                            LoadingState(
-                                modifier = Modifier.padding(vertical = 32.dp)
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LoadingState()
+                            }
                         }
                     }
                     
@@ -168,6 +176,11 @@ fun ProfileScreen(
                             onUpdateTheme = { settingsViewModel.updateTheme(it) },
                             onUpdateNotificationSettings = { settingsViewModel.updateNotificationSettings(it) },
                             onNotificationsClick = { showNotificationsDialog = true },
+                            onLanguageClick = {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Help wanted!")
+                                }
+                            },
                             onNavigateToSettings = onNavigateToSettings,
                             onNavigateToAbout = onNavigateToAbout,
                             onNavigateToRequests = onNavigateToRequests,
@@ -213,6 +226,7 @@ private fun ProfileContent(
     onUpdateTheme: (ThemePreference) -> Unit,
     onUpdateNotificationSettings: (NotificationSettings) -> Unit,
     onNotificationsClick: () -> Unit,
+    onLanguageClick: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToAbout: () -> Unit,
     onNavigateToRequests: (String?) -> Unit,
@@ -433,7 +447,10 @@ private fun ProfileContent(
                     icon = Icons.Default.Language,
                     title = "Language",
                     subtitle = "English",
-                    onClick = { showLanguageHelp = true }
+                    onClick = {
+                         // TODO: Use callback to show snackbar in parent
+                         onLanguageClick()
+                    }
                 )
 
                 if (showThemeDialog) {

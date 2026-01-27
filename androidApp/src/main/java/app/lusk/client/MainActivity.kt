@@ -8,6 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.fragment.app.FragmentActivity
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.lusk.client.data.security.BiometricAuthenticator
 import app.lusk.client.navigation.Screen
 import app.lusk.client.presentation.main.MainScreen
@@ -28,6 +29,7 @@ class MainActivity : FragmentActivity() {
     private val biometricAuthenticator: BiometricAuthenticator by inject()
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         app.lusk.client.util.CurrentActivityHolder.set(this)
         enableEdgeToEdge()

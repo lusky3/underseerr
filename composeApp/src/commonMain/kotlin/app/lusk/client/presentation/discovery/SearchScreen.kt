@@ -83,6 +83,7 @@ fun SearchScreen(
                 EmptySearchPrompt()
             } else {
                 SearchResultsList(
+                    query = searchQuery,
                     results = pagedResults,
                     onMediaClick = onMediaClick
                 )
@@ -131,6 +132,7 @@ private fun EmptySearchResults(
 
 @Composable
 private fun SearchResultsList(
+    query: String,
     results: androidx.paging.compose.LazyPagingItems<SearchResult>,
     onMediaClick: (MediaType, Int) -> Unit,
     modifier: Modifier = Modifier
@@ -195,7 +197,7 @@ private fun SearchResultsList(
                 }
                 results.loadState.append is LoadState.NotLoading && results.loadState.append.endOfPaginationReached && results.itemCount == 0 -> {
                     item {
-                        EmptySearchResults(query = "")
+                        EmptySearchResults(query = query)
                     }
                 }
             }
