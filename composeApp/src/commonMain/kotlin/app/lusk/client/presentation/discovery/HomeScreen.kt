@@ -54,6 +54,13 @@ fun HomeScreen(
     val isPlexUser by viewModel.isPlexUser.collectAsState()
     
     var isRefreshing by remember { mutableStateOf(false) }
+    
+    // Auto-dismiss refresh indicator when any of the data sources finish loading
+    LaunchedEffect(trending.loadState.refresh) {
+        if (trending.loadState.refresh !is LoadState.Loading && isRefreshing) {
+            isRefreshing = false
+        }
+    }
 
     val studios = listOf(
         3 to "Pixar",
@@ -102,7 +109,6 @@ fun HomeScreen(
                 upcomingMovies.refresh()
                 upcomingTvShows.refresh()
                 watchlist.refresh()
-                isRefreshing = false
             },
             modifier = Modifier
                 .fillMaxSize()

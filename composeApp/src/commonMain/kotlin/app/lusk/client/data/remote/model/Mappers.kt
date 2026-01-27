@@ -17,7 +17,18 @@ fun ApiMovie.toMovie(): Movie {
         backdropPath = backdropPath,
         releaseDate = releaseDate,
         voteAverage = voteAverage ?: 0.0,
-        mediaInfo = mediaInfo?.toMediaInfo()
+        mediaInfo = mediaInfo?.toMediaInfo(),
+        cast = credits?.cast?.map { it.toCastMember() } ?: emptyList()
+    )
+}
+
+fun ApiCastMember.toCastMember(): CastMember {
+    return CastMember(
+        id = id,
+        name = name,
+        character = character,
+        profilePath = profilePath,
+        order = order
     )
 }
 
@@ -31,7 +42,8 @@ fun ApiTvShow.toTvShow(): TvShow {
         firstAirDate = firstAirDate,
         voteAverage = voteAverage ?: 0.0,
         numberOfSeasons = numberOfSeasons ?: 0,
-        mediaInfo = mediaInfo?.toMediaInfo()
+        mediaInfo = mediaInfo?.toMediaInfo(),
+        cast = credits?.cast?.map { it.toCastMember() } ?: emptyList()
     )
 }
 

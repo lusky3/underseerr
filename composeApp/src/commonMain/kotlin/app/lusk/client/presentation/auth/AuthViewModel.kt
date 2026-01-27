@@ -227,6 +227,10 @@ class AuthViewModel(
     fun clearServerValidation() {
         _serverValidationState.value = ServerValidationState.Idle
     }
+    fun resetAuth() {
+        _authState.value = AuthState.Unauthenticated
+        _serverValidationState.value = ServerValidationState.Idle
+    }
 }
 
 /**

@@ -215,4 +215,10 @@ class SettingsViewModel(
             settingsRepository.removeServer(url)
         }
     }
+
+    fun updateTheme(theme: ThemePreference) {
+        viewModelScope.launch {
+            settingsRepository.setThemePreference(theme)
+        }
+    }
 }

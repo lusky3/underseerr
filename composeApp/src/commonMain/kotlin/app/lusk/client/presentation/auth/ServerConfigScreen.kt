@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 import kotlinx.coroutines.flow.first
 
@@ -58,7 +59,9 @@ fun ServerConfigScreen(
     // Navigate when server is validated
     LaunchedEffect(serverValidationState) {
         if (serverValidationState is ServerValidationState.Valid) {
+            delay(1000)
             onServerValidated()
+            viewModel.clearServerValidation()
         }
     }
     
@@ -83,7 +86,7 @@ fun ServerConfigScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Welcome to Overseerr",
+                text = "Welcome to Underseerr",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )

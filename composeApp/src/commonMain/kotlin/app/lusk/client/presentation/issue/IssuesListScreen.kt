@@ -59,7 +59,11 @@ fun IssuesListScreen(
                     // Filter button
                     Box {
                         IconButton(onClick = { showFilterMenu = true }) {
-                            Icon(Icons.Default.FilterList, "Filter")
+                            Icon(
+                                Icons.Default.FilterList,
+                                "Filter",
+                                tint = if (selectedTab != 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                         DropdownMenu(
                             expanded = showFilterMenu,

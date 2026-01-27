@@ -43,6 +43,12 @@ fun RequestDetailsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     
     var pullRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isLoading) {
+        if (!isLoading && pullRefreshing) {
+            pullRefreshing = false
+        }
+    }
     
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -71,7 +77,6 @@ fun RequestDetailsScreen(
             onRefresh = {
                 pullRefreshing = true
                 viewModel.refreshRequests()
-                pullRefreshing = false
             },
             modifier = Modifier
                 .fillMaxSize()

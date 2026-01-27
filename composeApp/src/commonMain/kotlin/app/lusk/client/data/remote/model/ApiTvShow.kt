@@ -16,5 +16,7 @@ data class ApiTvShow(
     val firstAirDate: String? = null,
     val voteAverage: Double? = null,
     val numberOfSeasons: Int? = null,
-    val mediaInfo: ApiMediaInfo? = null
+    val mediaInfo: ApiMediaInfo? = null,
+    @SerialName("credits")
+    val credits: ApiCredits? = null
 )

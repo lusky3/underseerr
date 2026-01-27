@@ -40,6 +40,12 @@ fun RequestsListScreen(
     var showFilterMenu by remember { mutableStateOf(false) }
     
     var pullRefreshing by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(isLoading) {
+        if (!isLoading && pullRefreshing) {
+            pullRefreshing = false
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -50,7 +56,11 @@ fun RequestsListScreen(
                     // Filter button
                     Box {
                         IconButton(onClick = { showFilterMenu = true }) {
-                            Icon(Icons.Default.FilterList, "Filter")
+                            Icon(
+                                Icons.Default.FilterList,
+                                "Filter",
+                                tint = if (selectedFilter != "All") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                         DropdownMenu(
                             expanded = showFilterMenu,
@@ -95,7 +105,6 @@ fun RequestsListScreen(
             onRefresh = {
                 pullRefreshing = true
                 viewModel.refreshRequests()
-                pullRefreshing = false
             },
             modifier = Modifier
                 .fillMaxSize()

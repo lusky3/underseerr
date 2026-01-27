@@ -438,7 +438,8 @@ data class MediaDetails(
     val isPartiallyAvailable: Boolean = false,
     val isPartialRequestsEnabled: Boolean = false,
     val requestedSeasons: List<Int> = emptyList(),
-    val mediaInfoId: Int? = null
+    val mediaInfoId: Int? = null,
+    val cast: List<app.lusk.client.domain.model.CastMember> = emptyList()
 )
 
 /**
@@ -460,7 +461,8 @@ private fun Movie.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails
     numberOfSeasons = 0,
     isPartiallyAvailable = false,
     isPartialRequestsEnabled = partialRequestsEnabled,
-    mediaInfoId = mediaInfo?.id
+    mediaInfoId = mediaInfo?.id,
+    cast = cast
 )
 
 private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails(
@@ -487,7 +489,8 @@ private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetail
             emptyList()
         }
     } ?: emptyList(),
-    mediaInfoId = mediaInfo?.id
+    mediaInfoId = mediaInfo?.id,
+    cast = cast
 )
 
 // Custom stateIn removed in favor of standard library stateIn

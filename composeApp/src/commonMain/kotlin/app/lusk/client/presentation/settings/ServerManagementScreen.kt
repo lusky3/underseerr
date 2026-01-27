@@ -92,11 +92,15 @@ fun ServerManagementScreen(
                     .padding(paddingValues)
             ) {
                 items(configuredServers) { server ->
+                    val isPrimary = server.url == currentServerUrl
+                    val isOnlyServer = configuredServers.size <= 1
+                    
                     ServerItem(
                         server = server,
-                        isActive = server.url == currentServerUrl,
+                        isActive = isPrimary,
+                        canDelete = !isPrimary && !isOnlyServer,
                         onServerClick = {
-                            if (server.url != currentServerUrl) {
+                            if (!isPrimary) {
                                 viewModel.switchServer(server.url)
                             }
                         },
@@ -148,6 +152,7 @@ fun ServerManagementScreen(
 private fun ServerItem(
     server: ServerConfig,
     isActive: Boolean,
+    canDelete: Boolean,
     onServerClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -200,11 +205,14 @@ private fun ServerItem(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            IconButton(onClick = onDeleteClick) {
+            IconButton(
+                onClick = onDeleteClick,
+                enabled = canDelete
+            ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete server",
-                    tint = MaterialTheme.colorScheme.error
+                    tint = if (canDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 )
             }
         }
@@ -273,6 +281,9 @@ private fun AddServerDialog(
                     } else if (!serverUrl.text.startsWith("http://") && 
                                !serverUrl.text.startsWith("https://")) {
                         urlError = "URL must start with http:// or https://"
+                        hasError = true
+                    } else if (serverUrl.text.contains(" ")) {
+                        urlError = "URL must not contain spaces"
                         hasError = true
                     }
                     

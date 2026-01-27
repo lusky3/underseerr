@@ -15,5 +15,7 @@ data class ApiMovie(
     val backdropPath: String? = null,
     val releaseDate: String? = null,
     val voteAverage: Double? = null,
-    val mediaInfo: ApiMediaInfo? = null
+    val mediaInfo: ApiMediaInfo? = null,
+    @SerialName("credits")
+    val credits: ApiCredits? = null
 )

@@ -43,6 +43,12 @@ fun CategoryResultsScreen(
     }
 
     var pullRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(pagingItems.loadState.refresh) {
+        if (pagingItems.loadState.refresh !is LoadState.Loading && pullRefreshing) {
+            pullRefreshing = false
+        }
+    }
     
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -63,13 +69,12 @@ fun CategoryResultsScreen(
             onRefresh = {
                 pullRefreshing = true
                 pagingItems.refresh()
-                pullRefreshing = false
             },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (pagingItems.loadState.refresh is LoadState.Loading) {
+            if (pagingItems.loadState.refresh is LoadState.Loading && pagingItems.itemCount == 0) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (pagingItems.loadState.refresh is LoadState.Error) {
                 val e = pagingItems.loadState.refresh as LoadState.Error

@@ -32,6 +32,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.OverseerrClient">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -46,6 +47,16 @@
                 <data
                     android:scheme="underseerr"
                     android:host="request" />
+            </intent-filter>
+
+            <!-- Deep link support for Auth Callback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="underseerr"
+                    android:host="auth_callback" />
             </intent-filter>
 
             <!-- Deep link support for server setup -->

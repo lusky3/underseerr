@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.lusk.client.domain.model.CastMember
 import app.lusk.client.domain.model.MediaType
 import app.lusk.client.domain.repository.IssueRepository
 import app.lusk.client.presentation.issue.ReportIssueDialog
@@ -33,6 +34,7 @@ import app.lusk.client.presentation.request.RequestViewModel
 
 import app.lusk.client.ui.components.PosterImage
 import app.lusk.client.ui.components.BackdropImage
+import app.lusk.client.ui.components.AsyncImage
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -66,18 +68,24 @@ fun MediaDetailsScreen(
     }
 
     var isRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state) {
+        if (state !is MediaDetailsState.Loading && isRefreshing) {
+            isRefreshing = false
+        }
+    }
     
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = {
                 isRefreshing = true
                 viewModel.loadMediaDetails(mediaType, mediaId)
-                isRefreshing = false
             },
             modifier = Modifier
                 .fillMaxSize()
@@ -231,6 +239,7 @@ private fun MediaDetailsContent(
                         onClick = onBackClick,
                         modifier = Modifier
                             .padding(8.dp)
+                            .statusBarsPadding()
                             .align(Alignment.TopStart)
                             .background(
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
@@ -408,11 +417,11 @@ private fun MediaDetailsContent(
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Placeholder cast members
-                        items(6) { index ->
-                            CastMember(
-                                name = listOf("Lead Actor", "Supporting", "Director", "Producer", "Writer", "Composer")[index],
-                                role = listOf("Main Character", "Side Role", "Direction", "Production", "Screenplay", "Music")[index]
+                        items(details.cast) { castMember ->
+                            CastMemberItem(
+                                name = castMember.name,
+                                role = castMember.character,
+                                profilePath = castMember.profilePath
                             )
                         }
                     }
@@ -449,9 +458,10 @@ private fun MediaDetailsContent(
 }
 
 @Composable
-private fun CastMember(
+private fun CastMemberItem(
     name: String,
-    role: String,
+    role: String?,
+    profilePath: String?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -463,12 +473,21 @@ private fun CastMember(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = name.first().toString(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            if (profilePath != null) {
+                AsyncImage(
+                    imageUrl = "https://image.tmdb.org/t/p/w200$profilePath",
+                    contentDescription = name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = name.first().toString(),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
@@ -479,14 +498,16 @@ private fun CastMember(
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center
         )
-        Text(
-            text = role,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
+        if (role != null) {
+            Text(
+                text = role,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 

@@ -35,48 +35,58 @@ class IssueViewModel(
         loadIssueCounts()
     }
     
-    fun loadIssues(filter: String = _selectedFilter.value) {
+    fun loadIssues(filter: String = _selectedFilter.value, isRefresh: Boolean = false) {
         viewModelScope.launch {
             _selectedFilter.value = filter
-            _uiState.value = IssueListState.Loading
+            if (!isRefresh) {
+                _uiState.value = IssueListState.Loading
+            }
             
-            issueRepository.getIssues(
-                take = 50,
-                skip = 0,
-                filter = filter
-            ).fold(
-                onSuccess = { issues ->
-                    _uiState.value = if (issues.isEmpty()) {
-                        IssueListState.Empty
-                    } else {
-                        IssueListState.Success(issues)
-                    }
-                },
-                onFailure = { error ->
-                    _uiState.value = IssueListState.Error(
-                        error.message ?: "Failed to load issues"
-                    )
-                }
-            )
+            fetchIssues(filter)
         }
+    }
+    
+    private suspend fun fetchIssues(filter: String) {
+        issueRepository.getIssues(
+            take = 50,
+            skip = 0,
+            filter = filter
+        ).fold(
+            onSuccess = { issues ->
+                _uiState.value = if (issues.isEmpty()) {
+                    IssueListState.Empty
+                } else {
+                    IssueListState.Success(issues)
+                }
+            },
+            onFailure = { error ->
+                _uiState.value = IssueListState.Error(
+                    error.message ?: "Failed to load issues"
+                )
+            }
+        )
     }
     
     fun loadIssueCounts() {
         viewModelScope.launch {
-            issueRepository.getIssueCounts().fold(
-                onSuccess = { counts ->
-                    _issueCounts.value = counts
-                },
-                onFailure = { /* Silently fail for counts */ }
-            )
+            fetchIssueCounts()
         }
+    }
+    
+    private suspend fun fetchIssueCounts() {
+        issueRepository.getIssueCounts().fold(
+            onSuccess = { counts ->
+                _issueCounts.value = counts
+            },
+            onFailure = { /* Silently fail for counts */ }
+        )
     }
     
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            loadIssues(_selectedFilter.value)
-            loadIssueCounts()
+            fetchIssues(_selectedFilter.value)
+            fetchIssueCounts()
             _isRefreshing.value = false
         }
     }

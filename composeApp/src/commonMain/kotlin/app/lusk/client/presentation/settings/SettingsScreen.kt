@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import app.lusk.client.domain.repository.NotificationSettings
 import app.lusk.client.domain.repository.ThemePreference
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 
 /**
  * Settings screen for app configuration.
@@ -56,12 +59,13 @@ fun SettingsScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+            ) {
             // Appearance Section
             SettingsSectionHeader(title = "Appearance")
             
@@ -173,6 +177,23 @@ fun SettingsScreen(
                 onClick = onNavigateToServerManagement
             )
         }
+        
+        // Bottom fade gradient overlay
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+        )
+    }
     }
     
     // Theme Selection Dialog

@@ -92,6 +92,7 @@ fun UnderseerrNavHost(
         composable<Screen.PlexAuth> {
             val viewModel: AuthViewModel = koinViewModel()
             PlexAuthScreen(
+                onBackClick = { navController.popBackStack() },
                 viewModel = viewModel,
                 onAuthSuccess = {
                     navController.navigate(Screen.Home) {
@@ -119,6 +120,7 @@ fun UnderseerrNavHost(
             }
             
             PlexAuthScreen(
+                onBackClick = { navController.popBackStack() },
                 viewModel = viewModel,
                 onAuthSuccess = {
                     navController.navigate(Screen.Home) {
@@ -266,7 +268,7 @@ fun UnderseerrNavHost(
                     navController.navigate(Screen.Requests)
                 },
                 onLogout = {
-                     navController.navigate(Screen.PlexAuth) {
+                     navController.navigate(Screen.ServerConfig()) {
                         popUpTo<Screen.Home> { inclusive = true }
                     }
                 }

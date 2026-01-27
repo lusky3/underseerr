@@ -41,7 +41,11 @@ fun SearchScreen(
                             viewModel.search(it)
                         },
                         placeholder = { Text("Search movies and TV shows") },
-                        singleLine = true,
+                        maxLines = 1,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Search,
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Text
+                        ),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surface,

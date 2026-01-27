@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.Error
  */
 @Composable
 fun LoadingState(
-    message: String = "Loading...",
+    message: String? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -41,12 +41,14 @@ fun LoadingState(
                 modifier = Modifier.size(48.dp),
                 color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (message != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }

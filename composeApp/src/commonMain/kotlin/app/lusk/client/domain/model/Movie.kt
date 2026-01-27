@@ -11,5 +11,6 @@ data class Movie(
     val backdropPath: String?,
     val releaseDate: String?,
     val voteAverage: Double,
-    val mediaInfo: MediaInfo?
+    val mediaInfo: MediaInfo?,
+    val cast: List<CastMember> = emptyList()
 )

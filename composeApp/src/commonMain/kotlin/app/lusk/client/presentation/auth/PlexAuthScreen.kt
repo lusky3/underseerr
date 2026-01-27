@@ -13,6 +13,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import org.koin.compose.viewmodel.koinViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
 
 /**
  * Plex authentication screen with OAuth flow.
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlexAuthScreen(
+    onBackClick: () -> Unit,
     onAuthSuccess: () -> Unit,
     onAuthError: (String) -> Unit,
     viewModel: AuthViewModel = koinViewModel()
@@ -31,35 +34,16 @@ fun PlexAuthScreen(
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     
-    // Auto-check on Resume
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        val state = authState
-        if (state is AuthState.WaitingForPlex) {
-             viewModel.checkPlexStatus(state.pinId)
-        }
-    }
-    
-    // Handle authentication success - use key to prevent re-triggering
-    val isAuthenticated = authState is AuthState.Authenticated
-    LaunchedEffect(isAuthenticated) {
-        if (isAuthenticated) {
-            // Delay slightly to let composition complete before navigating
-            delay(100)
-            onAuthSuccess()
-        }
-    }
-    // Handle authentication error
-    val authError = authState as? AuthState.Error
-    LaunchedEffect(authError) {
-        authError?.let { onAuthError(it.message) }
-    }
-
     // Handle WaitingForPlex - open browser and start polling
     val waitingForPlex = authState as? AuthState.WaitingForPlex
     LaunchedEffect(waitingForPlex) {
         waitingForPlex?.let { state ->
             // Open browser for Plex login
-            uriHandler.openUri(state.authUrl)
+            try {
+                uriHandler.openUri(state.authUrl)
+            } catch (e: Exception) {
+                // Ignore browser open errors
+            }
             
             // Start polling for status
             while (viewModel.authState.value is AuthState.WaitingForPlex) {
@@ -69,10 +53,43 @@ fun PlexAuthScreen(
         }
     }
     
+    // Auto-check on Resume
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (viewModel.authState.value is AuthState.WaitingForPlex) {
+             val state = viewModel.authState.value as AuthState.WaitingForPlex
+             viewModel.checkPlexStatus(state.pinId)
+        }
+    }
+    
+    
+    // Handle success/error states
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Authenticated -> {
+                onAuthSuccess()
+            }
+            is AuthState.Error -> {
+                onAuthError((authState as AuthState.Error).message)
+            }
+            else -> {}
+        }
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Authenticate with Plex") }
+                title = { Text("Authenticate with Plex") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        viewModel.resetAuth()
+                        onBackClick()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
             )
         }
     ) { paddingValues ->

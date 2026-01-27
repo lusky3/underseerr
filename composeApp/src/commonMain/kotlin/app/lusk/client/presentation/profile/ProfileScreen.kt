@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +27,11 @@ import app.lusk.client.presentation.auth.AuthState
 import app.lusk.client.presentation.auth.AuthViewModel
 import app.lusk.client.ui.components.ErrorState
 import app.lusk.client.ui.components.LoadingState
+import app.lusk.client.presentation.settings.SettingsViewModel
+import app.lusk.client.domain.repository.ThemePreference
+import app.lusk.client.domain.repository.NotificationSettings
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 
 /**
  * Masks an email address for privacy display.
@@ -77,10 +83,13 @@ fun ProfileScreen(
     onNavigateToRequests: (String?) -> Unit = {},
     onLogout: () -> Unit,
     viewModel: ProfileViewModel = koinViewModel(),
-    authViewModel: AuthViewModel = koinViewModel()
+    authViewModel: AuthViewModel = koinViewModel(),
+    settingsViewModel: SettingsViewModel = koinViewModel()
 ) {
     val profileState by viewModel.profileState.collectAsState()
     val authState by authViewModel.authState.collectAsState()
+    val notificationSettings by settingsViewModel.notificationSettings.collectAsState()
+    val themePreference by settingsViewModel.themePreference.collectAsState()
 
     // Handle logout navigation
     androidx.compose.runtime.LaunchedEffect(authState) {
@@ -135,16 +144,29 @@ fun ProfileScreen(
                     }
                     
                     is ProfileState.Error -> {
-                        ErrorState(
-                            message = state.message,
-                            onRetry = { viewModel.refresh() },
-                            modifier = Modifier.padding(vertical = 32.dp)
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            ErrorState(
+                                message = state.message,
+                                onRetry = { viewModel.refresh() },
+                                modifier = Modifier.padding(vertical = 16.dp)
+                            )
+                            Button(onClick = onNavigateToSettings) {
+                                Text("Open Settings")
+                            }
+                        }
                     }
                     
                     is ProfileState.Success -> {
                         ProfileContent(
                             state = state,
+                            notificationSettings = notificationSettings,
+                            themePreference = themePreference,
+                            onUpdateTheme = { settingsViewModel.updateTheme(it) },
+                            onUpdateNotificationSettings = { settingsViewModel.updateNotificationSettings(it) },
                             onNotificationsClick = { showNotificationsDialog = true },
                             onNavigateToSettings = onNavigateToSettings,
                             onNavigateToAbout = onNavigateToAbout,
@@ -154,12 +176,30 @@ fun ProfileScreen(
                     }
                 }
             }
+            
+            // Bottom fade gradient overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(32.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.background
+                            )
+                        )
+                    )
+            )
         }
     }
     
     // Notifications Dialog
     if (showNotificationsDialog) {
         NotificationsDialog(
+            settings = notificationSettings,
+            onUpdate = { settingsViewModel.updateNotificationSettings(it) },
             onDismiss = { showNotificationsDialog = false }
         )
     }
@@ -168,6 +208,10 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     state: ProfileState.Success,
+    notificationSettings: NotificationSettings,
+    themePreference: ThemePreference,
+    onUpdateTheme: (ThemePreference) -> Unit,
+    onUpdateNotificationSettings: (NotificationSettings) -> Unit,
     onNotificationsClick: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToAbout: () -> Unit,
@@ -175,6 +219,8 @@ private fun ProfileContent(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showThemeDialog by remember { mutableStateOf(false) }
+    var showLanguageHelp by remember { mutableStateOf(false) }
     Column(modifier = modifier) {
         // User Info Card - Horizontal layout like the mockup
         Card(
@@ -350,11 +396,15 @@ private fun ProfileContent(
                 SettingsRow(
                     icon = Icons.Default.Notifications,
                     title = "Notifications",
-                    onClick = onNotificationsClick,
+                    onClick = { onNotificationsClick() },
                     trailing = {
                         Switch(
-                            checked = true,
-                            onCheckedChange = { onNotificationsClick() },
+                            checked = notificationSettings.enabled,
+                            onCheckedChange = { enabled ->
+                                onUpdateNotificationSettings(
+                                    notificationSettings.copy(enabled = enabled)
+                                )
+                            },
                             modifier = Modifier.height(24.dp)
                         )
                     }
@@ -363,11 +413,17 @@ private fun ProfileContent(
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 
                 // Theme
+                val currentTheme = when(themePreference) {
+                    ThemePreference.LIGHT -> "Light"
+                    ThemePreference.DARK -> "Dark"
+                    ThemePreference.SYSTEM -> "System"
+                }
+
                 SettingsRow(
                     icon = Icons.Default.Palette,
                     title = "Theme",
-                    subtitle = "Dark",
-                    onClick = onNavigateToSettings
+                    subtitle = currentTheme,
+                    onClick = { showThemeDialog = true }
                 )
                 
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -377,6 +433,69 @@ private fun ProfileContent(
                     icon = Icons.Default.Language,
                     title = "Language",
                     subtitle = "English",
+                    onClick = { showLanguageHelp = true }
+                )
+
+                if (showThemeDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showThemeDialog = false },
+                        title = { Text("Select Theme") },
+                        text = {
+                            Column {
+                                ThemePreference.entries.forEach { theme ->
+                                    val title = when (theme) {
+                                        ThemePreference.LIGHT -> "Light"
+                                        ThemePreference.DARK -> "Dark"
+                                        ThemePreference.SYSTEM -> "System"
+                                    }
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onUpdateTheme(theme)
+                                                showThemeDialog = false
+                                            }
+                                            .padding(vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = theme == themePreference,
+                                            onClick = null
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(text = title)
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showThemeDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                if (showLanguageHelp) {
+                    AlertDialog(
+                        onDismissRequest = { showLanguageHelp = false },
+                        title = { Text("Language") },
+                        text = { Text("Help wanted") },
+                        confirmButton = {
+                            TextButton(onClick = { showLanguageHelp = false }) {
+                                Text("OK")
+                            }
+                        }
+                    )
+                }
+                
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                
+                // More Settings (Default Profiles, Server Management, etc.)
+                SettingsRow(
+                    icon = Icons.Default.Settings,
+                    title = "More Settings",
+                    subtitle = "Default profiles, server management",
                     onClick = onNavigateToSettings
                 )
                 
@@ -393,7 +512,7 @@ private fun ProfileContent(
                 
                 // Sign Out
                 SettingsRow(
-                    icon = Icons.Default.ExitToApp,
+                    icon = Icons.AutoMirrored.Filled.ExitToApp,
                     title = "Sign Out",
                     titleColor = MaterialTheme.colorScheme.error,
                     onClick = onLogout
@@ -497,12 +616,10 @@ private fun SettingsRow(
 
 @Composable
 private fun NotificationsDialog(
+    settings: NotificationSettings,
+    onUpdate: (NotificationSettings) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var requestApproved by remember { mutableStateOf(true) }
-    var requestAvailable by remember { mutableStateOf(true) }
-    var requestDeclined by remember { mutableStateOf(false) }
-    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Notification Settings") },
@@ -524,8 +641,10 @@ private fun NotificationsDialog(
                         )
                     }
                     Switch(
-                        checked = requestApproved,
-                        onCheckedChange = { requestApproved = it }
+                        checked = settings.requestApproved,
+                        onCheckedChange = { 
+                            onUpdate(settings.copy(requestApproved = it)) 
+                        }
                     )
                 }
                 
@@ -545,8 +664,10 @@ private fun NotificationsDialog(
                         )
                     }
                     Switch(
-                        checked = requestAvailable,
-                        onCheckedChange = { requestAvailable = it }
+                        checked = settings.requestAvailable,
+                        onCheckedChange = { 
+                            onUpdate(settings.copy(requestAvailable = it)) 
+                        }
                     )
                 }
                 
@@ -566,8 +687,10 @@ private fun NotificationsDialog(
                         )
                     }
                     Switch(
-                        checked = requestDeclined,
-                        onCheckedChange = { requestDeclined = it }
+                        checked = settings.requestDeclined,
+                        onCheckedChange = { 
+                            onUpdate(settings.copy(requestDeclined = it)) 
+                        }
                     )
                 }
             }

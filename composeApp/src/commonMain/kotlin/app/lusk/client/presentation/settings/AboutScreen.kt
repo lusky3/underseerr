@@ -21,6 +21,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.launch
+import app.lusk.client.ui.components.AsyncImage
 
 /**
  * About screen displaying app information, version, and credits.
@@ -74,11 +75,10 @@ fun AboutScreen(
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Movie,
+                    AsyncImage(
+                        imageUrl = "https://raw.githubusercontent.com/sct/overseerr/develop/public/logo.png",
                         contentDescription = null,
-                        modifier = Modifier.size(56.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        modifier = Modifier.size(56.dp)
                     )
                 }
             }
