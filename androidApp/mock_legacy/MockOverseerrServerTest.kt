@@ -1,9 +1,9 @@
-package app.lusk.client.mock
+package app.lusk.underseerr.mock
 
-import app.lusk.client.data.remote.api.AuthApiService
-import app.lusk.client.data.remote.api.DiscoveryApiService
-import app.lusk.client.data.remote.api.RequestApiService
-import app.lusk.client.data.remote.api.UserApiService
+import app.lusk.underseerr.data.remote.api.AuthApiService
+import app.lusk.underseerr.data.remote.api.DiscoveryApiService
+import app.lusk.underseerr.data.remote.api.RequestApiService
+import app.lusk.underseerr.data.remote.api.UserApiService
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -31,7 +31,7 @@ class MockOverseerrServerTest : FunSpec({
                 val authApi = MockServerTestHelper.createApiService<AuthApiService>(mockServer)
                 
                 val response = authApi.authenticateWithPlex(
-                    app.lusk.client.data.remote.model.PlexAuthRequest(
+                    app.lusk.underseerr.data.remote.model.PlexAuthRequest(
                         authToken = "test-token"
                     )
                 )
@@ -132,7 +132,7 @@ class MockOverseerrServerTest : FunSpec({
                 val requestApi = MockServerTestHelper.createApiService<RequestApiService>(mockServer)
                 
                 val response = requestApi.submitRequest(
-                    app.lusk.client.data.remote.model.ApiRequestBody(
+                    app.lusk.underseerr.data.remote.model.ApiRequestBody(
                         mediaId = 123,
                         mediaType = "movie"
                     )

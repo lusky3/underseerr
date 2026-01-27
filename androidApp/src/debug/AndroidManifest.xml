@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
-        android:name="app.lusk.client.DebugUnderseerrApplication"
+        android:name="app.lusk.underseerr.DebugUnderseerrApplication"
         android:usesCleartextTraffic="true"
         tools:replace="android:name,android:usesCleartextTraffic">
         

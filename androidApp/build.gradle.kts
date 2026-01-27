@@ -9,12 +9,12 @@ plugins {
 }
 
 android {
-    namespace = "app.lusk.client"
+    namespace = "app.lusk.underseerr"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
 
     defaultConfig {
-        applicationId = "app.lusk.client"
+        applicationId = "app.lusk.underseerr"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1

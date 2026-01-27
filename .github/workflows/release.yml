@@ -42,7 +42,7 @@ jobs:
           echo "$FIREBASE_GOOGLE_SERVICES_JSON_RELEASE" | base64 --decode > androidApp/src/release/google-services.json
         else
           echo "Secret FIREBASE_GOOGLE_SERVICES_JSON_RELEASE not found. Creating dummy."
-          echo '{"project_info":{"project_number":"0","project_id":"dummy","storage_bucket":""},"client":[{"client_info":{"mobilesdk_app_id":"1:0:android:0","android_client_info":{"package_name":"app.lusk.client"}},"api_key":[{"current_key":"dummy"}]}],"configuration_version":"1"}' > androidApp/src/release/google-services.json
+          echo '{"project_info":{"project_number":"0","project_id":"dummy","storage_bucket":""},"client":[{"client_info":{"mobilesdk_app_id":"1:0:android:0","android_client_info":{"package_name":"app.lusk.underseerr"}},"api_key":[{"current_key":"dummy"}]}],"configuration_version":"1"}' > androidApp/src/release/google-services.json
         fi
 
     - name: Get version from tag

@@ -5,7 +5,7 @@
 
     <application>
         <service
-            android:name="app.lusk.client.service.PushNotificationService"
+            android:name="app.lusk.underseerr.service.PushNotificationService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

@@ -1,4 +1,4 @@
-package app.lusk.client.mock
+package app.lusk.underseerr.mock
 
 import com.squareup.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json

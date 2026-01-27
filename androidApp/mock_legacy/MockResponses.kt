@@ -1,6 +1,6 @@
-package app.lusk.client.mock
+package app.lusk.underseerr.mock
 
-import app.lusk.client.data.remote.model.*
+import app.lusk.underseerr.data.remote.model.*
 
 /**
  * Provides realistic mock response data for Overseerr API endpoints.

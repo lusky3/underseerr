@@ -27,13 +27,13 @@ kotlin {
     }
 
     androidLibrary {
-        namespace = "app.lusk.client.shared"
+        namespace = "app.lusk.underseerr.shared"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
     }
 
     buildkonfig {
-        packageName = "app.lusk.client.shared"
+        packageName = "app.lusk.underseerr.shared"
         defaultConfigs {
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN, "DEBUG", "true")
         }

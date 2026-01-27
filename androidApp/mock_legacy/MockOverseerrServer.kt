@@ -1,4 +1,4 @@
-package app.lusk.client.mock
+package app.lusk.underseerr.mock
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
