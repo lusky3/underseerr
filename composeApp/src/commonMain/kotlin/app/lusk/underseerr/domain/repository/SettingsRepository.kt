@@ -1,5 +1,6 @@
 package app.lusk.underseerr.domain.repository
 
+import app.lusk.underseerr.domain.model.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 
@@ -108,6 +109,11 @@ interface SettingsRepository {
     
     fun hasRequestedNotificationPermission(): Flow<Boolean>
     suspend fun setHasRequestedNotificationPermission(hasRequested: Boolean)
+
+    /**
+     * Get global notification settings from the server.
+     */
+    suspend fun getGlobalNotificationSettings(): Result<Boolean>
 }
 
 /**
@@ -124,9 +130,17 @@ enum class ThemePreference {
  */
 data class NotificationSettings(
     val enabled: Boolean = true,
+    val requestPendingApproval: Boolean = true,
     val requestApproved: Boolean = true,
+    val requestAutoApproved: Boolean = true,
+    val requestDeclined: Boolean = true,
+    val requestProcessingFailed: Boolean = true,
     val requestAvailable: Boolean = true,
-    val requestDeclined: Boolean = true
+    val issueReported: Boolean = true,
+    val issueComment: Boolean = true,
+    val issueResolved: Boolean = true,
+    val issueReopened: Boolean = true,
+    val syncEnabled: Boolean = true
 )
 
 /**

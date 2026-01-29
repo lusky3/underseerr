@@ -15,6 +15,7 @@ fun ApiUserProfile.toDomain(): UserProfile {
         avatar = avatar,
         requestCount = requestCount,
         permissions = decodePermissions(permissions),
+        rawPermissions = permissions,
         isPlexUser = plexId != null
     )
 }

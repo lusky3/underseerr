@@ -50,7 +50,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     coEvery { repository.getMovieGenres() } returns Result.success(emptyList())
                     coEvery { repository.getTvGenres() } returns Result.success(emptyList())
                     
@@ -101,7 +101,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     
                     coEvery { repository.getTrending() } returns flowOf(PagingData.empty())
                     coEvery { repository.getPopularMovies() } returns flowOf(PagingData.empty())
@@ -131,7 +131,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     coEvery { repository.getMovieGenres() } returns Result.success(emptyList())
                     coEvery { repository.getTvGenres() } returns Result.success(emptyList())
 
@@ -185,7 +185,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
                     val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
                     
@@ -214,7 +214,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
                     val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
                     
@@ -251,7 +251,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
                     val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
                     
@@ -289,7 +289,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
                     val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
                     
@@ -318,7 +318,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
                     val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
                     
@@ -359,7 +359,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     
                     val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
                     advanceTimeBy(100)
@@ -394,7 +394,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     
                     val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
                     advanceTimeBy(100)
@@ -413,7 +413,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     
                     coEvery { repository.getTrending() } returns flowOf(PagingData.empty())
                     coEvery { repository.getPopularMovies() } returns flowOf(PagingData.empty())
@@ -445,7 +445,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
-                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), false))
+                    coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
                     
                     // When

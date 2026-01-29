@@ -157,6 +157,7 @@ class DomainModelPropertyTest : StringSpec({
                 avatar = avatar,
                 requestCount = requestCount,
                 permissions = permissions,
+                rawPermissions = 0L,
                 isPlexUser = isPlexUser
             )
             

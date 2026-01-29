@@ -114,6 +114,7 @@ class AuthRepositoryImpl(
                     canViewRequests = true,
                     isAdmin = true
                 ),
+                rawPermissions = 2L,
                 isPlexUser = true
             )
             val debugKey = "debug_session_key_12345"

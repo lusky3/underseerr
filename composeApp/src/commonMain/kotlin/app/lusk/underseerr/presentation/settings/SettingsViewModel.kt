@@ -2,6 +2,8 @@ package app.lusk.underseerr.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.lusk.underseerr.domain.model.AppPermissions
+import app.lusk.underseerr.domain.model.UserProfile
 import app.lusk.underseerr.domain.repository.NotificationSettings
 import app.lusk.underseerr.domain.repository.ServerConfig
 import app.lusk.underseerr.domain.repository.SettingsRepository
@@ -60,6 +62,12 @@ class SettingsViewModel(
     private val _currentServerUrl = MutableStateFlow<String?>(null)
     val currentServerUrl: StateFlow<String?> = _currentServerUrl.asStateFlow()
     
+    private val _globalWebPushEnabled = MutableStateFlow<Boolean>(true)
+    val globalWebPushEnabled: StateFlow<Boolean> = _globalWebPushEnabled.asStateFlow()
+
+    private val _currentUser = MutableStateFlow<UserProfile?>(null)
+    val currentUser: StateFlow<UserProfile?> = _currentUser.asStateFlow()
+    
     init {
         loadSettings()
         fetchProfiles()
@@ -110,6 +118,20 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.getCurrentServerUrl().collect {
                 _currentServerUrl.value = it
+            }
+        }
+
+        viewModelScope.launch {
+            // Check global settings
+            val globalResult = settingsRepository.getGlobalNotificationSettings()
+            if (globalResult is app.lusk.underseerr.domain.model.Result.Success) {
+                _globalWebPushEnabled.value = globalResult.data
+            }
+
+            // Get Current User for permissions
+            val userResult = authRepository.getCurrentUser()
+            if (userResult is app.lusk.underseerr.domain.model.Result.Success) {
+                _currentUser.value = userResult.data
             }
         }
     }
@@ -220,5 +242,13 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.setThemePreference(theme)
         }
+    }
+
+    fun hasPermission(permission: Int): Boolean {
+        val user = _currentUser.value ?: return false
+        val userPerms = user.rawPermissions
+        // Check if ADMIN or specific permission
+        return (userPerms and AppPermissions.ADMIN.toLong()) != 0L || 
+               (userPerms and permission.toLong()) != 0L
     }
 }

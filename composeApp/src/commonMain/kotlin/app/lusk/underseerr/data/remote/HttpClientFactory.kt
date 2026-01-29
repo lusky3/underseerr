@@ -68,7 +68,7 @@ class HttpClientFactory(
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
-                        // Logger disabled
+                        println(message)
                     }
                 }
                 level = LogLevel.ALL
@@ -81,6 +81,7 @@ class HttpClientFactory(
             }
             
             // Base URL configuration
+            expectSuccess = true
             defaultRequest {
                 val baseUrl = currentBaseUrl
                 if (baseUrl.isNotEmpty()) {
@@ -88,6 +89,7 @@ class HttpClientFactory(
                 }
                 contentType(ContentType.Application.Json)
                 header("Accept", "application/json")
+                header("User-Agent", "Underseerr/1.0.0 (Android)")
             }
         }
 

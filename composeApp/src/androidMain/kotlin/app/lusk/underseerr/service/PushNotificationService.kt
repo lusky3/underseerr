@@ -14,11 +14,14 @@ import com.google.firebase.messaging.RemoteMessage
 import org.koin.android.ext.android.inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.launch
 
 class PushNotificationService : FirebaseMessagingService() {
 
     private val notificationRepository: NotificationRepository by inject()
+    private val settingsRepository: app.lusk.underseerr.domain.repository.SettingsRepository by inject()
     private val logger: AppLogger by inject()
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -41,10 +44,46 @@ class PushNotificationService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
         
+        // 1. Get current local settings (runBlocking is acceptable here as it's a background service)
+        val settings = kotlinx.coroutines.runBlocking { 
+            settingsRepository.getNotificationSettings().first()
+        }
+        
         val title = message.notification?.title ?: message.data["title"] ?: "Overseerr"
         val body = message.notification?.body ?: message.data["message"] ?: "New notification"
         val imageUrl = message.notification?.imageUrl?.toString() ?: message.data["image"]
         val deepLink = message.data["url"]
+        val notificationTypeString = message.data["type"] // Assuming 'type' is in data payload
+
+        // 2. Client-Side Filtering
+        if (!settings.enabled) {
+            logger.d(TAG, "Dropping notification: Notifications disabled locally.")
+            return
+        }
+        
+        // Very basic text-based type detection if standard type field is missing or generic
+        // In a real app, strict type constants in the payload are better.
+        val lowerTitle = title.lowercase()
+        val lowerBody = body.lowercase()
+        
+        val shouldShow = when {
+            // Explicit type checks if available (mapped to typical Overseerr types)
+            notificationTypeString == "media_approved" || lowerTitle.contains("approved") -> settings.requestApproved
+            notificationTypeString == "media_available" || lowerTitle.contains("available") -> settings.requestAvailable
+            notificationTypeString == "media_declined" || lowerTitle.contains("declined") -> settings.requestDeclined
+            notificationTypeString == "media_pending" || lowerTitle.contains("requested") -> settings.requestPendingApproval
+            notificationTypeString == "media_failed" || lowerTitle.contains("failed") -> settings.requestProcessingFailed
+            notificationTypeString == "issue_created" || lowerTitle.contains("reported") -> settings.issueReported
+            notificationTypeString == "issue_comment" || lowerTitle.contains("comment") -> settings.issueComment
+            notificationTypeString == "issue_resolved" || lowerTitle.contains("resolved") -> settings.issueResolved
+            notificationTypeString == "issue_reopened" || lowerTitle.contains("reopened") -> settings.issueReopened
+            else -> true // Default to show if unknown
+        }
+        
+        if (!shouldShow) {
+            logger.d(TAG, "Dropping notification: $title (Filtered by local settings)")
+            return
+        }
         
         showNotification(title, body, imageUrl, deepLink)
     }

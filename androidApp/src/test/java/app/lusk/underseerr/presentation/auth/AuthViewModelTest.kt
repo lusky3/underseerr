@@ -139,6 +139,7 @@ class AuthViewModelTest {
             avatar = null,
             requestCount = 0,
             permissions = mockk(),
+            rawPermissions = 0L,
             isPlexUser = false
         )
         coEvery { authRepository.authenticateWithPlex(plexToken) } returns Result.success(userProfile)
@@ -186,6 +187,7 @@ class AuthViewModelTest {
             avatar = null,
             requestCount = 0,
             permissions = mockk(),
+            rawPermissions = 0L,
             isPlexUser = false
         )
         coEvery { authRepository.authenticateWithPlex(plexToken) } returns Result.success(userProfile)

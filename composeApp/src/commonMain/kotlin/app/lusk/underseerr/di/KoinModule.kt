@@ -27,6 +27,7 @@ fun sharedModule(context: PlatformContext) = module {
     single { PlexKtorService(get()) }
     single<RequestKtorService> { RequestServiceImpl(get()) }
     single<IssueService> { IssueKtorService(get()) }
+    single { SettingsKtorService(get()) }
     
     // Database
     single { 
@@ -45,9 +46,9 @@ fun sharedModule(context: PlatformContext) = module {
     single<DiscoveryRepository> { DiscoveryRepositoryImpl(get(), get(), get(), get()) }
     single<RequestRepository> { RequestRepositoryImpl(get(), get(), get(), get(), get()) }
     single<ProfileRepository> { ProfileRepositoryImpl(get(), get()) }
-    single<SettingsRepository> { SettingsRepositoryImpl(get()) }
+    single<SettingsRepository> { SettingsRepositoryImpl(get(), get(), get(), get()) }
     single<CacheRepository> { CacheRepositoryImpl(get(), get()) }
-    single<NotificationRepository> { NotificationRepositoryImpl(get(), get()) }
+    single<NotificationRepository> { NotificationRepositoryImpl(get(), get(), get(), get(), get()) }
     single<IssueRepository> { IssueRepositoryImpl(get(), get()) }
 }
 

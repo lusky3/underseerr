@@ -16,8 +16,15 @@ import kotlinx.coroutines.launch
  */
 class MainViewModel(
     private val settingsRepository: SettingsRepository,
+    private val notificationRepository: app.lusk.underseerr.domain.repository.NotificationRepository,
     private val permissionManager: app.lusk.underseerr.domain.permission.PermissionManager
 ) : ViewModel() {
+    
+    fun registerPushToken(token: String) {
+        viewModelScope.launch {
+            notificationRepository.registerForPushNotifications(token)
+        }
+    }
     
     val themePreference: StateFlow<ThemePreference> = settingsRepository.getThemePreference()
         .stateIn(

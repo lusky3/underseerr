@@ -34,6 +34,14 @@ class PreferencesManager(
         val NOTIFICATION_APPROVED = booleanPreferencesKey("notification_approved")
         val NOTIFICATION_AVAILABLE = booleanPreferencesKey("notification_available")
         val NOTIFICATION_DECLINED = booleanPreferencesKey("notification_declined")
+        val NOTIFICATION_PENDING = booleanPreferencesKey("notification_pending")
+        val NOTIFICATION_AUTO_APPROVED = booleanPreferencesKey("notification_auto_approved")
+        val NOTIFICATION_FAILED = booleanPreferencesKey("notification_failed")
+        val NOTIFICATION_ISSUE_REPORTED = booleanPreferencesKey("notification_issue_reported")
+        val NOTIFICATION_ISSUE_COMMENT = booleanPreferencesKey("notification_issue_comment")
+        val NOTIFICATION_ISSUE_RESOLVED = booleanPreferencesKey("notification_issue_resolved")
+        val NOTIFICATION_ISSUE_REOPENED = booleanPreferencesKey("notification_issue_reopened")
+        val SYNC_NOTIFICATION_SETTINGS = booleanPreferencesKey("sync_notification_settings")
         val DEFAULT_QUALITY_PROFILE = intPreferencesKey("default_quality_profile")
         val DEFAULT_MOVIE_QUALITY_PROFILE = intPreferencesKey("default_movie_quality_profile")
         val DEFAULT_TV_QUALITY_PROFILE = intPreferencesKey("default_tv_quality_profile")
@@ -291,7 +299,15 @@ class PreferencesManager(
                 enabled = preferences[PreferenceKeys.NOTIFICATIONS_ENABLED] ?: true,
                 requestApproved = preferences[PreferenceKeys.NOTIFICATION_APPROVED] ?: true,
                 requestAvailable = preferences[PreferenceKeys.NOTIFICATION_AVAILABLE] ?: true,
-                requestDeclined = preferences[PreferenceKeys.NOTIFICATION_DECLINED] ?: true
+                requestDeclined = preferences[PreferenceKeys.NOTIFICATION_DECLINED] ?: true,
+                requestPendingApproval = preferences[PreferenceKeys.NOTIFICATION_PENDING] ?: true,
+                requestAutoApproved = preferences[PreferenceKeys.NOTIFICATION_AUTO_APPROVED] ?: true,
+                requestProcessingFailed = preferences[PreferenceKeys.NOTIFICATION_FAILED] ?: true,
+                issueReported = preferences[PreferenceKeys.NOTIFICATION_ISSUE_REPORTED] ?: true,
+                issueComment = preferences[PreferenceKeys.NOTIFICATION_ISSUE_COMMENT] ?: true,
+                issueResolved = preferences[PreferenceKeys.NOTIFICATION_ISSUE_RESOLVED] ?: true,
+                issueReopened = preferences[PreferenceKeys.NOTIFICATION_ISSUE_REOPENED] ?: true,
+                syncEnabled = preferences[PreferenceKeys.SYNC_NOTIFICATION_SETTINGS] ?: true
             )
         }
     }
@@ -302,6 +318,14 @@ class PreferencesManager(
             preferences[PreferenceKeys.NOTIFICATION_APPROVED] = settings.requestApproved
             preferences[PreferenceKeys.NOTIFICATION_AVAILABLE] = settings.requestAvailable
             preferences[PreferenceKeys.NOTIFICATION_DECLINED] = settings.requestDeclined
+            preferences[PreferenceKeys.NOTIFICATION_PENDING] = settings.requestPendingApproval
+            preferences[PreferenceKeys.NOTIFICATION_AUTO_APPROVED] = settings.requestAutoApproved
+            preferences[PreferenceKeys.NOTIFICATION_FAILED] = settings.requestProcessingFailed
+            preferences[PreferenceKeys.NOTIFICATION_ISSUE_REPORTED] = settings.issueReported
+            preferences[PreferenceKeys.NOTIFICATION_ISSUE_COMMENT] = settings.issueComment
+            preferences[PreferenceKeys.NOTIFICATION_ISSUE_RESOLVED] = settings.issueResolved
+            preferences[PreferenceKeys.NOTIFICATION_ISSUE_REOPENED] = settings.issueReopened
+            preferences[PreferenceKeys.SYNC_NOTIFICATION_SETTINGS] = settings.syncEnabled
         }
     }
     

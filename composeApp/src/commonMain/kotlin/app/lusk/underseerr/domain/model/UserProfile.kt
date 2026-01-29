@@ -10,6 +10,7 @@ data class UserProfile(
     val avatar: String?,
     val requestCount: Int,
     val permissions: Permissions,
+    val rawPermissions: Long,
     val isPlexUser: Boolean
 )
 

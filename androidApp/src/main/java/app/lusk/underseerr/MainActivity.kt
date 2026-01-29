@@ -45,7 +45,9 @@ class MainActivity : FragmentActivity() {
         // Fetch and log current FCM token for testing
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                println("FCM TOKEN: ${task.result}")
+                val token = task.result
+                println("FCM TOKEN: $token")
+                viewModel.registerPushToken(token)
             }
         }
         
