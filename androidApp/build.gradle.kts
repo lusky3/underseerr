@@ -146,6 +146,8 @@ dependencies {
 
     // Other
     implementation(libs.androidx.splashscreen)
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
 
     // Sentry - Error monitoring (optional, only active if DSN is configured)
     implementation("io.sentry:sentry-android:8.14.0")

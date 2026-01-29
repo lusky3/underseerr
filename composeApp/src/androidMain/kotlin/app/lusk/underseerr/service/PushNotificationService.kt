@@ -15,6 +15,7 @@ class PushNotificationService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
+        println("FCM TOKEN: $token")
         scope.launch {
             try {
                 notificationRepository.registerForPushNotifications(token)

@@ -70,7 +70,6 @@
                     android:host="setup" />
             </intent-filter>
 
-            <!-- Deep link support for authentication callback -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -80,6 +79,16 @@
                     android:host="auth" />
             </intent-filter>
         </activity>
+
+        <!-- Firebase Messaging Service -->
+        <service
+            android:name="app.lusk.underseerr.service.PushNotificationService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

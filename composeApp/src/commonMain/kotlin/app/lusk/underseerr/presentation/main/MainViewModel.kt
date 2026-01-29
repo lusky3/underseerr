@@ -67,17 +67,17 @@ class MainViewModel(
     
     fun syncNotificationState() {
         viewModelScope.launch {
-             // If System Permission is DENIED, but Settings is ENABLED -> Disable Settings
-             // This ensures "If denied, toggle off"
-             val isGranted = permissionManager.isPermissionGranted(app.lusk.underseerr.domain.permission.Permission.NOTIFICATIONS)
-             if (!isGranted) {
-                 settingsRepository.getNotificationSettings().collect { settings ->
-                     if (settings.enabled) {
-                        settingsRepository.updateNotificationSettings(settings.copy(enabled = false))
-                     }
-                     throw kotlinx.coroutines.CancellationException()
-                 }
-             }
+            val isGranted = permissionManager.isPermissionGranted(app.lusk.underseerr.domain.permission.Permission.NOTIFICATIONS)
+            settingsRepository.getNotificationSettings().collect { settings ->
+                if (isGranted && !settings.enabled) {
+                    // System granted but app disabled -> Auto-enable app setting
+                    settingsRepository.updateNotificationSettings(settings.copy(enabled = true))
+                } else if (!isGranted && settings.enabled) {
+                    // System denied but app enabled -> Toggle off app setting
+                    settingsRepository.updateNotificationSettings(settings.copy(enabled = false))
+                }
+                throw kotlinx.coroutines.CancellationException()
+            }
         }
     }
 }

@@ -18,6 +18,7 @@ import app.lusk.underseerr.ui.theme.UnderseerrTheme
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import com.google.firebase.messaging.FirebaseMessaging
 
 /**
  * Main activity for the Underseerr.
@@ -40,6 +41,13 @@ class MainActivity : FragmentActivity() {
         
         // Check for notification permission on startup
         viewModel.requestNotificationPermission()
+
+        // Fetch and log current FCM token for testing
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                println("FCM TOKEN: ${task.result}")
+            }
+        }
         
         setContent {
             val themePreference by viewModel.themePreference.collectAsState()
