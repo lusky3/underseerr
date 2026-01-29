@@ -7,6 +7,7 @@ import app.lusk.underseerr.domain.repository.ThemePreference
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -53,14 +54,11 @@ class MainViewModel(
     fun requestNotificationPermission() {
         viewModelScope.launch {
             // Check current setting
-            settingsRepository.getNotificationSettings().collect { settings ->
-                if (settings.enabled) {
-                    if (!permissionManager.isPermissionGranted(app.lusk.underseerr.domain.permission.Permission.NOTIFICATIONS)) {
-                        permissionManager.requestPermission(app.lusk.underseerr.domain.permission.Permission.NOTIFICATIONS)
-                    }
+            val settings = settingsRepository.getNotificationSettings().firstOrNull() ?: return@launch
+            if (settings.enabled) {
+                if (!permissionManager.isPermissionGranted(app.lusk.underseerr.domain.permission.Permission.NOTIFICATIONS)) {
+                    permissionManager.requestPermission(app.lusk.underseerr.domain.permission.Permission.NOTIFICATIONS)
                 }
-                // Cancellation is important here because collect is infinite
-                throw kotlinx.coroutines.CancellationException()
             }
         }
     }
@@ -68,15 +66,14 @@ class MainViewModel(
     fun syncNotificationState() {
         viewModelScope.launch {
             val isGranted = permissionManager.isPermissionGranted(app.lusk.underseerr.domain.permission.Permission.NOTIFICATIONS)
-            settingsRepository.getNotificationSettings().collect { settings ->
-                if (isGranted && !settings.enabled) {
-                    // System granted but app disabled -> Auto-enable app setting
-                    settingsRepository.updateNotificationSettings(settings.copy(enabled = true))
-                } else if (!isGranted && settings.enabled) {
-                    // System denied but app enabled -> Toggle off app setting
-                    settingsRepository.updateNotificationSettings(settings.copy(enabled = false))
-                }
-                throw kotlinx.coroutines.CancellationException()
+            val settings = settingsRepository.getNotificationSettings().firstOrNull() ?: return@launch
+            
+            if (isGranted && !settings.enabled) {
+                // System granted but app disabled -> Auto-enable app setting
+                settingsRepository.updateNotificationSettings(settings.copy(enabled = true))
+            } else if (!isGranted && settings.enabled) {
+                // System denied but app enabled -> Toggle off app setting
+                settingsRepository.updateNotificationSettings(settings.copy(enabled = false))
             }
         }
     }

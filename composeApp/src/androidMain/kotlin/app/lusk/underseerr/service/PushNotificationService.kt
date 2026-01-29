@@ -1,5 +1,12 @@
 package app.lusk.underseerr.service
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import androidx.core.app.NotificationCompat
 import app.lusk.underseerr.domain.repository.NotificationRepository
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -30,30 +37,56 @@ class PushNotificationService : FirebaseMessagingService() {
         
         val title = message.notification?.title ?: message.data["title"] ?: "Overseerr"
         val body = message.notification?.body ?: message.data["message"] ?: "New notification"
+        val imageUrl = message.notification?.imageUrl?.toString() ?: message.data["image"]
+        val deepLink = message.data["url"]
         
-        showNotification(title, body)
+        showNotification(title, body, imageUrl, deepLink)
     }
 
-    private fun showNotification(title: String, body: String) {
+    private fun showNotification(title: String, body: String, imageUrl: String?, deepLink: String?) {
         val channelId = "underseerr_updates"
-        val notificationManager = getSystemService(android.app.NotificationManager::class.java)
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val channel = android.app.NotificationChannel(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
                 channelId,
                 "Overseerr Updates",
-                android.app.NotificationManager.IMPORTANCE_DEFAULT
-            )
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Notifications for media request updates and approvals"
+            }
             notificationManager.createNotificationChannel(channel)
         }
 
-        val notification = androidx.core.app.NotificationCompat.Builder(this, channelId)
+        // Create an Intent to open the app
+        val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            deepLink?.let { data = android.net.Uri.parse(it) }
+        }
+        
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Find the best icon
+        val smallIconResId = resources.getIdentifier("app_icon_transparent", "drawable", packageName).let {
+            if (it != 0) it else applicationInfo.icon
+        }
+
+        val notificationBuilder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(smallIconResId)
             .setContentTitle(title)
             .setContentText(body)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Replace with app icon
             .setAutoCancel(true)
-            .build()
+            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        // Handle image if present (note: simplified, usually requires loading into a Bitmap via Glide/Coil)
+        if (imageUrl != null) {
+            notificationBuilder.setStyle(NotificationCompat.BigTextStyle().bigText(body))
+        }
+
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 }
