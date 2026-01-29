@@ -28,6 +28,14 @@
         <!-- Disable Sentry auto-init; we initialize manually in UnderseerrApplication -->
         <!-- This allows the app to work without SENTRY_DSN for open source builds -->
         <meta-data android:name="io.sentry.auto-init" android:value="false" />
+
+        <!-- Set default icon and color for notifications -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/app_icon_transparent" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/ic_launcher_background" />
         
         <activity
             android:name=".MainActivity"

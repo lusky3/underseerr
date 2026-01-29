@@ -77,7 +77,13 @@ class PushNotificationService : FirebaseMessagingService() {
 
         // Find the best icon
         val smallIconResId = resources.getIdentifier("app_icon_transparent", "drawable", packageName).let {
-            if (it != 0) it else applicationInfo.icon
+            if (it != 0) {
+                logger.d(TAG, "Using custom transparent icon: $it")
+                it
+            } else {
+                logger.w(TAG, "Custom icon not found, falling back to app icon: ${applicationInfo.icon}")
+                applicationInfo.icon
+            }
         }
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
