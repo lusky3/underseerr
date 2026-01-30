@@ -69,7 +69,7 @@ jobs:
 
   deploy-production:
     needs: check
-    if: github.ref == 'refs/heads/main' || inputs.environment == 'production'
+    if: inputs.environment == 'production'
     runs-on: ubuntu-latest
     environment: production
     defaults:
