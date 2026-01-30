@@ -361,15 +361,7 @@ fun SettingsScreen(
                 onClick = { showUrlDialog = true }
             )
 
-            SettingsItem(
-                title = "Configure Notification Webhook",
-                subtitle = if (isAdmin) "Automatically configure Overseerr to send notifications to this app" else "Requires Admin permissions",
-                onClick = { 
-                    if (isAdmin) {
-                         viewModel.configureWebhook()
-                    }
-                }
-            )
+
             
             HorizontalDivider()
             

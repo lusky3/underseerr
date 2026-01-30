@@ -18,6 +18,8 @@ import app.lusk.underseerr.domain.repository.NotificationRepository
 import app.lusk.underseerr.domain.security.WebPushKeyManager
 import app.lusk.underseerr.util.AppLogger
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import app.lusk.underseerr.shared.BuildKonfig
 import kotlinx.coroutines.flow.map
 
 /**
@@ -25,8 +27,6 @@ import kotlinx.coroutines.flow.map
  * Feature: underseerr
  * Validates: Requirements 6.1, 6.2, 6.3
  */
-import app.lusk.underseerr.shared.BuildKonfig
-
 class NotificationRepositoryImpl(
     private val notificationDao: NotificationDao,
     private val userKtorService: UserKtorService,
@@ -44,8 +44,17 @@ class NotificationRepositoryImpl(
     override suspend fun registerForPushNotifications(token: String): Result<Unit> {
         val (p256dh, auth) = webPushKeyManager.getOrCreateWebPushKeys()
         
-        // For FCM, the Web Push endpoint is a specific URL containing the token
-        val endpoint = "https://fcm.googleapis.com/fcm/send/$token"
+        // Determine Notification Server URL (Worker Proxy)
+        val customServerUrl = settingsRepository.getNotificationServerUrl().first()
+        val serverUrl = if (customServerUrl.isNullOrBlank()) {
+             if (BuildKonfig.DEBUG) BuildKonfig.WORKER_ENDPOINT_STAGING else BuildKonfig.WORKER_ENDPOINT_PROD
+        } else {
+             customServerUrl
+        }
+        
+        val cleanUrl = serverUrl.trimEnd('/')
+        // Endpoint points to the Worker, which will proxy to FCM.
+        val endpoint = "$cleanUrl/push/$token"
         
         logger.d(TAG, "Registering for Push: endpoint=$endpoint")
         
