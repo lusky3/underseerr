@@ -35,8 +35,8 @@ buildscript {
                 because("Fixes Denial of Service vulnerability")
             }
             // Fix transitive vulnerabilities in AGP (Netty, JDOM, Jose4j, Guava)
-            classpath("io.netty:netty-codec-http2:4.1.124.Final") { because("Fixes CVE-2024-xxxx") }
-            classpath("io.netty:netty-handler:4.1.124.Final") { because("Fixes CVE-2024-xxxx") }
+            classpath("io.netty:netty-codec-http2:4.2.9.Final") { because("Fixes CVE-2024-xxxx") }
+            classpath("io.netty:netty-handler:4.2.9.Final") { because("Fixes CVE-2024-xxxx") }
             classpath("org.jdom:jdom2:2.0.6.1") { because("Fixes XXE vulnerability") }
             classpath("org.bitbucket.b_c:jose4j:0.9.6") { because("Fixes DoS vulnerability") }
             classpath("com.google.guava:guava:33.0.0-android") { because("Fixes insecure temp dir") }
@@ -49,14 +49,14 @@ subprojects {
     configurations.configureEach {
         resolutionStrategy {
             // Netty vulnerabilities - upgrade to patched versions
-            force("io.netty:netty-codec:4.1.124.Final")
-            force("io.netty:netty-codec-http:4.1.124.Final")
-            force("io.netty:netty-codec-http2:4.1.124.Final")
-            force("io.netty:netty-common:4.1.124.Final")
-            force("io.netty:netty-handler:4.1.124.Final")
-            force("io.netty:netty-buffer:4.1.124.Final")
-            force("io.netty:netty-transport:4.1.124.Final")
-            force("io.netty:netty-resolver:4.1.124.Final")
+            force("io.netty:netty-codec:4.2.9.Final")
+            force("io.netty:netty-codec-http:4.2.9.Final")
+            force("io.netty:netty-codec-http2:4.2.9.Final")
+            force("io.netty:netty-common:4.2.9.Final")
+            force("io.netty:netty-handler:4.2.9.Final")
+            force("io.netty:netty-buffer:4.2.9.Final")
+            force("io.netty:netty-transport:4.2.9.Final")
+            force("io.netty:netty-resolver:4.2.9.Final")
             
             // Protobuf vulnerabilities - CVE for DoS
             force("com.google.protobuf:protobuf-java:4.29.3")
