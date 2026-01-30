@@ -172,7 +172,7 @@ class NotificationRepositoryImpl(
         notificationDao.deleteNotification(notificationId)
     }
 
-    override suspend fun updateWebhookSettings(webhookUrl: String) {
+    override suspend fun updateWebhookSettings(webhookUrl: String): Result<Unit> = safeApiCall {
         // Construct the webhook settings payload for Overseerr
         val payload = mapOf(
             "enabled" to true,

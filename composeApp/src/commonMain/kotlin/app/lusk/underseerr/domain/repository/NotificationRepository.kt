@@ -50,5 +50,5 @@ interface NotificationRepository {
     /**
      * Update webhook notification settings including the Cloud Function URL.
      */
-    suspend fun updateWebhookSettings(webhookUrl: String)
+    suspend fun updateWebhookSettings(webhookUrl: String): Result<Unit>
 }

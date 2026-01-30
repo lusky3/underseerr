@@ -351,6 +351,8 @@ fun SettingsScreen(
                 subtitle = currentServerUrl ?: "No server configured",
                 onClick = onNavigateToServerManagement
             )
+            
+            Spacer(modifier = Modifier.height(100.dp))
         }
         
         // Bottom fade gradient overlay
