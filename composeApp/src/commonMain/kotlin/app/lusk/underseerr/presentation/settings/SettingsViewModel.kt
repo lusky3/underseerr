@@ -139,6 +139,16 @@ class SettingsViewModel(
             val userResult = authRepository.getCurrentUser()
             if (userResult is app.lusk.underseerr.domain.model.Result.Success) {
                 _currentUser.value = userResult.data
+                
+                // Sync notification settings from server if enabled
+                val currentSettings = settingsRepository.getNotificationSettings().first()
+                if (currentSettings.syncEnabled) {
+                     val syncResult = notificationRepository.fetchRemoteSettings(userResult.data.id)
+                     if (syncResult is app.lusk.underseerr.domain.model.Result.Success) {
+                         val merged = syncResult.data.copy(syncEnabled = true)
+                         settingsRepository.updateNotificationSettings(merged)
+                     }
+                }
             }
         }
     }

@@ -7,7 +7,10 @@ import app.lusk.underseerr.data.remote.api.SettingsKtorService
 import app.lusk.underseerr.data.remote.api.UserKtorService
 import app.lusk.underseerr.data.remote.model.*
 import app.lusk.underseerr.data.remote.safeApiCall
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import app.lusk.underseerr.domain.model.Notification
+import app.lusk.underseerr.domain.repository.NotificationSettings
 import app.lusk.underseerr.domain.model.Result
 import app.lusk.underseerr.domain.repository.NotificationRepository
 import app.lusk.underseerr.domain.security.WebPushKeyManager
@@ -173,79 +176,55 @@ class NotificationRepositoryImpl(
     }
 
     override suspend fun updateWebhookSettings(webhookUrl: String): Result<Unit> = safeApiCall {
-        // Construct the webhook settings payload for Overseerr
-        val payload = mapOf(
-            "enabled" to true,
-            "options" to mapOf(
-                "webhookUrl" to webhookUrl,
-                "authHeader" to "", // Optional
-                "jsonPayload" to "{\"notification_type\":\"{{notification_type}}\",\"subject\":\"{{subject}}\",\"message\":\"{{message}}\",\"image\":\"{{image}}\",\"email\":\"{{notifyuser_email}}\"}", // Base64 encoded in agent, but API takes string and handles it? 
-                // Wait, based on source code: 
-                // const payloadString = Buffer.from(this.getSettings().options.jsonPayload, 'base64').toString('utf8');
-                // The API expects the stored value to probably be Base64 if the agent decodes it.
-                // Let's check the API docs or assume we send plain string and the server handles it?
-                // Actually, let's look at the source again. The AGENT decodes it. That implies the SETTINGS store it as Base64.
-                // So we should Base64 encode our json template.
-                
-                // Simplified template:
-                // {
-                //   "notification_type": "{{notification_type}}",
-                //   "subject": "{{subject}}",
-                //   "message": "{{message}}",
-                //   "image": "{{image}}",
-                //   "notifyuser_email": "{{notifyuser_email}}",
-                //   "requestedBy_email": "{{requestedBy_email}}"
-                // }
-                
-                 "jsonPayload" to "ewogIC  ibm90aWZpY2F0aW9uX3R5cGUiOiAie3tub3RpZmljYXRpb25fdHlwZX19IiwKICAic3ViamVjdCI6ICJ7e3N1YmplY3R9fSIsCiAgIm1lc3NhZ2UiOiAie3ttZXNzYWdlfX0iLAogICJpbWFnZSI6ICJ7e2ltYWdlfX0iLAogICJbm90aWZ5dXNlcl9lbWFpbCI6ICJ7e25vdGlmeXVzZXJfZW1haWx9fSIsCiAgInJlcXVlc3RlZEJ5X2VtYWlsIjogInt7cmVxdWVzdGVkQnlfZW1haWx9fSIKfQ=="
-            ),
-             "types" to 14336 // Enable all or specific types? 
-             // Bitmask: 
-             // 2 (PENDING) + 4 (APPROVED) + 8 (AVAILABLE) + 16 (FAILED) + 32 (TEST) + 64 (DECLINED) + 128 (AUTO_APPROVED) + 256 (ISSUE_CREATED) ...
-             // Let's enable most relevant ones: 
-             // PENDING (2) + APPROVED (4) + AVAILABLE (8) + FAILED (16) + DECLINED (64) + AUTO_APPROVED (128) = 222
-             // + ISSUE_CREATED (256) + TITLE (512?) ... 
-             // A safe bet is a large number or calculate it. 
-             // Let's assume the user wants standard notifications. 
-             // For now, let's just use what was in the GET response or a calculated mask.
-             // Mask 4062 from logs = 2+4+8+16+32+64+128+256+512+1024+2048 (All up to ISSUE lines)
-        )
-        // Wait, the API might require us to fetch existing settings to preserve 'types'.
-        // But for auto-conf, we can enforce a good default.
-        
-        // Re-encoding logic to be safe:
-        // Plain JSON:
-        // {"notification_type":"{{notification_type}}","subject":"{{subject}}","message":"{{message}}","image":"{{image}}","notifyuser_email":"{{notifyuser_email}}","requestedBy_email":"{{requestedBy_email}}"}
-        // I will implement a helper or just hardcode the base64 for that string.
-        
-        val jsonTemplate = """
-            {
-              "notification_type": "{{notification_type}}",
-              "subject": "{{subject}}",
-              "message": "{{message}}",
-              "image": "{{image}}",
-              "notifyuser_email": "{{notifyuser_email}}",
-              "requestedBy_email": "{{requestedBy_email}}"
-            }
-        """.trimIndent()
-        
-        // We need a way to Base64 encode in KMP common code. 
-        // For now, let's assume we can add a Base64 util or use one if available.
-        // Or I can hardcode it for this specific template.
-        
-        // Hardcoded Base64 for the above JSON (minified safely):
+        // Base64 encoded JSON template (minified)
         // {"notification_type":"{{notification_type}}","subject":"{{subject}}","message":"{{message}}","image":"{{image}}","notifyuser_email":"{{notifyuser_email}}","requestedBy_email":"{{requestedBy_email}}"}
         val base64Payload = "eyJub3RpZmljYXRpb25fdHlwZSI6Int7bm90aWZpY2F0aW9uX3R5cGV9fSIsInN1YmplY3QiOiJ7e3N1YmplY3R9fSIsIm1lc3NhZ2UiOiJ7e21lc3NhZ2V9fSIsImltYWdlIjoie3tpbWFnZX19Iiwibm90aWZ5dXNlcl9lbWFpbCI6Int7bm90aWZ5dXNlcl9lbWFpbH19IiwicmVxdWVzdGVkQnlfZW1haWwiOiJ7e3JlcXVlc3RlZEJ5X2VtYWlsfX0ifQ=="
         
-        val finalPayload = mapOf(
-            "enabled" to true,
-            "types" to 4094, // Standard set
-            "options" to mapOf(
-                "webhookUrl" to webhookUrl,
-                "jsonPayload" to base64Payload
+        val payload = WebhookSettingsPayload(
+            enabled = true,
+            types = 4094, // Standard notification types mask
+            options = WebhookOptions(
+                webhookUrl = webhookUrl,
+                jsonPayload = base64Payload
             )
         )
         
-        settingsKtorService.updateWebhookSettings(finalPayload)
+        settingsKtorService.updateWebhookSettings(payload)
+    }
+
+    override suspend fun fetchRemoteSettings(userId: Int): Result<NotificationSettings> = safeApiCall {
+        val remote = settingsKtorService.getUserNotificationSettings(userId)
+        val mask = remote.notificationTypes.webpush ?: 0
+        val enabled = remote.webPushEnabled == true
+        
+        NotificationSettings(
+            enabled = enabled,
+            // Bitmask values based on Overseerr source
+            requestPendingApproval = (mask and 2) != 0,
+            requestApproved = (mask and 4) != 0,
+            requestAvailable = (mask and 8) != 0,
+            requestProcessingFailed = (mask and 16) != 0,
+            requestDeclined = (mask and 64) != 0,
+            requestAutoApproved = (mask and 128) != 0,
+            issueReported = (mask and 256) != 0,
+            issueComment = (mask and 512) != 0,
+            issueResolved = (mask and 1024) != 0,
+            issueReopened = (mask and 2048) != 0,
+            syncEnabled = true
+        )
     }
 }
+
+@Serializable
+data class WebhookOptions(
+    val webhookUrl: String,
+    val authHeader: String? = null,
+    val jsonPayload: String?
+)
+
+@Serializable
+data class WebhookSettingsPayload(
+    val enabled: Boolean,
+    val types: Int,
+    val options: WebhookOptions
+)

@@ -1,6 +1,7 @@
 package app.lusk.underseerr.data.remote.api
 
 import app.lusk.underseerr.data.remote.model.ApiWebPushGlobalSettings
+import app.lusk.underseerr.data.remote.model.ApiUserNotificationSettings
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -18,10 +19,14 @@ class SettingsKtorService(private val client: HttpClient) {
         return client.get("/api/v1/settings/notifications/webpush").body()
     }
 
-    suspend fun updateWebhookSettings(settings: Map<String, Any?>) {
+    suspend fun updateWebhookSettings(settings: Any) {
         client.post("/api/v1/settings/notifications/webhook") {
              contentType(ContentType.Application.Json)
              setBody(settings)
         }
+    }
+
+    suspend fun getUserNotificationSettings(userId: Int): ApiUserNotificationSettings {
+        return client.get("/api/v1/user/$userId/settings/notifications").body()
     }
 }

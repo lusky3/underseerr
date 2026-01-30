@@ -51,4 +51,9 @@ interface NotificationRepository {
      * Update webhook notification settings including the Cloud Function URL.
      */
     suspend fun updateWebhookSettings(webhookUrl: String): Result<Unit>
+    
+    /**
+     * Fetch remote notification settings from Overseerr.
+     */
+    suspend fun fetchRemoteSettings(userId: Int): Result<NotificationSettings>
 }
