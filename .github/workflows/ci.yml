@@ -29,7 +29,6 @@ jobs:
     environment: staging
     timeout-minutes: 60
     env:
-      CLOUDFLARE_WORKER_ENDPOINT_PROD: ${{ secrets.CLOUDFLARE_WORKER_ENDPOINT_PROD }}
       CLOUDFLARE_WORKER_ENDPOINT_STAGING: ${{ secrets.CLOUDFLARE_WORKER_ENDPOINT_STAGING }}
 
     steps:
