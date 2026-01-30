@@ -52,8 +52,8 @@ kotlin {
 
         defaultConfigs {
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN, "DEBUG", "true")
-            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_PROD", "\"${getEnv("CLOUDFLARE_WORKER_ENDPOINT_PROD")}\"")
-            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_STAGING", "\"${getEnv("CLOUDFLARE_WORKER_ENDPOINT_STAGING")}\"")
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_PROD", getEnv("CLOUDFLARE_WORKER_ENDPOINT_PROD"))
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_STAGING", getEnv("CLOUDFLARE_WORKER_ENDPOINT_STAGING"))
         }
     }
     
