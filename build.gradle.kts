@@ -14,7 +14,7 @@ plugins {
     alias(libs.plugins.google.services) apply false
     id("org.sonarqube") version "7.2.2.6593"
 
-    id("io.sentry.android.gradle") version "5.12.2" apply false
+    id("io.sentry.android.gradle") version "6.0.0" apply false
 }
 
 sonar {
