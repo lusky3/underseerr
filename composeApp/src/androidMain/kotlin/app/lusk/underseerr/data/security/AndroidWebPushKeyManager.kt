@@ -91,61 +91,67 @@ class AndroidWebPushKeyManager(
     }
 
     override suspend fun decrypt(payload: ByteArray): ByteArray = withContext(Dispatchers.IO) {
-        val privateKeyStr = sharedPrefs.getString(KEY_PRIVATE_KEY, null) ?: throw IllegalStateException("Keys not initialized")
-        val authSecretStr = sharedPrefs.getString(KEY_AUTH, null) ?: throw IllegalStateException("Keys not initialized")
+        try {
+            val privateKeyStr = sharedPrefs.getString(KEY_PRIVATE_KEY, null) ?: throw IllegalStateException("Keys not initialized")
+            val authSecretStr = sharedPrefs.getString(KEY_AUTH, null) ?: throw IllegalStateException("Keys not initialized")
+            val myPubKeyStr = sharedPrefs.getString(KEY_P256DH, null) ?: throw IllegalStateException("Keys not initialized")
 
-        val decoder = Base64.getUrlDecoder()
-        val privateKeyBytes = decoder.decode(privateKeyStr)
-        val authSecret = decoder.decode(authSecretStr)
+            val decoder = Base64.getUrlDecoder()
+            val privateKeyBytes = decoder.decode(privateKeyStr)
+            val authSecret = decoder.decode(authSecretStr)
+            val myPubKey = decoder.decode(myPubKeyStr)
 
-        // Parse aes128gcm Header: salt(16) | rs(4) | idlen(1) | keyid(idlen)
-        if (payload.size < 21) throw IllegalArgumentException("Payload too short")
-        val salt = payload.sliceArray(0 until 16)
-        val idlen = payload[20].toInt() and 0xFF
-        if (payload.size < 21 + idlen) throw IllegalArgumentException("Payload truncated")
-        val senderPubKey = payload.sliceArray(21 until 21 + idlen)
-        val ciphertext = payload.sliceArray(21 + idlen until payload.size)
+            // Parse aes128gcm Header: salt(16) | rs(4) | idlen(1) | keyid(idlen)
+            if (payload.size < 21) throw IllegalArgumentException("Payload too short: ${payload.size}")
+            val salt = payload.sliceArray(0 until 16)
+            val idlen = payload[20].toInt() and 0xFF
+            if (payload.size < 21 + idlen) throw IllegalArgumentException("Payload truncated: ${payload.size} < 21 + $idlen")
+            val senderPubKey = payload.sliceArray(21 until 21 + idlen)
+            val ciphertext = payload.sliceArray(21 + idlen until payload.size)
 
-        // 1. Shared Secret
-        val keyFactory = KeyFactory.getInstance("EC")
-        val privateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateKeyBytes))
-        val senderPublicKey = uncompressedToPublicKey(senderPubKey)
+            android.util.Log.d("WebPushDecrypt", "Parsed header: idlen=$idlen, ciphertext size=${ciphertext.size}")
 
-        val keyAgreement = KeyAgreement.getInstance("ECDH")
-        keyAgreement.init(privateKey)
-        keyAgreement.doPhase(senderPublicKey, true)
-        val sharedSecret = keyAgreement.generateSecret()
+            // 1. Shared Secret
+            val keyFactory = KeyFactory.getInstance("EC")
+            val privateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateKeyBytes))
+            val senderPublicKey = uncompressedToPublicKey(senderPubKey)
 
-        // 2. HKDF Multi-stage
-        // PRK_IKM = HKDF-Extract(auth_secret, shared_secret)
-        val prkIkm = hkdfExtract(authSecret, sharedSecret)
-        
-        // IKM = HKDF-Expand(PRK_IKM, "WebPush: info\0", 32)
-        val ikm = hkdfExpand(prkIkm, "WebPush: info\u0000".toByteArray(), 32)
-        
-        // PRK = HKDF-Extract(salt, IKM)
-        val prk = hkdfExtract(salt, ikm)
-        
-        // CEK & Nonce
-        val cek = hkdfExpand(prk, "Content-Encoding: aes128gcm\u0000".toByteArray(), 16)
-        val nonce = hkdfExpand(prk, "Content-Encoding: nonce\u0000".toByteArray(), 12)
+            val keyAgreement = KeyAgreement.getInstance("ECDH")
+            keyAgreement.init(privateKey)
+            keyAgreement.doPhase(senderPublicKey, true)
+            val sharedSecret = keyAgreement.generateSecret()
+            android.util.Log.d("WebPushDecrypt", "Shared secret derived")
 
-        // 3. AES-GCM Decrypt
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val spec = GCMParameterSpec(128, nonce)
-        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(cek, "AES"), spec)
-        
-        val decrypted = cipher.doFinal(ciphertext)
-        
-        // Remove padding (delimited by 0x02, followed by nulls)
-        var end = decrypted.size - 1
-        while (end >= 0 && decrypted[end] == 0.toByte()) {
-            end--
-        }
-        if (end >= 0 && decrypted[end] == 2.toByte()) {
-            decrypted.copyOfRange(0, end)
-        } else {
-            decrypted
+            // 2. HKDF Multi-stage
+            val prkIkm = hkdfExtract(authSecret, sharedSecret)
+            val ikm = hkdfExpand(prkIkm, "WebPush: info\u0000".toByteArray(), 32)
+            val prk = hkdfExtract(salt, ikm)
+            
+            val cek = hkdfExpand(prk, "Content-Encoding: aes128gcm\u0000".toByteArray(), 16)
+            val nonce = hkdfExpand(prk, "Content-Encoding: nonce\u0000".toByteArray(), 12)
+            android.util.Log.d("WebPushDecrypt", "HKDF complete: CEK derived")
+
+            // 3. AES-GCM Decrypt
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val spec = GCMParameterSpec(128, nonce)
+            cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(cek, "AES"), spec)
+            
+            val decrypted = cipher.doFinal(ciphertext)
+            android.util.Log.d("WebPushDecrypt", "AES Decryption successful")
+            
+            // Remove padding
+            var end = decrypted.size - 1
+            while (end >= 0 && decrypted[end] == 0.toByte()) {
+                end--
+            }
+            if (end >= 0 && decrypted[end] == 2.toByte()) {
+                decrypted.copyOfRange(0, end)
+            } else {
+                decrypted
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("WebPushDecrypt", "Encryption error: ${e.message}", e)
+            throw e
         }
     }
 

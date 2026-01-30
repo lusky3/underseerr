@@ -51,15 +51,26 @@ class PushNotificationService : FirebaseMessagingService() {
         logger.d(TAG, "onMessageReceived called. From: ${message.from}")
         
         val type = message.data["type"]
+        val payloadBase64 = message.data["payload"]
+        val headersJson = message.data["headers"]
+        
+        logger.d(TAG, "Message Type: $type")
+        logger.d(TAG, "Payload Length: ${payloadBase64?.length ?: 0}")
+        logger.d(TAG, "Headers: $headersJson")
+
         if (type == "webpush_encrypted") {
-            val payloadBase64 = message.data["payload"]
             if (payloadBase64 != null) {
                 try {
                     val encryptedPayload = android.util.Base64.decode(payloadBase64, android.util.Base64.DEFAULT)
+                    logger.d(TAG, "Decoding Base64 payload success. Size: ${encryptedPayload.size}")
+                    
                     // Decryption involves crypto, doing it in runBlocking since this is a service callback
-                    val decryptedBytes = runBlocking { webPushKeyManager.decrypt(encryptedPayload) }
+                    val decryptedBytes = runBlocking { 
+                        logger.d(TAG, "Attempting decryption...")
+                        webPushKeyManager.decrypt(encryptedPayload) 
+                    }
                     val decryptedJson = String(decryptedBytes)
-                    logger.d(TAG, "Successfully decrypted Web Push payload")
+                    logger.d(TAG, "Successfully decrypted Web Push payload: $decryptedJson")
                     
                     val json = Json { ignoreUnknownKeys = true }
                     val data = json.decodeFromString<Map<String, String>>(decryptedJson)
@@ -72,8 +83,10 @@ class PushNotificationService : FirebaseMessagingService() {
                     processIncomingNotification(title, body, image, deepLink, data["notification_type"])
                     return
                 } catch (e: Exception) {
-                    logger.e(TAG, "Failed to decrypt Web Push notification", e)
+                    logger.e(TAG, "Failed to decrypt Web Push notification: ${e.message}", e)
                 }
+            } else {
+                logger.w(TAG, "Received webpush_encrypted but payload is null")
             }
         }
 

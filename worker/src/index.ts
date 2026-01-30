@@ -235,7 +235,12 @@ export default {
 
                 // Forward the RAW payload (encrypted) and headers
                 const body = await request.arrayBuffer();
-                const bodyBase64 = btoa(String.fromCharCode(...new Uint8Array(body)));
+                const uint8 = new Uint8Array(body);
+                let binary = '';
+                for (let i = 0; i < uint8.length; i++) {
+                    binary += String.fromCharCode(uint8[i]);
+                }
+                const bodyBase64 = btoa(binary);
 
                 // Collect relevant headers for Web Push decryption
                 const headers: any = {};
@@ -243,6 +248,8 @@ export default {
                     const val = request.headers.get(h);
                     if (val) headers[h] = val;
                 });
+
+                console.log(`Forwarding push for token: ${token.substring(0, 10)}... Size: ${body.byteLength} Encoding: ${headers['content-encoding']}`);
 
                 const messageBody = {
                     message: {
@@ -267,8 +274,14 @@ export default {
                     body: JSON.stringify(messageBody)
                 });
 
-                if (!fcmRes.ok) return new Response("FCM Error", { status: 502 });
-                return new Response(JSON.stringify({ success: true }), { status: 201 });
+                const fcmText = await fcmRes.text();
+                if (!fcmRes.ok) {
+                    console.error(`FCM Error: ${fcmRes.status} - ${fcmText}`);
+                    return new Response(`FCM Error: ${fcmText}`, { status: 502 });
+                }
+
+                console.log(`FCM Success: ${fcmText}`);
+                return new Response(JSON.stringify({ success: true, fcm: JSON.parse(fcmText) }), { status: 201 });
 
             } catch (e: any) {
                 return new Response(`Error: ${e.message}`, { status: 500 });
