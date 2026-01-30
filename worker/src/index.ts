@@ -137,14 +137,27 @@ export default {
                 }
 
                 // Get Google Access Token
+                // Get Google Access Token
                 if (!env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+                    console.error("GOOGLE_APPLICATION_CREDENTIALS_JSON env var is missing");
                     return new Response("Service Account not configured", { status: 500 });
                 }
 
-                const accessToken = await getAccessToken(env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+                let serviceAccountJson = env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+                // If it doesn't look like JSON, assume Base64 and try to decode
+                if (!serviceAccountJson.trim().startsWith('{')) {
+                    try {
+                        serviceAccountJson = atob(serviceAccountJson);
+                    } catch (err) {
+                        console.error("Failed to decode Base64 secret", err);
+                        return new Response("Invalid Service Account credentials", { status: 500 });
+                    }
+                }
+
+                const accessToken = await getAccessToken(serviceAccountJson);
 
                 // Construct FCM Message (HTTP v1 API)
-                const projectId = JSON.parse(env.GOOGLE_APPLICATION_CREDENTIALS_JSON).project_id;
+                const projectId = JSON.parse(serviceAccountJson).project_id;
                 const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
                 // Sanitize Payload: Only pass necessary strings
