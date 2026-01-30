@@ -63,8 +63,8 @@ jobs:
           mkdir -p androidApp/src/debug
           mkdir -p androidApp/src/release
           if [ -n "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" ]; then
-            echo "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" > androidApp/src/debug/google-services.json
-            echo "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" > androidApp/src/release/google-services.json
+            echo "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" | base64 -d > androidApp/src/debug/google-services.json
+            echo "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" | base64 -d > androidApp/src/release/google-services.json
           else
              echo "WARNING: FIREBASE_GOOGLE_SERVICES_JSON_DEBUG not found. Using dummy."
              echo '{ "project_info": {"project_number": "000000000000" }, "client": [{ "client_info": { "android_client_info": { "package_name": "app.lusk.underseerr.debug" } } }] }' > androidApp/src/debug/google-services.json
