@@ -294,8 +294,17 @@ class SettingsViewModel(
         viewModelScope.launch {
             // Use configured URL or default
             val currentUrl = _notificationServerUrl.value
-            // Placeholder default for now
-            val webhookUrl = if (currentUrl.isNullOrBlank()) "https://underseerr-notifications.worker.workers.dev/webhook" else "$currentUrl/webhook"
+            
+            // Determine default logic
+            val defaultEndpoint = if (app.lusk.underseerr.shared.BuildKonfig.DEBUG) {
+                 app.lusk.underseerr.shared.BuildKonfig.WORKER_ENDPOINT_STAGING
+            } else {
+                 app.lusk.underseerr.shared.BuildKonfig.WORKER_ENDPOINT_PROD
+            }
+            
+            val baseUrl = if (currentUrl.isNullOrBlank()) defaultEndpoint else currentUrl
+            val sanitizedBase = baseUrl.trimEnd('/')
+            val webhookUrl = "$sanitizedBase/webhook"
             
             val result = notificationRepository.updateWebhookSettings(webhookUrl)
             

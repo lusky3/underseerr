@@ -286,31 +286,67 @@ fun SettingsScreen(
             val notificationServerUrl by viewModel.notificationServerUrl.collectAsState()
 
             if (showUrlDialog) {
+                var isCustom by remember { mutableStateOf(!notificationServerUrl.isNullOrBlank()) }
                 var urlInput by remember { mutableStateOf(notificationServerUrl ?: "") }
+                
                 AlertDialog(
                     onDismissRequest = { showUrlDialog = false },
                     title = { Text("Notification Server URL") },
                     text = {
                         Column {
-                            Text("Enter the URL of your Cloudflare Worker.", style = MaterialTheme.typography.bodyMedium)
-                            Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(
-                                value = urlInput,
-                                onValueChange = { urlInput = it },
-                                label = { Text("https://...") },
-                                singleLine = true
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { isCustom = false }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = !isCustom,
+                                    onClick = { isCustom = false }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Default (Hosted)")
+                            }
+                            
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { isCustom = true }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = isCustom,
+                                    onClick = { isCustom = true }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Custom")
+                            }
+
+                            if (isCustom) {
+                                OutlinedTextField(
+                                    value = urlInput,
+                                    onValueChange = { urlInput = it },
+                                    label = { Text("https://...") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     },
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                if (urlInput.matches(Regex("^(https?://).+"))) {
+                                if (!isCustom) {
+                                    viewModel.setNotificationServerUrl("")
+                                    showUrlDialog = false
+                                } else if (urlInput.matches(Regex("^(https?://).+"))) {
                                     viewModel.setNotificationServerUrl(urlInput)
                                     showUrlDialog = false
                                 }
                             },
-                            enabled = urlInput.matches(Regex("^(https?://).+"))
+                            enabled = !isCustom || urlInput.matches(Regex("^(https?://).+"))
                         ) { Text("Save") }
                     },
                     dismissButton = {
