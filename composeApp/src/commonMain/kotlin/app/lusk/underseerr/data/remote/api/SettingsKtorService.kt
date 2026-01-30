@@ -14,4 +14,11 @@ class SettingsKtorService(private val client: HttpClient) {
     suspend fun getGlobalWebPushSettings(): ApiWebPushGlobalSettings {
         return client.get("/api/v1/settings/notifications/webpush").body()
     }
+
+    suspend fun updateWebhookSettings(settings: Map<String, Any?>) {
+        client.post("/api/v1/settings/notifications/webhook") {
+             io.ktor.http.contentType(io.ktor.http.ContentType.Application.Json)
+             io.ktor.client.request.setBody(settings)
+        }
+    }
 }

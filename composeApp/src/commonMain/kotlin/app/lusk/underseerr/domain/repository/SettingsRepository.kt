@@ -113,7 +113,30 @@ interface SettingsRepository {
     /**
      * Get global notification settings from the server.
      */
+    /**
+     * Get global notification settings from the server.
+     */
     suspend fun getGlobalNotificationSettings(): Result<Boolean>
+
+    /**
+     * Get cached FCM push token.
+     */
+    fun getPushToken(): Flow<String?>
+
+    /**
+     * Save FCM push token.
+     */
+    suspend fun savePushToken(token: String)
+
+    /**
+     * Get configured Notification Server URL (Cloudflare Worker).
+     */
+    fun getNotificationServerUrl(): Flow<String?>
+
+    /**
+     * Set Notification Server URL.
+     */
+    suspend fun setNotificationServerUrl(url: String)
 }
 
 /**

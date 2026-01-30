@@ -23,8 +23,10 @@ import kotlinx.coroutines.flow.map
 class NotificationRepositoryImpl(
     private val notificationDao: NotificationDao,
     private val userKtorService: UserKtorService,
+    private val settingsKtorService: SettingsKtorService,
     private val settingsRepository: app.lusk.underseerr.domain.repository.SettingsRepository,
     private val webPushKeyManager: WebPushKeyManager,
+    private val notificationServerService: app.lusk.underseerr.data.remote.api.NotificationServerService,
     private val logger: AppLogger
 ) : NotificationRepository {
     
@@ -39,6 +41,28 @@ class NotificationRepositoryImpl(
         val endpoint = "https://fcm.googleapis.com/fcm/send/$token"
         
         logger.d(TAG, "Registering for Push: endpoint=$endpoint")
+        
+        // 0. Register token with Cloudflare Worker (or configured backend)
+        val currentUser = safeApiCall { userKtorService.getCurrentUser() }
+        if (currentUser is Result.Success) {
+            // TODO: Retrieve the configured Notification Server URL from settings
+            // For now, we'll hardcode or use a placeholder that matches the deployed worker default
+            // Ideally, this is stored in Preferences and user enters it.
+            // But since we want "Hybrid", sending it alongside the webhook config is tricky because the app needs to know where to POST /register.
+            
+            // Temporary default or fetched from settings (which we need to add)
+            val serverUrl = "https://underseerr-notifications.YOUR_SUBDOMAIN.workers.dev" 
+            // We should inject this or get it from settingsRepository
+            
+            try {
+                // notificationServerService.registerToken(serverUrl, currentUser.data.email, token)
+                // logger.d(TAG, "Registered token with notification server")
+            } catch (e: Exception) {
+                logger.w(TAG, "Failed to register token with notification server: ${e.message}")
+            }
+        } else {
+             logger.w(TAG, "Could not fetch current user to register token. Cloud Function notifications may fail.")
+        }
         
         // 1. Check Global Settings & Update User Settings
         logger.d(TAG, "Step 1: Checking settings...")
@@ -137,5 +161,82 @@ class NotificationRepositoryImpl(
     
     override suspend fun deleteNotification(notificationId: String) {
         notificationDao.deleteNotification(notificationId)
+    }
+
+    override suspend fun updateWebhookSettings(webhookUrl: String) {
+        // Construct the webhook settings payload for Overseerr
+        val payload = mapOf(
+            "enabled" to true,
+            "options" to mapOf(
+                "webhookUrl" to webhookUrl,
+                "authHeader" to "", // Optional
+                "jsonPayload" to "{\"notification_type\":\"{{notification_type}}\",\"subject\":\"{{subject}}\",\"message\":\"{{message}}\",\"image\":\"{{image}}\",\"email\":\"{{notifyuser_email}}\"}", // Base64 encoded in agent, but API takes string and handles it? 
+                // Wait, based on source code: 
+                // const payloadString = Buffer.from(this.getSettings().options.jsonPayload, 'base64').toString('utf8');
+                // The API expects the stored value to probably be Base64 if the agent decodes it.
+                // Let's check the API docs or assume we send plain string and the server handles it?
+                // Actually, let's look at the source again. The AGENT decodes it. That implies the SETTINGS store it as Base64.
+                // So we should Base64 encode our json template.
+                
+                // Simplified template:
+                // {
+                //   "notification_type": "{{notification_type}}",
+                //   "subject": "{{subject}}",
+                //   "message": "{{message}}",
+                //   "image": "{{image}}",
+                //   "notifyuser_email": "{{notifyuser_email}}",
+                //   "requestedBy_email": "{{requestedBy_email}}"
+                // }
+                
+                 "jsonPayload" to "ewogIC  ibm90aWZpY2F0aW9uX3R5cGUiOiAie3tub3RpZmljYXRpb25fdHlwZX19IiwKICAic3ViamVjdCI6ICJ7e3N1YmplY3R9fSIsCiAgIm1lc3NhZ2UiOiAie3ttZXNzYWdlfX0iLAogICJpbWFnZSI6ICJ7e2ltYWdlfX0iLAogICJbm90aWZ5dXNlcl9lbWFpbCI6ICJ7e25vdGlmeXVzZXJfZW1haWx9fSIsCiAgInJlcXVlc3RlZEJ5X2VtYWlsIjogInt7cmVxdWVzdGVkQnlfZW1haWx9fSIKfQ=="
+            ),
+             "types" to 14336 // Enable all or specific types? 
+             // Bitmask: 
+             // 2 (PENDING) + 4 (APPROVED) + 8 (AVAILABLE) + 16 (FAILED) + 32 (TEST) + 64 (DECLINED) + 128 (AUTO_APPROVED) + 256 (ISSUE_CREATED) ...
+             // Let's enable most relevant ones: 
+             // PENDING (2) + APPROVED (4) + AVAILABLE (8) + FAILED (16) + DECLINED (64) + AUTO_APPROVED (128) = 222
+             // + ISSUE_CREATED (256) + TITLE (512?) ... 
+             // A safe bet is a large number or calculate it. 
+             // Let's assume the user wants standard notifications. 
+             // For now, let's just use what was in the GET response or a calculated mask.
+             // Mask 4062 from logs = 2+4+8+16+32+64+128+256+512+1024+2048 (All up to ISSUE lines)
+        )
+        // Wait, the API might require us to fetch existing settings to preserve 'types'.
+        // But for auto-conf, we can enforce a good default.
+        
+        // Re-encoding logic to be safe:
+        // Plain JSON:
+        // {"notification_type":"{{notification_type}}","subject":"{{subject}}","message":"{{message}}","image":"{{image}}","notifyuser_email":"{{notifyuser_email}}","requestedBy_email":"{{requestedBy_email}}"}
+        // I will implement a helper or just hardcode the base64 for that string.
+        
+        val jsonTemplate = """
+            {
+              "notification_type": "{{notification_type}}",
+              "subject": "{{subject}}",
+              "message": "{{message}}",
+              "image": "{{image}}",
+              "notifyuser_email": "{{notifyuser_email}}",
+              "requestedBy_email": "{{requestedBy_email}}"
+            }
+        """.trimIndent()
+        
+        // We need a way to Base64 encode in KMP common code. 
+        // For now, let's assume we can add a Base64 util or use one if available.
+        // Or I can hardcode it for this specific template.
+        
+        // Hardcoded Base64 for the above JSON (minified safely):
+        // {"notification_type":"{{notification_type}}","subject":"{{subject}}","message":"{{message}}","image":"{{image}}","notifyuser_email":"{{notifyuser_email}}","requestedBy_email":"{{requestedBy_email}}"}
+        val base64Payload = "eyJub3RpZmljYXRpb25fdHlwZSI6Int7bm90aWZpY2F0aW9uX3R5cGV9fSIsInN1YmplY3QiOiJ7e3N1YmplY3R9fSIsIm1lc3NhZ2UiOiJ7e21lc3NhZ2V9fSIsImltYWdlIjoie3tpbWFnZX19Iiwibm90aWZ5dXNlcl9lbWFpbCI6Int7bm90aWZ5dXNlcl9lbWFpbH19IiwicmVxdWVzdGVkQnlfZW1haWwiOiJ7e3JlcXVlc3RlZEJ5X2VtYWlsfX0ifQ=="
+        
+        val finalPayload = mapOf(
+            "enabled" to true,
+            "types" to 4094, // Standard set
+            "options" to mapOf(
+                "webhookUrl" to webhookUrl,
+                "jsonPayload" to base64Payload
+            )
+        )
+        
+        settingsKtorService.updateWebhookSettings(finalPayload)
     }
 }

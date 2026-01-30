@@ -46,4 +46,9 @@ interface NotificationRepository {
      * Delete specific notification.
      */
     suspend fun deleteNotification(notificationId: String)
+
+    /**
+     * Update webhook notification settings including the Cloud Function URL.
+     */
+    suspend fun updateWebhookSettings(webhookUrl: String)
 }

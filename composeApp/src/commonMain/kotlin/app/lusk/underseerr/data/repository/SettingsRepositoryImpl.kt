@@ -136,4 +136,17 @@ class SettingsRepositoryImpl(
             settings.enabled
         }
     }
+
+    override fun getPushToken(): Flow<String?> = preferencesManager.getPushToken()
+
+    override suspend fun savePushToken(token: String) {
+        preferencesManager.setPushToken(token)
+    }
+
+    override fun getNotificationServerUrl(): Flow<String?> =
+        preferencesManager.getNotificationServerUrl()
+
+    override suspend fun setNotificationServerUrl(url: String) {
+        preferencesManager.setNotificationServerUrl(url)
+    }
 }

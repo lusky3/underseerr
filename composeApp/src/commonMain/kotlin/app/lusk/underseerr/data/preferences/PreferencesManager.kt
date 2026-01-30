@@ -50,6 +50,8 @@ class PreferencesManager(
         val CURRENT_SERVER_URL = stringPreferencesKey("current_server_url")
         val CLIENT_ID = stringPreferencesKey("client_id")
         val HAS_REQUESTED_NOTIFICATIONS = booleanPreferencesKey("has_requested_notifications")
+        val PUSH_TOKEN = stringPreferencesKey("push_token")
+        val NOTIFICATION_SERVER_URL = stringPreferencesKey("notification_server_url")
     }
     
     /**
@@ -410,6 +412,30 @@ class PreferencesManager(
     fun hasRequestedNotificationPermission(): Flow<Boolean> {
         return dataStore.data.map { preferences ->
             preferences[PreferenceKeys.HAS_REQUESTED_NOTIFICATIONS] ?: false
+        }
+    }
+
+    suspend fun setPushToken(token: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.PUSH_TOKEN] = token
+        }
+    }
+
+    fun getPushToken(): Flow<String?> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.PUSH_TOKEN]
+        }
+    }
+
+    suspend fun setNotificationServerUrl(url: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.NOTIFICATION_SERVER_URL] = url
+        }
+    }
+
+    fun getNotificationServerUrl(): Flow<String?> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.NOTIFICATION_SERVER_URL]
         }
     }
 }

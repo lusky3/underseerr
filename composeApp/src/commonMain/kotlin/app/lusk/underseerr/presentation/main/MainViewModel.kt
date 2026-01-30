@@ -22,6 +22,7 @@ class MainViewModel(
     
     fun registerPushToken(token: String) {
         viewModelScope.launch {
+            settingsRepository.savePushToken(token)
             notificationRepository.registerForPushNotifications(token)
         }
     }

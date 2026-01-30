@@ -29,7 +29,8 @@ class SettingsViewModel(
     private val authRepository: app.lusk.underseerr.domain.repository.AuthRepository,
     private val requestRepository: app.lusk.underseerr.domain.repository.RequestRepository,
     private val biometricManager: app.lusk.underseerr.domain.security.BiometricManager,
-    private val permissionManager: app.lusk.underseerr.domain.permission.PermissionManager
+    private val permissionManager: app.lusk.underseerr.domain.permission.PermissionManager,
+    private val notificationRepository: app.lusk.underseerr.domain.repository.NotificationRepository
 ) : ViewModel() {
     
     private val _themePreference = MutableStateFlow(ThemePreference.SYSTEM)
@@ -166,6 +167,14 @@ class SettingsViewModel(
                 
                 if (permissionManager.isPermissionGranted(permission)) {
                      settingsRepository.updateNotificationSettings(settings)
+                     
+                     // Force re-registration to ensure server Web Push setting is enabled
+                     val cachedToken = settingsRepository.getPushToken().first()
+                     if (cachedToken != null) {
+                        launch {
+                            notificationRepository.registerForPushNotifications(cachedToken)
+                        }
+                     }
                 } else {
                     val shouldShowRationale = permissionManager.shouldShowRationale(permission)
                     val hasRequested = settingsRepository.hasRequestedNotificationPermission().first()
@@ -250,5 +259,39 @@ class SettingsViewModel(
         // Check if ADMIN or specific permission
         return (userPerms and AppPermissions.ADMIN.toLong()) != 0L || 
                (userPerms and permission.toLong()) != 0L
+    }
+
+    private val _notificationServerUrl = MutableStateFlow<String?>(null)
+    val notificationServerUrl: StateFlow<String?> = _notificationServerUrl.asStateFlow()
+
+    init {
+        loadSettings()
+        fetchProfiles()
+        checkBiometricAvailability()
+        
+        viewModelScope.launch {
+            settingsRepository.getNotificationServerUrl().collect {
+                _notificationServerUrl.value = it
+            }
+        }
+    }
+
+    // ... (rest of methods)
+
+    fun setNotificationServerUrl(url: String) {
+        viewModelScope.launch {
+            settingsRepository.setNotificationServerUrl(url)
+        }
+    }
+
+    fun configureWebhook() {
+        viewModelScope.launch {
+            // Use configured URL or default
+            val currentUrl = _notificationServerUrl.value
+            // Placeholder default for now
+            val webhookUrl = if (currentUrl.isNullOrBlank()) "https://underseerr-notifications.worker.workers.dev/webhook" else "$currentUrl/webhook"
+            
+            notificationRepository.updateWebhookSettings(webhookUrl)
+        }
     }
 }

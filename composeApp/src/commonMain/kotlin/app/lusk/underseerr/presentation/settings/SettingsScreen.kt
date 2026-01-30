@@ -266,6 +266,61 @@ fun SettingsScreen(
             )
             
             HorizontalDivider()
+
+            // Webhook Configuration (Auto-Setup)
+            SettingsSectionHeader(title = "Advanced Integration")
+            
+            val isAdmin = viewModel.hasPermission(app.lusk.underseerr.domain.model.AppPermissions.ADMIN)
+            
+            var showUrlDialog by remember { mutableStateOf(false) }
+            val notificationServerUrl by viewModel.notificationServerUrl.collectAsState()
+
+            if (showUrlDialog) {
+                var urlInput by remember { mutableStateOf(notificationServerUrl ?: "") }
+                AlertDialog(
+                    onDismissRequest = { showUrlDialog = false },
+                    title = { Text("Notification Server URL") },
+                    text = {
+                        Column {
+                            Text("Enter the URL of your Cloudflare Worker.", style = MaterialTheme.typography.bodyMedium)
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = urlInput,
+                                onValueChange = { urlInput = it },
+                                label = { Text("https://...") },
+                                singleLine = true
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.setNotificationServerUrl(urlInput)
+                            showUrlDialog = false
+                        }) { Text("Save") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showUrlDialog = false }) { Text("Cancel") }
+                    }
+                )
+            }
+
+            SettingsItem(
+                title = "Notification Server",
+                subtitle = notificationServerUrl ?: "Default (Cloudflare)",
+                onClick = { showUrlDialog = true }
+            )
+
+            SettingsItem(
+                title = "Configure Notification Webhook",
+                subtitle = if (isAdmin) "Automatically configure Overseerr to send notifications to this app" else "Requires Admin permissions",
+                onClick = { 
+                    if (isAdmin) {
+                         viewModel.configureWebhook()
+                    }
+                }
+            )
+            
+            HorizontalDivider()
             
             // Requests Section
             SettingsSectionHeader(title = "Requests")

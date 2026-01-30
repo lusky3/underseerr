@@ -24,4 +24,5 @@ actual fun platformModule(): Module = module {
     single<app.lusk.underseerr.util.AppLogger> { app.lusk.underseerr.util.ConsoleLogger() }
     single<app.lusk.underseerr.domain.security.BiometricManager> { app.lusk.underseerr.domain.security.IosBiometricManager() }
     single<app.lusk.underseerr.domain.permission.PermissionManager> { app.lusk.underseerr.domain.permission.IosPermissionManager() }
+    single<app.lusk.underseerr.domain.repository.FirestoreService> { app.lusk.underseerr.data.repository.IosFirestoreService() }
 }

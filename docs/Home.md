@@ -6,6 +6,7 @@ This is the official documentation for **Underseerr**, a native mobile applicati
 
 * **[Setup Guide](Setup.md)**: Steps to configure your development environment and build the app.
 * **[User Guide](User_Guide.md)**: Learn how to use the app feature by feature.
+* **[Push Notifications](PUSH_NOTIFICATIONS.md)**: How to set up your own notification backend (Cloudflare/Firebase).
 * **[Architecture](Architecture.md)**: Understand the technical design, including Kotlin Multiplatform and Jetpack Compose.
 * **[Contributing](Contributing.md)**: Guidelines for code style, commits, and submitting pull requests.
 

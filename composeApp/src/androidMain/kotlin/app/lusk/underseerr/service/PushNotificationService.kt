@@ -44,6 +44,13 @@ class PushNotificationService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
         
+        logger.d(TAG, "onMessageReceived called. From: ${message.from}")
+        logger.d(TAG, "Message Data Keys: ${message.data.keys}")
+        logger.d(TAG, "Message Data: ${message.data}")
+        message.notification?.let {
+            logger.d(TAG, "Message Notification: Title=${it.title}, Body=${it.body}")
+        }
+        
         // 1. Get current local settings (runBlocking is acceptable here as it's a background service)
         val settings = kotlinx.coroutines.runBlocking { 
             settingsRepository.getNotificationSettings().first()

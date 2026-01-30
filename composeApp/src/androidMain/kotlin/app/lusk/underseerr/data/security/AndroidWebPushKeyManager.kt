@@ -34,13 +34,15 @@ class AndroidWebPushKeyManager(
     private companion object {
         const val KEY_P256DH = "p256dh"
         const val KEY_AUTH = "auth"
+        const val KEY_PRIVATE_KEY = "private_key"
     }
 
     override suspend fun getOrCreateWebPushKeys(): Pair<String, String> = withContext(Dispatchers.IO) {
         val p256dh = sharedPrefs.getString(KEY_P256DH, null)
         val auth = sharedPrefs.getString(KEY_AUTH, null)
+        val privateKey = sharedPrefs.getString(KEY_PRIVATE_KEY, null)
 
-        if (p256dh != null && auth != null) {
+        if (p256dh != null && auth != null && privateKey != null) {
             return@withContext p256dh to auth
         }
 
@@ -61,6 +63,9 @@ class AndroidWebPushKeyManager(
         
         val newP256dh = Base64.getUrlEncoder().withoutPadding().encodeToString(uncompressedKey)
 
+        // Save Private Key (PKCS#8)
+        val newPrivateKey = Base64.getUrlEncoder().withoutPadding().encodeToString(keyPair.private.encoded)
+
         // Generate auth secret (16 random bytes)
         val authBytes = ByteArray(16)
         SecureRandom().nextBytes(authBytes)
@@ -69,6 +74,7 @@ class AndroidWebPushKeyManager(
         sharedPrefs.edit()
             .putString(KEY_P256DH, newP256dh)
             .putString(KEY_AUTH, newAuth)
+            .putString(KEY_PRIVATE_KEY, newPrivateKey)
             .apply()
 
         newP256dh to newAuth
