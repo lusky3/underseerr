@@ -65,8 +65,8 @@ jobs:
             echo "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" > androidApp/src/release/google-services.json
           else
              echo "WARNING: FIREBASE_GOOGLE_SERVICES_JSON_DEBUG not found. Using dummy."
-             echo '{ "project_info": {"project_number": "000000000000" }, "client": [{ "client_info": { "android_client_info": { "package_name": "app.lusk.client.debug" } } }] }' > androidApp/src/debug/google-services.json
-             echo '{ "project_info": {"project_number": "000000000000" }, "client": [{ "client_info": { "android_client_info": { "package_name": "app.lusk.client" } } }] }' > androidApp/src/release/google-services.json
+             echo '{ "project_info": {"project_number": "000000000000" }, "client": [{ "client_info": { "android_client_info": { "package_name": "app.lusk.underseerr.debug" } } }] }' > androidApp/src/debug/google-services.json
+             echo '{ "project_info": {"project_number": "000000000000" }, "client": [{ "client_info": { "android_client_info": { "package_name": "app.lusk.underseerr" } } }] }' > androidApp/src/release/google-services.json
           fi
       
       - name: Build and analyze
