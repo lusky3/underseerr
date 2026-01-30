@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+
 
 /**
  * ViewModel for settings screen.
@@ -68,6 +71,9 @@ class SettingsViewModel(
 
     private val _currentUser = MutableStateFlow<UserProfile?>(null)
     val currentUser: StateFlow<UserProfile?> = _currentUser.asStateFlow()
+    
+    private val _uiEvent = MutableSharedFlow<String>()
+    val uiEvent: SharedFlow<String> = _uiEvent
     
     init {
         loadSettings()
@@ -253,9 +259,9 @@ class SettingsViewModel(
         }
     }
 
-    fun hasPermission(permission: Int): Boolean {
-        val user = _currentUser.value ?: return false
-        val userPerms = user.rawPermissions
+    fun hasPermission(user: UserProfile?, permission: Int): Boolean {
+        val userToCheck = user ?: return false
+        val userPerms = userToCheck.rawPermissions
         // Check if ADMIN or specific permission
         return (userPerms and AppPermissions.ADMIN.toLong()) != 0L || 
                (userPerms and permission.toLong()) != 0L
@@ -291,7 +297,13 @@ class SettingsViewModel(
             // Placeholder default for now
             val webhookUrl = if (currentUrl.isNullOrBlank()) "https://underseerr-notifications.worker.workers.dev/webhook" else "$currentUrl/webhook"
             
-            notificationRepository.updateWebhookSettings(webhookUrl)
+            val result = notificationRepository.updateWebhookSettings(webhookUrl)
+            
+            if (result is app.lusk.underseerr.domain.model.Result.Success) {
+                _uiEvent.emit("Webhook configured successfully")
+            } else if (result is app.lusk.underseerr.domain.model.Result.Error) {
+                _uiEvent.emit("Failed: ${result.error.message ?: "Unknown error"}")
+            }
         }
     }
 }

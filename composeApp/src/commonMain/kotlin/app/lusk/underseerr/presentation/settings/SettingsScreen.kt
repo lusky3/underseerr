@@ -32,6 +32,15 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val themePreference by viewModel.themePreference.collectAsState()
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(viewModel) {
+        viewModel.uiEvent.collect { message -> 
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+    
+
     val notificationSettings by viewModel.notificationSettings.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
     val defaultMovieProfile by viewModel.defaultMovieProfile.collectAsState()
@@ -46,6 +55,7 @@ fun SettingsScreen(
     var showTvProfileDialog by remember { mutableStateOf(false) }
     
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
@@ -171,7 +181,7 @@ fun SettingsScreen(
                 )
 
                 // Advanced Request Notifications (Permission Based)
-                val canManageRequests = viewModel.hasPermission(app.lusk.underseerr.domain.model.AppPermissions.MANAGE_REQUESTS)
+                val canManageRequests = viewModel.hasPermission(currentUser, app.lusk.underseerr.domain.model.AppPermissions.MANAGE_REQUESTS)
                 
                 SettingsSwitchItem(
                     title = "Request Pending Approval",
@@ -207,7 +217,7 @@ fun SettingsScreen(
                 HorizontalDivider()
                 SettingsSectionHeader(title = "Issue Notifications")
 
-                val canManageIssues = viewModel.hasPermission(app.lusk.underseerr.domain.model.AppPermissions.MANAGE_ISSUES)
+                val canManageIssues = viewModel.hasPermission(currentUser, app.lusk.underseerr.domain.model.AppPermissions.MANAGE_ISSUES)
 
                 SettingsSwitchItem(
                     title = "Issue Reported",
@@ -270,7 +280,7 @@ fun SettingsScreen(
             // Webhook Configuration (Auto-Setup)
             SettingsSectionHeader(title = "Advanced Integration")
             
-            val isAdmin = viewModel.hasPermission(app.lusk.underseerr.domain.model.AppPermissions.ADMIN)
+            val isAdmin = viewModel.hasPermission(currentUser, app.lusk.underseerr.domain.model.AppPermissions.ADMIN)
             
             var showUrlDialog by remember { mutableStateOf(false) }
             val notificationServerUrl by viewModel.notificationServerUrl.collectAsState()
@@ -293,10 +303,15 @@ fun SettingsScreen(
                         }
                     },
                     confirmButton = {
-                        TextButton(onClick = {
-                            viewModel.setNotificationServerUrl(urlInput)
-                            showUrlDialog = false
-                        }) { Text("Save") }
+                        TextButton(
+                            onClick = {
+                                if (urlInput.matches(Regex("^(https?://).+"))) {
+                                    viewModel.setNotificationServerUrl(urlInput)
+                                    showUrlDialog = false
+                                }
+                            },
+                            enabled = urlInput.matches(Regex("^(https?://).+"))
+                        ) { Text("Save") }
                     },
                     dismissButton = {
                         TextButton(onClick = { showUrlDialog = false }) { Text("Cancel") }
