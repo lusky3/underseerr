@@ -8,6 +8,15 @@ on:
     paths:
       - 'worker/**'
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 jobs:
   check:
@@ -30,7 +39,7 @@ jobs:
 
   deploy-staging:
     needs: check
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/develop' || inputs.environment == 'staging'
     runs-on: ubuntu-latest
     environment: staging
     defaults:
@@ -60,7 +69,7 @@ jobs:
 
   deploy-production:
     needs: check
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || inputs.environment == 'production'
     runs-on: ubuntu-latest
     environment: production
     defaults:
