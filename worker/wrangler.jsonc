@@ -1,0 +1,23 @@
+{
+    "name": "underseerr-notifications",
+    "main": "src/index.ts",
+    "compatibility_date": "2023-10-25",
+    "env": {
+        "staging": {
+            "name": "underseerr-notifications-staging",
+            "kv_namespaces": [
+                {
+                    "binding": "TOKENS"
+                }
+            ]
+        },
+        "production": {
+            "name": "underseerr-notifications-prod",
+            "kv_namespaces": [
+                {
+                    "binding": "TOKENS"
+                }
+            ]
+        }
+    }
+}

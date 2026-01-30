@@ -32,18 +32,17 @@ This guide explains how to deploy the notification backend to Cloudflare Workers
     npm install
     ```
 
-3. Create KV Namespaces for both environments:
+3. **Automatic Provisioning:**
+    The project uses `wrangler.jsonc` configured for automatic resource provisioning. You do **not** need to manually create KV namespaces or copy IDs.
 
-    *For Production:* `npx wrangler kv:namespace create "TOKENS" --env production`
-    *For Staging:* `npx wrangler kv:namespace create "TOKENS" --env staging`
+    When the GitHub Action runs `wrangler deploy`, Cloudflare will automatically:
+    * Create the necessary KV Namespaces (`underseerr-notifications-prod-TOKENS`, etc.) if they don't exist.
+    * Link them to your worker.
 
-4. **Important:** Copy the `id` strings from the output. Using environment variables ensures the repo stays clean.
-
-    Add these to your **GitHub Repository Secrets**:
-    * `CLOUDFLARE_TOKENS_KV_ID_PROD`
-    * `CLOUDFLARE_TOKENS_KV_ID_STAGING`
-
-    The `wrangler.toml` file uses placeholders (e.g., `TOKENS_KV_ID_PROD`) which the CI/CD pipeline replaces automatically during deployment.
+4. Add these to your **GitHub Repository Secrets**:
+    * `CLOUDFLARE_API_TOKEN_PROD` / `CLOUDFLARE_API_TOKEN_STAGING`
+    * `GOOGLE_APPLICATION_CREDENTIALS_JSON_PROD` / `GOOGLE_APPLICATION_CREDENTIALS_JSON_STAGING`
+    * `CLOUDFLARE_ACCOUNT_ID`
 
 ### 3. Deploy
 

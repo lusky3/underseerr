@@ -46,8 +46,6 @@ jobs:
           cache-dependency-path: worker/package-lock.json
       - name: Install Dependencies
         run: npm ci
-      - name: Inject KV ID
-        run: sed -i 's/TOKENS_KV_ID_STAGING/${{ secrets.CLOUDFLARE_TOKENS_KV_ID_STAGING }}/g' wrangler.toml
       - name: Deploy Staging
         uses: cloudflare/wrangler-action@v3
         with:
@@ -78,8 +76,6 @@ jobs:
           cache-dependency-path: worker/package-lock.json
       - name: Install Dependencies
         run: npm ci
-      - name: Inject KV ID
-        run: sed -i 's/TOKENS_KV_ID_PROD/${{ secrets.CLOUDFLARE_TOKENS_KV_ID_PROD }}/g' wrangler.toml
       - name: Deploy Production
         uses: cloudflare/wrangler-action@v3
         with:
