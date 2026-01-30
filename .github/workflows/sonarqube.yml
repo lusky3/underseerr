@@ -27,6 +27,7 @@ jobs:
   sonarqube:
     name: SonarQube Analysis
     runs-on: ubuntu-latest
+    environment: staging
     # Skip if no token (e.g., Dependabot PRs don't have access to secrets)
     if: ${{ github.actor != 'dependabot[bot]' }}
     
