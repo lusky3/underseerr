@@ -34,19 +34,16 @@ This guide explains how to deploy the notification backend to Cloudflare Workers
 
 3. Create KV Namespaces for both environments:
 
-    *For Production:*
+    *For Production:* `npx wrangler kv:namespace create "TOKENS" --env production`
+    *For Staging:* `npx wrangler kv:namespace create "TOKENS" --env staging`
 
-    ```bash
-    npx wrangler kv:namespace create "TOKENS" --env production
-    ```
+4. **Important:** Copy the `id` strings from the output. Using environment variables ensures the repo stays clean.
 
-    *For Staging:*
+    Add these to your **GitHub Repository Secrets**:
+    * `CLOUDFLARE_TOKENS_KV_ID_PROD`
+    * `CLOUDFLARE_TOKENS_KV_ID_STAGING`
 
-    ```bash
-    npx wrangler kv:namespace create "TOKENS" --env staging
-    ```
-
-4. Copy the `id` values from the output and update `wrangler.toml` in the respective `[env.production]` and `[env.staging]` sections.
+    The `wrangler.toml` file uses placeholders (e.g., `TOKENS_KV_ID_PROD`) which the CI/CD pipeline replaces automatically during deployment.
 
 ### 3. Deploy
 

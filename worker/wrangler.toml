@@ -8,11 +8,11 @@ compatibility_date = "2023-10-25"
 name = "underseerr-notifications-staging"
 [[env.staging.kv_namespaces]]
 binding = "TOKENS"
-id = "" # TODO: Run `npx wrangler kv:namespace create "TOKENS" --env staging`
+id = "TOKENS_KV_ID_STAGING"
 
 # Environment: Production
 [env.production]
 name = "underseerr-notifications-prod"
 [[env.production.kv_namespaces]]
 binding = "TOKENS"
-id = "" # TODO: Run `npx wrangler kv:namespace create "TOKENS"` (or reuse the existing one)
+id = "TOKENS_KV_ID_PROD"
