@@ -3,7 +3,7 @@ name: Deploy Notification Worker
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - 'worker/**'
   workflow_dispatch:

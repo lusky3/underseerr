@@ -92,7 +92,7 @@ Go to your **GitHub Repository -> Settings -> Secrets and variables -> Actions**
 
 ### Step 4.2: Deploy
 
-Simply push changes to the `worker/` directory on the `master` branch. The action will:
+Simply push changes to the `worker/` directory on the `main` branch. The action will:
 
 1. Install dependencies.
 2. Run strict type-checking (`tsc`).
