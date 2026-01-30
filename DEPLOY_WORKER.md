@@ -78,7 +78,36 @@ This guide explains how to deploy the notification backend to Cloudflare Workers
 
     Paste the JSON content when prompted.
 
-### 4. Connect App
+## 4. Production Deployment (Secure CI/CD)
+
+For a critical production backend, **do not** deploy from your local machine. Use GitHub Actions to automate deployments, ensure code quality, and manage secrets securely.
+
+### Step 4.1: Configure GitHub Secrets
+
+Go to your **GitHub Repository -> Settings -> Secrets and variables -> Actions** and add:
+
+1. `CLOUDFLARE_API_TOKEN`: Create this in the [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) (Template: **Edit Cloudflare Workers**).
+2. `CLOUDFLARE_ACCOUNT_ID`: Find this in the Cloudflare Dashboard sidebar (Overview page).
+3. `GOOGLE_APPLICATION_CREDENTIALS_JSON`: The content of your Firebase Service Account JSON file.
+
+### Step 4.2: Deploy
+
+Simply push changes to the `worker/` directory on the `master` branch. The action will:
+
+1. Install dependencies.
+2. Run strict type-checking (`tsc`).
+3. Securely inject the Google credentials.
+4. Deploy to Cloudflare.
+
+### Step 4.3: Rollback
+
+If a bad update is deployed:
+
+1. Run `npx wrangler rollback` locally (requires login).
+2. Or re-run a previous successful job in GitHub Actions.
+3. Cloudflare keeps the last 10 versions available for instant rollback.
+
+## 5. Connect App
 
 1. Note your worker URL (e.g., `https://underseerr-notifications.your-name.workers.dev`).
 2. Open the Android App -> Settings -> Advanced Integration.
