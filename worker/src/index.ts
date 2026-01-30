@@ -213,15 +213,14 @@ export default {
             }
         }
 
-        // Endpoint 3: Gotify Emulation
-        if (request.method === 'POST' && url.pathname === '/message') {
+        // Endpoint 3: Web Push Proxy (Blind)
+        // POST /push/:token
+        if (request.method === 'POST' && url.pathname.startsWith('/push/')) {
             try {
-                let fcmToken = request.headers.get('X-Gotify-Key');
-                if (!fcmToken) fcmToken = new URL(request.url).searchParams.get('token');
-                if (!fcmToken) return new Response("Missing X-Gotify-Key header or token param", { status: 401 });
+                const token = url.pathname.split('/').pop();
+                if (!token) return new Response("Missing token in path", { status: 400 });
 
-                const payload: any = await request.json();
-
+                // Get Google Access Token
                 if (!env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
                     return new Response("Service Account not configured", { status: 500 });
                 }
@@ -234,26 +233,27 @@ export default {
                 const projectId = JSON.parse(serviceAccountJson).project_id;
                 const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
-                const cleanSubject = String(payload.title || "Notification").substring(0, 100);
-                const cleanMessage = String(payload.message || "").substring(0, 500);
+                // Forward the RAW payload (encrypted) and headers
+                const body = await request.arrayBuffer();
+                const bodyBase64 = btoa(String.fromCharCode(...new Uint8Array(body)));
+
+                // Collect relevant headers for Web Push decryption
+                const headers: any = {};
+                ['encryption', 'crypto-key', 'content-encoding', 'ttl', 'content-type'].forEach(h => {
+                    const val = request.headers.get(h);
+                    if (val) headers[h] = val;
+                });
 
                 const messageBody = {
                     message: {
-                        token: fcmToken,
+                        token: token,
                         data: {
-                            title: cleanSubject,
-                            message: cleanMessage,
-                            type: "gotify_emulated",
-                            url: "underseerr://request"
+                            type: "webpush_encrypted",
+                            payload: bodyBase64,
+                            headers: JSON.stringify(headers)
                         },
                         android: {
-                            priority: "high",
-                            notification: {
-                                title: cleanSubject,
-                                body: cleanMessage,
-                                icon: "app_icon_transparent",
-                                color: "#FFFFFF"
-                            }
+                            priority: "high"
                         }
                     }
                 };
@@ -268,10 +268,7 @@ export default {
                 });
 
                 if (!fcmRes.ok) return new Response("FCM Error", { status: 502 });
-                const responseData: any = await fcmRes.json();
-                return new Response(JSON.stringify({ success: true, id: responseData.name }), {
-                    headers: { "Content-Type": "application/json" }
-                });
+                return new Response(JSON.stringify({ success: true }), { status: 201 });
 
             } catch (e: any) {
                 return new Response(`Error: ${e.message}`, { status: 500 });

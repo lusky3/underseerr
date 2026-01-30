@@ -42,41 +42,30 @@ class NotificationRepositoryImpl(
     }
     
     override suspend fun registerForPushNotifications(token: String): Result<Unit> {
-        // Notification Server URL (Worker Proxy)
+        val (p256dh, auth) = webPushKeyManager.getOrCreateWebPushKeys()
+        
+        // Determine Notification Server URL (Worker Proxy)
         val customServerUrl = settingsRepository.getNotificationServerUrl().first()
         val serverUrl = if (customServerUrl.isNullOrBlank()) {
              if (BuildKonfig.DEBUG) BuildKonfig.WORKER_ENDPOINT_STAGING else BuildKonfig.WORKER_ENDPOINT_PROD
         } else {
              customServerUrl
         }
-        val cleanUrl = serverUrl.trimEnd('/')
         
-        logger.d(TAG, "Registering for/Updating Gotify-style notifications: url=$cleanUrl")
-
+        val cleanUrl = serverUrl.trimEnd('/')
+        // Endpoint points to the Worker, which will proxy to FCM.
+        val endpoint = "$cleanUrl/push/$token"
+        
+        logger.d(TAG, "Registering for Web Push Proxy: endpoint=$endpoint")
+        
         return safeApiCall {
-             // 1. Get User ID
-             val user = userKtorService.getCurrentUser()
-             
-             // 2. Get Current Settings to preserve other prefs
-             val currentSettings = userKtorService.getUserNotificationSettings(user.id)
-             
-             // 3. Use WebPush types/bitmask as a baseline for Gotify, or default
-             val types = currentSettings.notificationTypes.webpush ?: 4094
-             
-             // 4. Update Settings: Enable Gotify, Point URL to Worker, Token = FCM Token
-             val newSettings = currentSettings.copy(
-                 gotifyEnabled = true,
-                 notificationTypes = currentSettings.notificationTypes.copy(gotify = types),
-                 gotify = ApiGotifySettings(
-                     enabled = true,
-                     options = ApiGotifyOptions(
-                         url = cleanUrl, 
-                         token = token
-                     )
-                 )
-             )
-             
-             userKtorService.updateUserNotificationSettings(user.id, newSettings)
+            // Register the subscription on Overseerr
+            val subscription = ApiRegisterPushSubscription(
+                endpoint = endpoint,
+                auth = auth,
+                p256dh = p256dh
+            )
+            userKtorService.registerPushSubscription(subscription)
         }
     }
     

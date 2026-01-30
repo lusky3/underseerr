@@ -12,6 +12,9 @@ import app.lusk.underseerr.util.AppLogger
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import org.koin.android.ext.android.inject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
+import app.lusk.underseerr.domain.security.WebPushKeyManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -22,6 +25,7 @@ class PushNotificationService : FirebaseMessagingService() {
 
     private val notificationRepository: NotificationRepository by inject()
     private val settingsRepository: app.lusk.underseerr.domain.repository.SettingsRepository by inject()
+    private val webPushKeyManager: WebPushKeyManager by inject()
     private val logger: AppLogger by inject()
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -45,36 +49,66 @@ class PushNotificationService : FirebaseMessagingService() {
         super.onMessageReceived(message)
         
         logger.d(TAG, "onMessageReceived called. From: ${message.from}")
-        logger.d(TAG, "Message Data Keys: ${message.data.keys}")
-        logger.d(TAG, "Message Data: ${message.data}")
-        message.notification?.let {
-            logger.d(TAG, "Message Notification: Title=${it.title}, Body=${it.body}")
-        }
         
-        // 1. Get current local settings (runBlocking is acceptable here as it's a background service)
-        val settings = kotlinx.coroutines.runBlocking { 
-            settingsRepository.getNotificationSettings().first()
+        val type = message.data["type"]
+        if (type == "webpush_encrypted") {
+            val payloadBase64 = message.data["payload"]
+            if (payloadBase64 != null) {
+                try {
+                    val encryptedPayload = android.util.Base64.decode(payloadBase64, android.util.Base64.DEFAULT)
+                    // Decryption involves crypto, doing it in runBlocking since this is a service callback
+                    val decryptedBytes = runBlocking { webPushKeyManager.decrypt(encryptedPayload) }
+                    val decryptedJson = String(decryptedBytes)
+                    logger.d(TAG, "Successfully decrypted Web Push payload")
+                    
+                    val json = Json { ignoreUnknownKeys = true }
+                    val data = json.decodeFromString<Map<String, String>>(decryptedJson)
+                    
+                    val title = data["subject"] ?: "Overseerr"
+                    val body = data["message"] ?: ""
+                    val image = data["image"]
+                    val deepLink = "underseerr://request" // Default deep link for now
+                    
+                    processIncomingNotification(title, body, image, deepLink, data["notification_type"])
+                    return
+                } catch (e: Exception) {
+                    logger.e(TAG, "Failed to decrypt Web Push notification", e)
+                }
+            }
         }
-        
+
+        // Fallback or Standard Plaintext Data
         val title = message.notification?.title ?: message.data["title"] ?: "Overseerr"
         val body = message.notification?.body ?: message.data["message"] ?: "New notification"
         val imageUrl = message.notification?.imageUrl?.toString() ?: message.data["image"]
         val deepLink = message.data["url"]
-        val notificationTypeString = message.data["type"] // Assuming 'type' is in data payload
+        val notificationTypeString = message.data["type"]
 
+        processIncomingNotification(title, body, imageUrl, deepLink, notificationTypeString)
+    }
+
+    private fun processIncomingNotification(
+        title: String, 
+        body: String, 
+        imageUrl: String?, 
+        deepLink: String?, 
+        notificationTypeString: String?
+    ) {
+        // 1. Get current local settings
+        val settings = runBlocking { 
+            settingsRepository.getNotificationSettings().first()
+        }
+        
         // 2. Client-Side Filtering
         if (!settings.enabled) {
             logger.d(TAG, "Dropping notification: Notifications disabled locally.")
             return
         }
         
-        // Very basic text-based type detection if standard type field is missing or generic
-        // In a real app, strict type constants in the payload are better.
         val lowerTitle = title.lowercase()
         val lowerBody = body.lowercase()
         
         val shouldShow = when {
-            // Explicit type checks if available (mapped to typical Overseerr types)
             notificationTypeString == "media_approved" || lowerTitle.contains("approved") -> settings.requestApproved
             notificationTypeString == "media_available" || lowerTitle.contains("available") -> settings.requestAvailable
             notificationTypeString == "media_declined" || lowerTitle.contains("declined") -> settings.requestDeclined
@@ -84,7 +118,7 @@ class PushNotificationService : FirebaseMessagingService() {
             notificationTypeString == "issue_comment" || lowerTitle.contains("comment") -> settings.issueComment
             notificationTypeString == "issue_resolved" || lowerTitle.contains("resolved") -> settings.issueResolved
             notificationTypeString == "issue_reopened" || lowerTitle.contains("reopened") -> settings.issueReopened
-            else -> true // Default to show if unknown
+            else -> true
         }
         
         if (!shouldShow) {
