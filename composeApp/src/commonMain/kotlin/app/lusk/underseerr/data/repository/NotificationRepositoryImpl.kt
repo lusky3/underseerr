@@ -56,13 +56,18 @@ class NotificationRepositoryImpl(
             
             if (serverUrl.isBlank()) {
                 logger.e(TAG, "Worker Endpoint is missing! Check build configuration.")
-            }
-
-            try {
-                notificationServerService.registerToken(serverUrl, currentUser.data.email, token)
-                logger.d(TAG, "Registered token with notification server: $serverUrl")
-            } catch (e: Exception) {
-                logger.w(TAG, "Failed to register token with notification server: ${e.message}")
+            } else {
+                val email = currentUser.data.email
+                if (!email.isNullOrBlank()) {
+                    try {
+                        notificationServerService.registerToken(serverUrl, email, token)
+                        logger.d(TAG, "Registered token with notification server: $serverUrl")
+                    } catch (e: Exception) {
+                        logger.w(TAG, "Failed to register token with notification server: ${e.message}")
+                    }
+                } else {
+                    logger.w(TAG, "Skipping token registration: User email is null or blank.")
+                }
             }
         } else {
              logger.w(TAG, "Could not fetch current user to register token. Cloud Function notifications may fail.")
