@@ -32,51 +32,50 @@ This guide explains how to deploy the notification backend to Cloudflare Workers
     npm install
     ```
 
-3. Create a KV Namespace for storing tokens:
+3. Create KV Namespaces for both environments:
+
+    *For Production:*
 
     ```bash
-    npx wrangler kv:namespace create "TOKENS"
+    npx wrangler kv:namespace create "TOKENS" --env production
     ```
 
-    *Output Example:*
+    *For Staging:*
 
-    ```toml
-    [[kv_namespaces]]
-    binding = "TOKENS"
-    id = "e57c..."
+    ```bash
+    npx wrangler kv:namespace create "TOKENS" --env staging
     ```
 
-4. Copy the `id` from the output and update `wrangler.toml`:
-
-    ```toml
-    [[kv_namespaces]]
-    binding = "TOKENS"
-    id = "YOUR_KV_ID_HERE"
-    ```
+4. Copy the `id` values from the output and update `wrangler.toml` in the respective `[env.production]` and `[env.staging]` sections.
 
 ### 3. Deploy
 
-1. Login to Cloudflare:
+1. Login: `npx wrangler login`
+
+2. **Set Secrets (Per Environment):**
+
+    *Production:*
 
     ```bash
-    npx wrangler login
+    npx wrangler secret put GOOGLE_APPLICATION_CREDENTIALS_JSON --env production
     ```
 
-2. Deploy the worker:
+    *(Paste Prod JSON)*
+
+    *Staging:*
 
     ```bash
-    npx wrangler deploy
+    npx wrangler secret put GOOGLE_APPLICATION_CREDENTIALS_JSON --env staging
     ```
 
-3. **Set the Secret (Crucial):**
-    Open the JSON file you downloaded from Firebase in Step 1. Copy the entire content.
-    Run this command to save it securely (do not commit it):
+    *(Paste Staging JSON)*
+
+3. Deploy manually (optional):
 
     ```bash
-    npx wrangler secret put GOOGLE_APPLICATION_CREDENTIALS_JSON
+    npx wrangler deploy --env staging
+    npx wrangler deploy --env production
     ```
-
-    Paste the JSON content when prompted.
 
 ## 4. Production Deployment (Secure CI/CD)
 
@@ -88,11 +87,17 @@ Go to your **GitHub Repository -> Settings -> Secrets and variables -> Actions**
 
 1. `CLOUDFLARE_API_TOKEN`: Create this in the [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) (Template: **Edit Cloudflare Workers**).
 2. `CLOUDFLARE_ACCOUNT_ID`: Find this in the Cloudflare Dashboard sidebar (Overview page).
-3. `GOOGLE_APPLICATION_CREDENTIALS_JSON`: The content of your Firebase Service Account JSON file.
+3. `GOOGLE_APPLICATION_CREDENTIALS_JSON_PROD`: Content of your Production Firebase JSON.
+4. `GOOGLE_APPLICATION_CREDENTIALS_JSON_STAGING`: Content of your Staging Firebase JSON.
 
 ### Step 4.2: Deploy
 
-Simply push changes to the `worker/` directory on the `main` branch. The action will:
+Simply push changes to the `worker/` directory on the `main` branch.
+
+* **main** branch -> Deploys to `production` environment.
+* **develop** branch (create if needed) -> Deploys to `staging`.
+
+The action will:
 
 1. Install dependencies.
 2. Run strict type-checking (`tsc`).
@@ -116,5 +121,5 @@ If a bad update is deployed:
 
 ## Troubleshooting
 
-- **Check Logs:** `npx wrangler tail` shows real-time logs.
-- **FCM Errors:** Ensure the Firebase Service Account has "Cloud Messaging Service Agent" role (usually default).
+* **Check Logs:** `npx wrangler tail` shows real-time logs.
+* **FCM Errors:** Ensure the Firebase Service Account has "Cloud Messaging Service Agent" role (usually default).
