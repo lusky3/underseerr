@@ -32,17 +32,26 @@ This guide explains how to deploy the notification backend to Cloudflare Workers
     npm install
     ```
 
-3. **Automatic Provisioning:**
-    The project uses `wrangler.jsonc` configured for automatic resource provisioning. You do **not** need to manually create KV namespaces or copy IDs.
+3. **KV Namespace Setup:**
+    The `wrangler.toml` file uses separate KV Namespaces for Staging and Production.
 
-    When the GitHub Action runs `wrangler deploy`, Cloudflare will automatically:
-    * Create the necessary KV Namespaces (`underseerr-notifications-prod-TOKENS`, etc.) if they don't exist.
-    * Link them to your worker.
+    * **Manual Creation (First Time Only):**
+
+        ```bash
+        npx wrangler kv:namespace create "TOKENS" --env staging
+        npx wrangler kv:namespace create "TOKENS" --env production
+        ```
+
+    * Copy the `id` from the output and update `wrangler.toml`.
+    * **Note:** We have already configured this for the main repo, but if you fork it, you must update the IDs.
 
 4. Add these to your **GitHub Repository Secrets**:
-    * `CLOUDFLARE_API_TOKEN_PROD` / `CLOUDFLARE_API_TOKEN_STAGING`
-    * `GOOGLE_APPLICATION_CREDENTIALS_JSON_PROD` / `GOOGLE_APPLICATION_CREDENTIALS_JSON_STAGING`
+    * `CLOUDFLARE_API_TOKEN` (API Token with Worker Edit permissions)
     * `CLOUDFLARE_ACCOUNT_ID`
+    * `GOOGLE_APPLICATION_CREDENTIALS_JSON_PROD` (Base64 Encoded)
+    * `GOOGLE_APPLICATION_CREDENTIALS_JSON_STAGING` (Base64 Encoded)
+    * `CLOUDFLARE_TOKENS_KV_ID_STAGING` (If injecting via CI)
+    * `CLOUDFLARE_TOKENS_KV_ID_PROD` (If injecting via CI)
 
 ### 3. Deploy
 
@@ -110,7 +119,7 @@ If a bad update is deployed:
 
 ## 5. Connect App
 
-1. Note your worker URL (e.g., `https://underseerr-notifications.your-name.workers.dev`).
+1. Note your worker URL (e.g., `https://underseerr-notifications-prod.lusk.workers.dev/`).
 2. Open the Android App -> Settings -> Advanced Integration.
 3. Tap **Notification Server** and enter your Worker URL (remove any trailing slash).
 4. Tap **"Configure Notification Webhook"** to auto-configure Overseerr.
