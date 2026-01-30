@@ -72,4 +72,6 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          CLOUDFLARE_WORKER_ENDPOINT_PROD: ${{ secrets.CLOUDFLARE_WORKER_ENDPOINT_PROD }}
+          CLOUDFLARE_WORKER_ENDPOINT_STAGING: ${{ secrets.CLOUDFLARE_WORKER_ENDPOINT_STAGING }}
         run: ./gradlew :androidApp:assembleDebug :composeApp:compileAndroidMain sonar --info

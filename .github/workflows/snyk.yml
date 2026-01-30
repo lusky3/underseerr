@@ -39,6 +39,8 @@ jobs:
     
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      CLOUDFLARE_WORKER_ENDPOINT_PROD: ${{ secrets.CLOUDFLARE_WORKER_ENDPOINT_PROD }}
+      CLOUDFLARE_WORKER_ENDPOINT_STAGING: ${{ secrets.CLOUDFLARE_WORKER_ENDPOINT_STAGING }}
     
     steps:
       - name: Checkout repository

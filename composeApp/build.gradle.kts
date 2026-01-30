@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -34,8 +36,24 @@ kotlin {
 
     buildkonfig {
         packageName = "app.lusk.underseerr.shared"
+        
+        // Load .env properties
+        val envProps = Properties()
+        val envFile = rootProject.file(".env.local")
+        if (envFile.exists()) {
+             FileInputStream(envFile).use { stream ->
+                 envProps.load(stream)
+             }
+        }
+
+        fun getEnv(key: String): String {
+            return System.getenv(key) ?: envProps.getProperty(key) ?: ""
+        }
+
         defaultConfigs {
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN, "DEBUG", "true")
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_PROD", "\"${getEnv("CLOUDFLARE_WORKER_ENDPOINT_PROD")}\"")
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_STAGING", "\"${getEnv("CLOUDFLARE_WORKER_ENDPOINT_STAGING")}\"")
         }
     }
     

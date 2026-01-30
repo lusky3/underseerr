@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.map
  * Feature: underseerr
  * Validates: Requirements 6.1, 6.2, 6.3
  */
+import app.lusk.underseerr.shared.BuildKonfig
+
 class NotificationRepositoryImpl(
     private val notificationDao: NotificationDao,
     private val userKtorService: UserKtorService,
@@ -42,21 +44,23 @@ class NotificationRepositoryImpl(
         
         logger.d(TAG, "Registering for Push: endpoint=$endpoint")
         
-        // 0. Register token with Cloudflare Worker (or configured backend)
+        // 0. Register token with Cloudflare Worker
         val currentUser = safeApiCall { userKtorService.getCurrentUser() }
         if (currentUser is Result.Success) {
-            // TODO: Retrieve the configured Notification Server URL from settings
-            // For now, we'll hardcode or use a placeholder that matches the deployed worker default
-            // Ideally, this is stored in Preferences and user enters it.
-            // But since we want "Hybrid", sending it alongside the webhook config is tricky because the app needs to know where to POST /register.
+            // Retrieve Endpoint from Build Config (injected via Env Vars)
+            val serverUrl = if (BuildKonfig.DEBUG) {
+                 BuildKonfig.WORKER_ENDPOINT_STAGING.ifBlank { BuildKonfig.WORKER_ENDPOINT_PROD }
+            } else {
+                 BuildKonfig.WORKER_ENDPOINT_PROD
+            }
             
-            // Temporary default or fetched from settings (which we need to add)
-            val serverUrl = "https://underseerr-notifications.YOUR_SUBDOMAIN.workers.dev" 
-            // We should inject this or get it from settingsRepository
-            
+            if (serverUrl.isBlank()) {
+                logger.e(TAG, "Worker Endpoint is missing! Check build configuration.")
+            }
+
             try {
-                // notificationServerService.registerToken(serverUrl, currentUser.data.email, token)
-                // logger.d(TAG, "Registered token with notification server")
+                notificationServerService.registerToken(serverUrl, currentUser.data.email, token)
+                logger.d(TAG, "Registered token with notification server: $serverUrl")
             } catch (e: Exception) {
                 logger.w(TAG, "Failed to register token with notification server: ${e.message}")
             }
