@@ -176,16 +176,15 @@ class NotificationRepositoryImpl(
     }
 
     override suspend fun updateWebhookSettings(webhookUrl: String): Result<Unit> = safeApiCall {
-        // Base64 encoded JSON template (minified)
-        // {"notification_type":"{{notification_type}}","subject":"{{subject}}","message":"{{message}}","image":"{{image}}","notifyuser_email":"{{notifyuser_email}}","requestedBy_email":"{{requestedBy_email}}"}
-        val base64Payload = "eyJub3RpZmljYXRpb25fdHlwZSI6Int7bm90aWZpY2F0aW9uX3R5cGV9fSIsInN1YmplY3QiOiJ7e3N1YmplY3R9fSIsIm1lc3NhZ2UiOiJ7e21lc3NhZ2V9fSIsImltYWdlIjoie3tpbWFnZX19Iiwibm90aWZ5dXNlcl9lbWFpbCI6Int7bm90aWZ5dXNlcl9lbWFpbH19IiwicmVxdWVzdGVkQnlfZW1haWwiOiJ7e3JlcXVlc3RlZEJ5X2VtYWlsfX0ifQ=="
+        // JSON template for Overseerr (Plain JSON, server handles Base64 encoding)
+        val jsonPayload = """{"notification_type":"{{notification_type}}","subject":"{{subject}}","message":"{{message}}","image":"{{image}}","notifyuser_email":"{{notifyuser_email}}","requestedBy_email":"{{requestedBy_email}}"}"""
         
         val payload = WebhookSettingsPayload(
             enabled = true,
             types = 4094, // Standard notification types mask
             options = WebhookOptions(
                 webhookUrl = webhookUrl,
-                jsonPayload = base64Payload
+                jsonPayload = jsonPayload
             )
         )
         

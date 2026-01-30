@@ -357,7 +357,7 @@ fun SettingsScreen(
 
             SettingsItem(
                 title = "Notification Server",
-                subtitle = notificationServerUrl ?: "Default (Cloudflare)",
+                subtitle = notificationServerUrl.takeUnless { it.isNullOrBlank() } ?: "Default (Hosted)",
                 onClick = { showUrlDialog = true }
             )
 
