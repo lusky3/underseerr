@@ -213,6 +213,71 @@ export default {
             }
         }
 
+        // Endpoint 3: Gotify Emulation
+        if (request.method === 'POST' && url.pathname === '/message') {
+            try {
+                let fcmToken = request.headers.get('X-Gotify-Key');
+                if (!fcmToken) fcmToken = new URL(request.url).searchParams.get('token');
+                if (!fcmToken) return new Response("Missing X-Gotify-Key header or token param", { status: 401 });
+
+                const payload: any = await request.json();
+
+                if (!env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+                    return new Response("Service Account not configured", { status: 500 });
+                }
+
+                let serviceAccountJson = env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+                if (!serviceAccountJson.trim().startsWith('{')) {
+                    try { serviceAccountJson = atob(serviceAccountJson); } catch (e) { }
+                }
+                const accessToken = await getAccessToken(serviceAccountJson);
+                const projectId = JSON.parse(serviceAccountJson).project_id;
+                const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
+                const cleanSubject = String(payload.title || "Notification").substring(0, 100);
+                const cleanMessage = String(payload.message || "").substring(0, 500);
+
+                const messageBody = {
+                    message: {
+                        token: fcmToken,
+                        data: {
+                            title: cleanSubject,
+                            message: cleanMessage,
+                            type: "gotify_emulated",
+                            url: "underseerr://request"
+                        },
+                        android: {
+                            priority: "high",
+                            notification: {
+                                title: cleanSubject,
+                                body: cleanMessage,
+                                icon: "app_icon_transparent",
+                                color: "#FFFFFF"
+                            }
+                        }
+                    }
+                };
+
+                const fcmRes = await fetch(fcmUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(messageBody)
+                });
+
+                if (!fcmRes.ok) return new Response("FCM Error", { status: 502 });
+                const responseData: any = await fcmRes.json();
+                return new Response(JSON.stringify({ success: true, id: responseData.name }), {
+                    headers: { "Content-Type": "application/json" }
+                });
+
+            } catch (e: any) {
+                return new Response(`Error: ${e.message}`, { status: 500 });
+            }
+        }
+
         return new Response("Underseerr Notification Worker", { status: 200 });
     },
 };
