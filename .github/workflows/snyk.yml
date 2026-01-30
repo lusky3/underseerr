@@ -35,6 +35,7 @@ jobs:
       security-events: write  # for uploading SARIF results to Code Scanning
       actions: read           # required for private repos
     runs-on: ubuntu-latest
+    environment: staging
     
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -55,40 +56,20 @@ jobs:
       - name: Set up Snyk CLI
         uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04
 
-      - name: Create dummy google-services.json for build
+      - name: Inject Google Services JSON
+        env:
+          FIREBASE_GOOGLE_SERVICES_JSON_DEBUG: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON_DEBUG }}
         run: |
           mkdir -p androidApp/src/debug
           mkdir -p androidApp/src/release
-          echo '{
-            "project_info": {
-              "project_number": "000000000000",
-              "project_id": "dummy-project",
-              "storage_bucket": "dummy-project.appspot.com"
-            },
-            "client": [{
-              "client_info": {
-                "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
-                "android_client_info": { "package_name": "app.lusk.underseerr.debug" }
-              },
-              "api_key": [{ "current_key": "dummy-api-key" }]
-            }],
-            "configuration_version": "1"
-          }' > androidApp/src/debug/google-services.json
-          echo '{
-            "project_info": {
-              "project_number": "000000000000",
-              "project_id": "dummy-project",
-              "storage_bucket": "dummy-project.appspot.com"
-            },
-            "client": [{
-              "client_info": {
-                "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
-                "android_client_info": { "package_name": "app.lusk.underseerr" }
-              },
-              "api_key": [{ "current_key": "dummy-api-key" }]
-            }],
-            "configuration_version": "1"
-          }' > androidApp/src/release/google-services.json
+          if [ -n "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" ]; then
+            echo "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" > androidApp/src/debug/google-services.json
+            echo "$FIREBASE_GOOGLE_SERVICES_JSON_DEBUG" > androidApp/src/release/google-services.json
+          else
+             echo "WARNING: FIREBASE_GOOGLE_SERVICES_JSON_DEBUG not found. Using dummy."
+             echo '{ "project_info": {"project_number": "000000000000" }, "client": [{ "client_info": { "android_client_info": { "package_name": "app.lusk.underseerr.debug" } } }] }' > androidApp/src/debug/google-services.json
+             echo '{ "project_info": {"project_number": "000000000000" }, "client": [{ "client_info": { "android_client_info": { "package_name": "app.lusk.underseerr" } } }] }' > androidApp/src/release/google-services.json
+          fi
 
       # Snyk Code (SAST) - Static Application Security Testing
       - name: Snyk Code Test
