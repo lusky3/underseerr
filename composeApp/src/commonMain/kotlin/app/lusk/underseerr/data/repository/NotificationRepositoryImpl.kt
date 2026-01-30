@@ -12,6 +12,8 @@ import kotlinx.serialization.Serializable
 import app.lusk.underseerr.domain.model.Notification
 import app.lusk.underseerr.domain.repository.NotificationSettings
 import app.lusk.underseerr.domain.model.Result
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.builtins.serializer
 import app.lusk.underseerr.domain.repository.NotificationRepository
 import app.lusk.underseerr.domain.security.WebPushKeyManager
 import app.lusk.underseerr.util.AppLogger
@@ -176,15 +178,30 @@ class NotificationRepositoryImpl(
     }
 
     override suspend fun updateWebhookSettings(webhookUrl: String): Result<Unit> = safeApiCall {
-        // JSON template for Overseerr (Plain JSON, server handles Base64 encoding)
-        val jsonPayload = """{"notification_type":"{{notification_type}}","subject":"{{subject}}","message":"{{message}}","image":"{{image}}","notifyuser_email":"{{notifyuser_email}}","requestedBy_email":"{{requestedBy_email}}"}"""
+        // JSON template for Overseerr
+        val jsonTemplate = """
+            {
+                "notification_type": "{{notification_type}}",
+                "subject": "{{subject}}",
+                "message": "{{message}}",
+                "image": "{{image}}",
+                "notifyuser_email": "{{notifyuser_email}}",
+                "requestedBy_email": "{{requestedBy_email}}"
+            }
+        """.trimIndent()
+        
+        // Overseerr server calls JSON.parse on the input string.
+        // If we send raw JSON, it stores an Object, which crashes the WebUI (Ace Editor expects String).
+        // We must send a JSON-encoded string so JSON.parse returns the String.
+        // This effectively double-encodes the JSON.
+        val safePayload = Json.encodeToString(String.serializer(), jsonTemplate)
         
         val payload = WebhookSettingsPayload(
             enabled = true,
             types = 4094, // Standard notification types mask
             options = WebhookOptions(
                 webhookUrl = webhookUrl,
-                jsonPayload = jsonPayload
+                jsonPayload = safePayload
             )
         )
         
