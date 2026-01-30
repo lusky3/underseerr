@@ -6,6 +6,9 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+
 /**
  * Ktor implementation of global settings endpoints.
  */
@@ -17,8 +20,8 @@ class SettingsKtorService(private val client: HttpClient) {
 
     suspend fun updateWebhookSettings(settings: Map<String, Any?>) {
         client.post("/api/v1/settings/notifications/webhook") {
-             io.ktor.http.contentType(io.ktor.http.ContentType.Application.Json)
-             io.ktor.client.request.setBody(settings)
+             contentType(ContentType.Application.Json)
+             setBody(settings)
         }
     }
 }

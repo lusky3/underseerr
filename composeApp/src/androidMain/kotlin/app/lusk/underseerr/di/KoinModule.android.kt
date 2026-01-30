@@ -25,7 +25,7 @@ actual fun platformModule(): Module = module {
             activityProvider = { app.lusk.underseerr.util.CurrentActivityHolder.get() }
         )
     }
-    single<app.lusk.underseerr.domain.repository.FirestoreService> { 
-        app.lusk.underseerr.data.repository.AndroidFirestoreService(get()) 
-    }
+    // single<app.lusk.underseerr.domain.repository.FirestoreService> { 
+    //     app.lusk.underseerr.data.repository.AndroidFirestoreService(get()) 
+    // }
 }
