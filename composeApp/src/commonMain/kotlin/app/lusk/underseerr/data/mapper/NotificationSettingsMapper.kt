@@ -25,6 +25,7 @@ object NotificationSettingsMapper {
             issueComment = (webpushMask and NotificationTypeMask.ISSUE_COMMENT) != 0,
             issueResolved = (webpushMask and NotificationTypeMask.ISSUE_RESOLVED) != 0,
             issueReopened = (webpushMask and NotificationTypeMask.ISSUE_REOPENED) != 0,
+            mediaAutoRequested = (webpushMask and NotificationTypeMask.MEDIA_AUTO_REQUESTED) != 0,
             syncEnabled = true // Default, will be overwritten by local prefs in repository if needed
         )
     }
@@ -41,6 +42,9 @@ object NotificationSettingsMapper {
         if (settings.issueComment) mask = mask or NotificationTypeMask.ISSUE_COMMENT
         if (settings.issueResolved) mask = mask or NotificationTypeMask.ISSUE_RESOLVED
         if (settings.issueReopened) mask = mask or NotificationTypeMask.ISSUE_REOPENED
+        if (settings.mediaAutoRequested) mask = mask or NotificationTypeMask.MEDIA_AUTO_REQUESTED
+        // Always include TEST_NOTIFICATION bit to ensure connectivity tests work
+        mask = mask or NotificationTypeMask.TEST_NOTIFICATION
         return mask
     }
 }

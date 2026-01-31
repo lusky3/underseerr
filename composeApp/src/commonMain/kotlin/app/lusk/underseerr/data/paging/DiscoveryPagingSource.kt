@@ -10,16 +10,28 @@ import app.lusk.underseerr.data.remote.model.ApiSearchResult
  */
 class DiscoveryPagingSource<T : Any>(
     private val fetcher: suspend (Int) -> ApiSearchResults,
-    private val mapper: (ApiSearchResult) -> T
+    private val mapper: (ApiSearchResult) -> T,
+    private val discoveryDao: app.lusk.underseerr.data.local.dao.DiscoveryDao? = null,
+    private val cacheKey: String? = null
 ) : PagingSource<Int, T>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, T> {
+        val page = params.key ?: 1
         return try {
-            val page = params.key ?: 1
             println("DiscoveryPagingSource: Loading page $page")
             val response = fetcher(page)
             println("DiscoveryPagingSource: Fetched ${response.results.size} items for page $page")
             val data = response.results.map { mapper(it) }
+
+            // Cache page 1 results
+            if (page == 1 && discoveryDao != null && cacheKey != null) {
+                try {
+                    val json = kotlinx.serialization.json.Json.encodeToString(ApiSearchResults.serializer(), response)
+                    discoveryDao.insert(app.lusk.underseerr.data.local.entity.DiscoveryCacheEntity(cacheKey, json))
+                } catch (e: Exception) {
+                    println("DiscoveryPagingSource: Failed to cache results: ${e.message}")
+                }
+            }
 
             LoadResult.Page(
                 data = data,
@@ -28,7 +40,25 @@ class DiscoveryPagingSource<T : Any>(
             )
         } catch (e: Exception) {
             println("DiscoveryPagingSource: Error loading page: ${e.message}")
-            e.printStackTrace()
+            
+            // Fallback to cache for page 1
+            if (page == 1 && discoveryDao != null && cacheKey != null) {
+                val cached = discoveryDao.getCache(cacheKey)
+                if (cached != null) {
+                    try {
+                        val response = kotlinx.serialization.json.Json.decodeFromString(ApiSearchResults.serializer(), cached.data)
+                        val data = response.results.map { mapper(it) }
+                        return LoadResult.Page(
+                            data = data,
+                            prevKey = null,
+                            nextKey = null // Don't allow pagination when in offline cache mode for now
+                        )
+                    } catch (decodeError: Exception) {
+                        println("DiscoveryPagingSource: Failed to decode cache: ${decodeError.message}")
+                    }
+                }
+            }
+            
             LoadResult.Error(e)
         }
     }

@@ -61,10 +61,10 @@ class RequestViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
     
     val defaultMovieProfile = settingsRepository.getDefaultMovieQualityProfile()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
         
     val defaultTvProfile = settingsRepository.getDefaultTvQualityProfile()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
     
     init {
         viewModelScope.launch {
@@ -232,7 +232,7 @@ class RequestViewModel(
         _isQualityProfilesLoading, 
         _isRootFoldersLoading
     ) { q, r -> q || r }
-    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     /**
      * Load quality profiles.

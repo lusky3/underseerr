@@ -13,5 +13,5 @@ interface WebPushKeyManager {
     /**
      * Decrypts a Web Push payload.
      */
-    suspend fun decrypt(payload: ByteArray): ByteArray
+    suspend fun decrypt(payload: ByteArray, headers: Map<String, String>): String
 }

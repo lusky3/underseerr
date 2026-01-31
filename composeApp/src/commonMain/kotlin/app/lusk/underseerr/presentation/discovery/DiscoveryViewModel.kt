@@ -31,6 +31,15 @@ class DiscoveryViewModel(
     private val profileRepository: ProfileRepository
 ) : ViewModel() {
     
+    init {
+        println("DiscoveryViewModel: Created")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        println("DiscoveryViewModel: Cleared")
+    }
+    
     companion object {
         private const val SEARCH_DEBOUNCE_MS = 500L
     }
@@ -41,7 +50,7 @@ class DiscoveryViewModel(
             .cachedIn(viewModelScope)
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
+                started = SharingStarted.Lazily,
                 initialValue = PagingData.empty()
             )
 
@@ -51,7 +60,7 @@ class DiscoveryViewModel(
             .cachedIn(viewModelScope)
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
+                started = SharingStarted.Lazily,
                 initialValue = PagingData.empty()
             )
 
@@ -60,7 +69,7 @@ class DiscoveryViewModel(
             .cachedIn(viewModelScope)
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
+                started = SharingStarted.Lazily,
                 initialValue = PagingData.empty()
             )
 
@@ -69,7 +78,7 @@ class DiscoveryViewModel(
             .cachedIn(viewModelScope)
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
+                started = SharingStarted.Lazily,
                 initialValue = PagingData.empty()
             )
 
@@ -78,7 +87,7 @@ class DiscoveryViewModel(
             .cachedIn(viewModelScope)
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
+                started = SharingStarted.Lazily,
                 initialValue = PagingData.empty()
             )
 
@@ -105,7 +114,7 @@ class DiscoveryViewModel(
         .cachedIn(viewModelScope)
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Lazily,
             initialValue = PagingData.empty()
         )
     

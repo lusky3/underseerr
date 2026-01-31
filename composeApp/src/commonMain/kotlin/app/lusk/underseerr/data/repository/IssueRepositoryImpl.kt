@@ -41,12 +41,19 @@ class IssueRepositoryImpl(
                         val tmdbId = issue.mediaTmdbId
                         if (tmdbId != null) {
                             try {
-                                val title = if (issue.mediaType == MediaType.MOVIE) {
-                                    discoveryService.getMovieDetails(tmdbId).title
+                                if (issue.mediaType == MediaType.MOVIE) {
+                                    val details = discoveryService.getMovieDetails(tmdbId)
+                                    issue.copy(
+                                        mediaTitle = details.title,
+                                        mediaPosterPath = details.posterPath ?: issue.mediaPosterPath
+                                    )
                                 } else {
-                                    discoveryService.getTvShowDetails(tmdbId).name
+                                    val details = discoveryService.getTvShowDetails(tmdbId)
+                                    issue.copy(
+                                        mediaTitle = details.name,
+                                        mediaPosterPath = details.posterPath ?: issue.mediaPosterPath
+                                    )
                                 }
-                                issue.copy(mediaTitle = title)
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 issue
@@ -73,12 +80,19 @@ class IssueRepositoryImpl(
             val tmdbId = issue.mediaTmdbId
             if (tmdbId != null) {
                 try {
-                    val title = if (issue.mediaType == MediaType.MOVIE) {
-                        discoveryService.getMovieDetails(tmdbId).title
+                    if (issue.mediaType == MediaType.MOVIE) {
+                        val details = discoveryService.getMovieDetails(tmdbId)
+                        issue.copy(
+                            mediaTitle = details.title,
+                            mediaPosterPath = details.posterPath ?: issue.mediaPosterPath
+                        )
                     } else {
-                        discoveryService.getTvShowDetails(tmdbId).name
+                        val details = discoveryService.getTvShowDetails(tmdbId)
+                        issue.copy(
+                            mediaTitle = details.name,
+                            mediaPosterPath = details.posterPath ?: issue.mediaPosterPath
+                        )
                     }
-                    issue.copy(mediaTitle = title)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     issue

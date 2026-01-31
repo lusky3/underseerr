@@ -152,10 +152,12 @@ fun SettingsScreen(
             )
             
             if (notificationSettings.enabled && globalWebPushEnabled) {
-                // Request Notifications
+                // Personal Request Notifications
+                val isAdmin = viewModel.hasPermission(currentUser, app.lusk.underseerr.domain.model.AppPermissions.ADMIN)
+                
                 SettingsSwitchItem(
                     title = "Request Approved",
-                    subtitle = "Get notified when request is approved",
+                    subtitle = if (isAdmin) "Get notified when requests are approved (including others)" else "Get notified when your request is approved",
                     checked = notificationSettings.requestApproved,
                     onCheckedChange = { checked ->
                         viewModel.updateNotificationSettings(notificationSettings.copy(requestApproved = checked))
@@ -173,7 +175,7 @@ fun SettingsScreen(
                 
                 SettingsSwitchItem(
                     title = "Request Declined",
-                    subtitle = "Get notified when request is declined",
+                    subtitle = if (isAdmin) "Get notified when requests are declined (including others)" else "Get notified when your request is declined",
                     checked = notificationSettings.requestDeclined,
                     onCheckedChange = { checked ->
                         viewModel.updateNotificationSettings(notificationSettings.copy(requestDeclined = checked))
@@ -183,81 +185,87 @@ fun SettingsScreen(
                 // Advanced Request Notifications (Permission Based)
                 val canManageRequests = viewModel.hasPermission(currentUser, app.lusk.underseerr.domain.model.AppPermissions.MANAGE_REQUESTS)
                 
-                SettingsSwitchItem(
-                    title = "Request Pending Approval",
-                    subtitle = "Get notified when other users submit new media requests which require approval",
-                    checked = notificationSettings.requestPendingApproval,
-                    onCheckedChange = { checked ->
-                        viewModel.updateNotificationSettings(notificationSettings.copy(requestPendingApproval = checked))
-                    },
-                    enabled = canManageRequests
-                )
+                if (canManageRequests) {
+                    SettingsSwitchItem(
+                        title = "Request Pending Approval",
+                        subtitle = "Get notified when other users submit new media requests which require approval",
+                        checked = notificationSettings.requestPendingApproval,
+                        onCheckedChange = { checked ->
+                            viewModel.updateNotificationSettings(notificationSettings.copy(requestPendingApproval = checked))
+                        }
+                    )
 
-                SettingsSwitchItem(
-                    title = "Request Automatically Approved",
-                    subtitle = "Get notified when other users submit new media requests which are automatically approved",
-                    checked = notificationSettings.requestAutoApproved,
-                    onCheckedChange = { checked ->
-                        viewModel.updateNotificationSettings(notificationSettings.copy(requestAutoApproved = checked))
-                    },
-                    enabled = canManageRequests
-                )
+                    SettingsSwitchItem(
+                        title = "Request Automatically Approved",
+                        subtitle = "Get notified when other users submit new media requests which are automatically approved",
+                        checked = notificationSettings.requestAutoApproved,
+                        onCheckedChange = { checked ->
+                            viewModel.updateNotificationSettings(notificationSettings.copy(requestAutoApproved = checked))
+                        }
+                    )
 
-                SettingsSwitchItem(
-                    title = "Request Processing Failed",
-                    subtitle = "Get notified when media requests fail to be added to Radarr or Sonarr",
-                    checked = notificationSettings.requestProcessingFailed,
-                    onCheckedChange = { checked ->
-                        viewModel.updateNotificationSettings(notificationSettings.copy(requestProcessingFailed = checked))
-                    },
-                    enabled = canManageRequests
-                )
+                    SettingsSwitchItem(
+                        title = "Media Auto-Requested",
+                        subtitle = "Get notified when media is automatically requested by Overseerr (e.g. from watchlist sync)",
+                        checked = notificationSettings.mediaAutoRequested,
+                        onCheckedChange = { checked ->
+                            viewModel.updateNotificationSettings(notificationSettings.copy(mediaAutoRequested = checked))
+                        }
+                    )
+
+                    SettingsSwitchItem(
+                        title = "Request Processing Failed",
+                        subtitle = "Get notified when media requests fail to be added to Radarr or Sonarr",
+                        checked = notificationSettings.requestProcessingFailed,
+                        onCheckedChange = { checked ->
+                            viewModel.updateNotificationSettings(notificationSettings.copy(requestProcessingFailed = checked))
+                        }
+                    )
+                }
 
                 // Issue Notifications
-                HorizontalDivider()
-                SettingsSectionHeader(title = "Issue Notifications")
-
                 val canManageIssues = viewModel.hasPermission(currentUser, app.lusk.underseerr.domain.model.AppPermissions.MANAGE_ISSUES)
+                
+                if (canManageIssues) {
+                    HorizontalDivider()
+                    SettingsSectionHeader(title = "Issue Notifications")
 
-                SettingsSwitchItem(
-                    title = "Issue Reported",
-                    subtitle = "Get notified when other users report issues",
-                    checked = notificationSettings.issueReported,
-                    onCheckedChange = { checked ->
-                        viewModel.updateNotificationSettings(notificationSettings.copy(issueReported = checked))
-                    },
-                    enabled = canManageIssues
-                )
+                    SettingsSwitchItem(
+                        title = "Issue Reported",
+                        subtitle = "Get notified when other users report issues",
+                        checked = notificationSettings.issueReported,
+                        onCheckedChange = { checked ->
+                            viewModel.updateNotificationSettings(notificationSettings.copy(issueReported = checked))
+                        }
+                    )
 
-                SettingsSwitchItem(
-                    title = "Issue Comment",
-                    subtitle = "Get notified when other users comment on issues",
-                    checked = notificationSettings.issueComment,
-                    onCheckedChange = { checked ->
-                        viewModel.updateNotificationSettings(notificationSettings.copy(issueComment = checked))
-                    },
-                    enabled = canManageIssues // Assuming permission needed
-                )
+                    SettingsSwitchItem(
+                        title = "Issue Comment",
+                        subtitle = "Get notified when other users comment on issues",
+                        checked = notificationSettings.issueComment,
+                        onCheckedChange = { checked ->
+                            viewModel.updateNotificationSettings(notificationSettings.copy(issueComment = checked))
+                        }
+                    )
 
-                SettingsSwitchItem(
-                    title = "Issue Resolved",
-                    subtitle = "Get notified when issues are resolved by other users",
-                    checked = notificationSettings.issueResolved,
-                    onCheckedChange = { checked ->
-                        viewModel.updateNotificationSettings(notificationSettings.copy(issueResolved = checked))
-                    },
-                    enabled = canManageIssues // Assuming permission needed
-                )
+                    SettingsSwitchItem(
+                        title = "Issue Resolved",
+                        subtitle = "Get notified when issues are resolved by other users",
+                        checked = notificationSettings.issueResolved,
+                        onCheckedChange = { checked ->
+                            viewModel.updateNotificationSettings(notificationSettings.copy(issueResolved = checked))
+                        }
+                    )
 
-                SettingsSwitchItem(
-                    title = "Issue Reopened",
-                    subtitle = "Get notified when issues are reopened by other users",
-                    checked = notificationSettings.issueReopened,
-                    onCheckedChange = { checked ->
-                        viewModel.updateNotificationSettings(notificationSettings.copy(issueReopened = checked))
-                    },
-                    enabled = canManageIssues // Assuming permission needed
-                )
+                    SettingsSwitchItem(
+                        title = "Issue Reopened",
+                        subtitle = "Get notified when issues are reopened by other users",
+                        checked = notificationSettings.issueReopened,
+                        onCheckedChange = { checked ->
+                            viewModel.updateNotificationSettings(notificationSettings.copy(issueReopened = checked))
+                        }
+                    )
+                }
             }
             
             HorizontalDivider()

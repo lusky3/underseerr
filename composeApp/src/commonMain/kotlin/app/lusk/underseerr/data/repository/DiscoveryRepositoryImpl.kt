@@ -33,7 +33,8 @@ class DiscoveryRepositoryImpl(
     private val discoveryKtorService: DiscoveryKtorService,
     private val movieDao: app.lusk.underseerr.data.local.dao.MovieDao,
     private val tvShowDao: app.lusk.underseerr.data.local.dao.TvShowDao,
-    private val mediaRequestDao: app.lusk.underseerr.data.local.dao.MediaRequestDao
+    private val mediaRequestDao: app.lusk.underseerr.data.local.dao.MediaRequestDao,
+    private val discoveryDao: app.lusk.underseerr.data.local.dao.DiscoveryDao
 ) : DiscoveryRepository {
     
     companion object {
@@ -44,7 +45,7 @@ class DiscoveryRepositoryImpl(
     override fun getTrending(): Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> {
         return Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
-            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getTrending(it) }, { it.toSearchResult() }) }
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getTrending(it) }, { it.toSearchResult() }, discoveryDao, "trending") }
         ).flow
     }
     
@@ -163,14 +164,14 @@ class DiscoveryRepositoryImpl(
     override fun getPopularMovies(): Flow<PagingData<Movie>> {
         return Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
-            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getPopularMovies(it) }, { it.toMovie() }) }
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getPopularMovies(it) }, { it.toMovie() }, discoveryDao, "popular_movies") }
         ).flow
     }
     
     override fun getPopularTvShows(): Flow<PagingData<TvShow>> {
         return Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
-            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getPopularTvShows(it) }, { it.toTvShow() }) }
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getPopularTvShows(it) }, { it.toTvShow() }, discoveryDao, "popular_tv") }
         ).flow
     }
 

@@ -27,8 +27,23 @@ class ProfileViewModel(
     private val requestRepository: app.lusk.underseerr.domain.repository.RequestRepository
 ) : ViewModel() {
     
-    private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Loading)
-    val profileState: StateFlow<ProfileState> = _profileState.asStateFlow()
+    private val _profile = MutableStateFlow<UserProfile?>(null)
+    val profile: StateFlow<UserProfile?> = _profile.asStateFlow()
+
+    private val _quota = MutableStateFlow<app.lusk.underseerr.domain.repository.RequestQuota?>(null)
+    val quota: StateFlow<app.lusk.underseerr.domain.repository.RequestQuota?> = _quota.asStateFlow()
+
+    private val _statistics = MutableStateFlow<app.lusk.underseerr.domain.model.UserStatistics?>(null)
+    val statistics: StateFlow<app.lusk.underseerr.domain.model.UserStatistics?> = _statistics.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _isRefreshingStats = MutableStateFlow(false)
+    val isRefreshingStats: StateFlow<Boolean> = _isRefreshingStats.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
     
     init {
         loadProfile()
@@ -36,54 +51,69 @@ class ProfileViewModel(
     
     fun loadProfile() {
         viewModelScope.launch {
-            _profileState.value = ProfileState.Loading
+            if (_profile.value == null) {
+                _isLoading.value = true
+            } else {
+                _isRefreshingStats.value = true
+            }
+            _error.value = null
             
-            // Fetch initial data (fast)
-            val profileResult = profileRepository.getUserProfile()
-            val quotaResult = profileRepository.getUserQuota()
-            var statsResult = profileRepository.getUserStatistics()
-            
-            // Show result immediately
-            if (profileResult is Result.Success && 
-                quotaResult is Result.Success && 
-                statsResult is Result.Success) {
-                _profileState.value = ProfileState.Success(
-                    profile = profileResult.data,
-                    quota = quotaResult.data,
-                    statistics = statsResult.data
-                )
-            } else if (profileResult is Result.Error) {
-                _profileState.value = ProfileState.Error(profileResult.error.getUserMessage())
-                return@launch
-            } else if (quotaResult is Result.Error) {
-                 _profileState.value = ProfileState.Error(quotaResult.error.getUserMessage())
-                 return@launch
-            } else if (statsResult is Result.Error) {
-                 _profileState.value = ProfileState.Error(statsResult.error.getUserMessage())
-                 return@launch
+            // Fetch everything in parallel
+            val profileJob = launch {
+                when (val result = profileRepository.getUserProfile()) {
+                    is Result.Success -> _profile.value = result.data
+                    is Result.Error -> _error.value = result.error.getUserMessage()
+                    is Result.Loading -> {}
+                }
             }
             
-            // Refresh requests in background (slow due to hydration)
-            // This ensures local database is up to date for stats fallback
+            val quotaJob = launch {
+                when (val result = profileRepository.getUserQuota()) {
+                    is Result.Success -> _quota.value = result.data
+                    is Result.Error -> _error.value = _error.value ?: result.error.getUserMessage()
+                    is Result.Loading -> {}
+                }
+            }
+            
+            val statsJob = launch {
+                when (val result = profileRepository.getUserStatistics()) {
+                    is Result.Success -> _statistics.value = result.data
+                    is Result.Error -> _error.value = _error.value ?: result.error.getUserMessage()
+                    is Result.Loading -> {}
+                }
+            }
+
+            // Sync
+            listOf(profileJob, quotaJob, statsJob).forEach { it.join() }
+            
+            // Background refresh requests to update stats
             requestRepository.refreshRequests()
             
-            // Re-fetch stats (might have improved if using fallback)
-            statsResult = profileRepository.getUserStatistics()
-            
-            if (profileResult is Result.Success && 
-                quotaResult is Result.Success && 
-                statsResult is Result.Success) {
-                _profileState.value = ProfileState.Success(
-                    profile = profileResult.data,
-                    quota = quotaResult.data,
-                    statistics = statsResult.data
-                )
+            // Re-fetch stats after sync
+            val finalStats = profileRepository.getUserStatistics()
+            if (finalStats is Result.Success) {
+                _statistics.value = finalStats.data
             }
+            
+            _isLoading.value = false
+            _isRefreshingStats.value = false
         }
     }
     
     fun refresh() {
         loadProfile()
+    }
+
+    fun refreshStatistics() {
+        viewModelScope.launch {
+            _isRefreshingStats.value = true
+            requestRepository.refreshRequests()
+            val finalStats = profileRepository.getUserStatistics()
+            if (finalStats is Result.Success) {
+                _statistics.value = finalStats.data
+            }
+            _isRefreshingStats.value = false
+        }
     }
 }
 

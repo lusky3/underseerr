@@ -1,5 +1,6 @@
 package app.lusk.underseerr.data.remote.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -34,20 +35,20 @@ data class ApiIssue(
  */
 @Serializable
 data class ApiIssueMedia(
-    val id: Int? = null,
-    val tmdbId: Int? = null,
-    val tvdbId: Int? = null,
-    val mediaType: String? = null,
-    val status: Int = 1,
+    @SerialName("id") val id: Int? = null,
+    @SerialName("tmdbId") val tmdbId: Int? = null,
+    @SerialName("tvdbId") val tvdbId: Int? = null,
+    @SerialName("mediaType") val mediaType: String? = null,
+    @SerialName("status") val status: Int = 1,
     // Movie fields
-    val title: String? = null,
-    val originalTitle: String? = null,
+    @SerialName("title") val title: String? = null,
+    @SerialName("originalTitle") val originalTitle: String? = null,
     // TV fields
-    val name: String? = null,
-    val originalName: String? = null,
+    @SerialName("name") val name: String? = null,
+    @SerialName("originalName") val originalName: String? = null,
     // Common fields
-    val posterPath: String? = null,
-    val backdropPath: String? = null
+    @SerialName("posterPath") val posterPath: String? = null,
+    @SerialName("backdropPath") val backdropPath: String? = null
 )
 
 /**

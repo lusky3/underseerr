@@ -87,6 +87,11 @@ async function hashEmail(email: string): Promise<string> {
 export default {
     async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
         const url = new URL(request.url);
+        console.log(`[Worker] Received ${request.method} to ${url.pathname} (Full: ${request.url})`);
+
+        if (url.pathname === '/') {
+            return new Response('Underseerr Worker is alive!', { status: 200 });
+        }
 
         // Endpoint 1: Register Device Token
         // POST /register

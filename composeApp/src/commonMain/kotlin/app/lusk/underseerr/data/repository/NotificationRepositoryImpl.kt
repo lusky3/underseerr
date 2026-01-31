@@ -63,7 +63,8 @@ class NotificationRepositoryImpl(
             val subscription = ApiRegisterPushSubscription(
                 endpoint = endpoint,
                 auth = auth,
-                p256dh = p256dh
+                p256dh = p256dh,
+                userAgent = "Mozilla/5.0 (Linux; Android 13; Underseerr) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36"
             )
             userKtorService.registerPushSubscription(subscription)
         }
@@ -119,7 +120,7 @@ class NotificationRepositoryImpl(
         
         val payload = WebhookSettingsPayload(
             enabled = true,
-            types = 4094, // Standard notification types mask
+            types = 8190, // Mask covering all types inclusive of MEDIA_AUTO_REQUESTED
             options = WebhookOptions(
                 webhookUrl = webhookUrl,
                 jsonPayload = safePayload
@@ -147,6 +148,7 @@ class NotificationRepositoryImpl(
             issueComment = (mask and 512) != 0,
             issueResolved = (mask and 1024) != 0,
             issueReopened = (mask and 2048) != 0,
+            mediaAutoRequested = (mask and 4096) != 0,
             syncEnabled = true
         )
     }

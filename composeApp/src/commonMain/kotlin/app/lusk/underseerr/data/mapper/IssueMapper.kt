@@ -44,7 +44,7 @@ fun ApiIssue.toDomain(): Issue {
         problemSeason = if (showSeason) problemSeason else null,
         problemEpisode = if (showEpisode) problemEpisode else null,
         mediaTitle = mediaTitle,
-        mediaPosterPath = media?.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" },
+        mediaPosterPath = media?.posterPath,
         mediaType = mediaType,
         mediaTmdbId = media?.tmdbId,
         createdByName = createdBy?.displayName ?: createdBy?.email ?: "Unknown",

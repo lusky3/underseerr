@@ -143,7 +143,13 @@ fun PosterImage(
     title: String,
     modifier: Modifier = Modifier
 ) {
-    val imageUrl = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
+    val imageUrl = posterPath?.let { 
+        when {
+            it.startsWith("http") -> it
+            it.startsWith("/") -> "https://image.tmdb.org/t/p/w200$it"
+            else -> "https://image.tmdb.org/t/p/w200/$it"
+        }
+    }
     
     AsyncImage(
         imageUrl = imageUrl,
@@ -162,7 +168,9 @@ fun BackdropImage(
     title: String,
     modifier: Modifier = Modifier
 ) {
-    val imageUrl = backdropPath?.let { "https://image.tmdb.org/t/p/w1280$it" }
+    val imageUrl = backdropPath?.let { 
+        if (it.startsWith("http")) it else "https://image.tmdb.org/t/p/w1280$it" 
+    }
     
     AsyncImage(
         imageUrl = imageUrl,
@@ -181,8 +189,12 @@ fun AvatarImage(
     userName: String,
     modifier: Modifier = Modifier
 ) {
+    val imageUrl = avatarUrl?.let {
+        if (it.startsWith("http")) it else it // Avatar URLs are usually full or handled by Coil
+    }
+    
     AsyncImage(
-        imageUrl = avatarUrl,
+        imageUrl = imageUrl ?: avatarUrl,
         contentDescription = "Avatar for $userName",
         modifier = modifier,
         contentScale = ContentScale.Crop

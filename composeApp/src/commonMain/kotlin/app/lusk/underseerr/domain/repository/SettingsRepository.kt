@@ -163,6 +163,7 @@ data class NotificationSettings(
     val issueComment: Boolean = true,
     val issueResolved: Boolean = true,
     val issueReopened: Boolean = true,
+    val mediaAutoRequested: Boolean = true,
     val syncEnabled: Boolean = true
 )
 

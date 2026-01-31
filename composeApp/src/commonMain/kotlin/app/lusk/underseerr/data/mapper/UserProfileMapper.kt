@@ -20,7 +20,20 @@ fun ApiUserProfile.toDomain(): UserProfile {
     )
 }
 
-private fun decodePermissions(bitmask: Long): Permissions {
+fun app.lusk.underseerr.data.local.entity.UserEntity.toDomain(): UserProfile {
+    return UserProfile(
+        id = id,
+        email = email,
+        displayName = displayName,
+        avatar = avatar,
+        requestCount = requestCount,
+        permissions = decodePermissions(permissions),
+        rawPermissions = permissions,
+        isPlexUser = isPlexUser
+    )
+}
+
+internal fun decodePermissions(bitmask: Long): Permissions {
     // Overseerr Permission masks
     val ADMIN = 2L
     val MANAGE_REQUESTS = 16L

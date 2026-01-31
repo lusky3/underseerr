@@ -41,12 +41,14 @@ fun sharedModule(context: PlatformContext) = module {
     single { get<UnderseerrDatabase>().mediaRequestDao() }
     single { get<UnderseerrDatabase>().notificationDao() }
     single { get<UnderseerrDatabase>().offlineRequestDao() }
+    single { get<UnderseerrDatabase>().userDao() }
+    single { get<UnderseerrDatabase>().discoveryDao() }
     
     // Repositories
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get()) }
-    single<DiscoveryRepository> { DiscoveryRepositoryImpl(get(), get(), get(), get()) }
+    single<DiscoveryRepository> { DiscoveryRepositoryImpl(get(), get(), get(), get(), get()) }
     single<RequestRepository> { RequestRepositoryImpl(get(), get(), get(), get(), get()) }
-    single<ProfileRepository> { ProfileRepositoryImpl(get(), get()) }
+    single<ProfileRepository> { ProfileRepositoryImpl(get(), get(), get()) }
     single<SettingsRepository> { SettingsRepositoryImpl(get(), get(), get(), get()) }
     single<CacheRepository> { CacheRepositoryImpl(get(), get()) }
     single<NotificationRepository> { NotificationRepositoryImpl(get(), get(), get(), get(), get(), get(), get()) }

@@ -117,10 +117,17 @@ fun HomeScreen(
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
+                val hasOfflineError = trending.loadState.refresh is LoadState.Error ||
+                        popularMovies.loadState.refresh is LoadState.Error ||
+                        popularTvShows.loadState.refresh is LoadState.Error
+                
+                val hasCachedData = trending.itemCount > 0 || popularMovies.itemCount > 0
+                val showOfflineBanner = hasOfflineError && hasCachedData
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
+                    contentPadding = PaddingValues(top = if (showOfflineBanner) 48.dp else 16.dp, bottom = 100.dp)
                 ) {
 
 
@@ -248,11 +255,8 @@ fun HomeScreen(
                     )
             )
 
-            val hasOfflineError = trending.loadState.refresh is LoadState.Error ||
-                    popularMovies.loadState.refresh is LoadState.Error
-            
             OfflineBanner(
-                visible = hasOfflineError,
+                visible = showOfflineBanner,
                 modifier = Modifier.align(Alignment.TopCenter)
             )
             }

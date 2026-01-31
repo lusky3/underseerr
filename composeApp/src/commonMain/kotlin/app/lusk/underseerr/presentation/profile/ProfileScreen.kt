@@ -87,7 +87,13 @@ fun ProfileScreen(
     authViewModel: AuthViewModel = koinViewModel(),
     settingsViewModel: SettingsViewModel = koinViewModel()
 ) {
-    val profileState by viewModel.profileState.collectAsState()
+    val profile by viewModel.profile.collectAsState()
+    val quota by viewModel.quota.collectAsState()
+    val statistics by viewModel.statistics.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isRefreshingStats by viewModel.isRefreshingStats.collectAsState()
+    val error by viewModel.error.collectAsState()
+    
     val authState by authViewModel.authState.collectAsState()
     val notificationSettings by settingsViewModel.notificationSettings.collectAsState()
     val themePreference by settingsViewModel.themePreference.collectAsState()
@@ -112,7 +118,14 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text("Profile") },
                 actions = {
-                    IconButton(onClick = { viewModel.refresh() }) {
+                    val hasData = profile != null && quota != null && statistics != null
+                    IconButton(onClick = { 
+                        if (hasData) {
+                            viewModel.refreshStatistics()
+                        } else {
+                            viewModel.refresh()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Refresh"
@@ -121,92 +134,116 @@ fun ProfileScreen(
                 }
             )
         }
-    ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = pullRefreshing,
-            onRefresh = {
-                pullRefreshing = true
-                viewModel.refresh()
-                pullRefreshing = false
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = paddingValues.calculateTopPadding())
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
-            ) {
-                when (val state = profileState) {
-                    is ProfileState.Loading -> {
-                        if (!pullRefreshing) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                LoadingState()
-                            }
+        ) { paddingValues ->
+            val hasData = profile != null && quota != null && statistics != null
+            val isOffline = error != null && hasData
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Content Layer
+                PullToRefreshBox(
+                    isRefreshing = isLoading && pullRefreshing,
+                    onRefresh = {
+                        pullRefreshing = true
+                        if (hasData) {
+                            viewModel.refreshStatistics()
+                        } else {
+                            viewModel.refresh()
                         }
-                    }
-                    
-                    is ProfileState.Error -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            ErrorState(
-                                message = state.message,
-                                onRetry = { viewModel.refresh() },
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                            Button(onClick = onNavigateToSettings) {
-                                Text("Open Settings")
-                            }
-                        }
-                    }
-                    
-                    is ProfileState.Success -> {
-                        ProfileContent(
-                            state = state,
-                            notificationSettings = notificationSettings,
-                            themePreference = themePreference,
-                            onUpdateTheme = { settingsViewModel.updateTheme(it) },
-                            onUpdateNotificationSettings = { settingsViewModel.updateNotificationSettings(it) },
-                            onNotificationsClick = { showNotificationsDialog = true },
-                            onLanguageClick = {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Help wanted!")
+                        pullRefreshing = false
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = paddingValues.calculateTopPadding())
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp)
+                            .padding(top = if (isOffline) 48.dp else 16.dp, bottom = 100.dp)
+                    ) {
+                        when {
+                            isLoading && !hasData -> {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(400.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    LoadingState()
                                 }
-                            },
-                            onNavigateToSettings = onNavigateToSettings,
-                            onNavigateToAbout = onNavigateToAbout,
-                            onNavigateToRequests = onNavigateToRequests,
-                            onLogout = { authViewModel.logout() }
-                        )
+                            }
+                            
+                            error != null && !hasData -> {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(400.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        ErrorState(
+                                            message = error!!,
+                                            onRetry = { viewModel.refresh() },
+                                            modifier = Modifier.padding(vertical = 16.dp)
+                                        )
+                                        Button(onClick = onNavigateToSettings) {
+                                            Text("Open Settings")
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            hasData -> {
+                                ProfileContent(
+                                    profile = profile!!,
+                                    quota = quota!!,
+                                    statistics = statistics!!,
+                                    isRefreshingStats = isRefreshingStats,
+                                    notificationSettings = notificationSettings,
+                                    themePreference = themePreference,
+                                    onUpdateTheme = { settingsViewModel.updateTheme(it) },
+                                    onUpdateNotificationSettings = { settingsViewModel.updateNotificationSettings(it) },
+                                    onNotificationsClick = { showNotificationsDialog = true },
+                                    onLanguageClick = {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Help wanted!")
+                                        }
+                                    },
+                                    onNavigateToSettings = onNavigateToSettings,
+                                    onNavigateToAbout = onNavigateToAbout,
+                                    onNavigateToRequests = onNavigateToRequests,
+                                    onLogout = { authViewModel.logout() }
+                                )
+                            }
+                        }
                     }
-                }
-            }
-            
-            // Bottom fade gradient overlay
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(32.dp)
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.background
+
+                    // Bottom fade gradient overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(32.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        MaterialTheme.colorScheme.background
+                                    )
+                                )
                             )
-                        )
                     )
-            )
+                }
+
+                // Banner Layer
+                app.lusk.underseerr.ui.components.OfflineBanner(
+                    visible = isOffline,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = paddingValues.calculateTopPadding())
+                )
+            }
         }
-    }
     
     // Notifications Dialog
     if (showNotificationsDialog) {
@@ -220,7 +257,10 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileContent(
-    state: ProfileState.Success,
+    profile: app.lusk.underseerr.domain.model.UserProfile,
+    quota: app.lusk.underseerr.domain.repository.RequestQuota,
+    statistics: app.lusk.underseerr.domain.model.UserStatistics,
+    isRefreshingStats: Boolean,
     notificationSettings: NotificationSettings,
     themePreference: ThemePreference,
     onUpdateTheme: (ThemePreference) -> Unit,
@@ -251,9 +291,9 @@ private fun ProfileContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Avatar on the left
-                if (state.profile.avatar != null) {
+                if (profile.avatar != null) {
                     AsyncImage(
-                        imageUrl = state.profile.avatar,
+                        imageUrl = profile.avatar,
                         contentDescription = "User avatar",
                         modifier = Modifier
                             .size(72.dp)
@@ -282,7 +322,7 @@ private fun ProfileContent(
                 // User info on the right
                 Column {
                     Text(
-                        text = state.profile.displayName,
+                        text = profile.displayName,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -290,7 +330,7 @@ private fun ProfileContent(
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     Text(
-                        text = maskEmail(state.profile.email),
+                        text = maskEmail(profile.email),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -303,7 +343,7 @@ private fun ProfileContent(
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Text(
-                            text = "Admin",
+                            text = "Admin", // TODO: Get actual role
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -316,34 +356,47 @@ private fun ProfileContent(
         Spacer(modifier = Modifier.height(20.dp))
         
         // Statistics Cards Row - Clickable to navigate to Requests with filter
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            StatCard(
-                icon = Icons.Default.Schedule,
-                value = state.statistics.totalRequests.toString(),
-                label = "Requests",
-                color = MaterialTheme.colorScheme.primary,
-                onClick = { onNavigateToRequests(null) }, // All requests
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                icon = Icons.Default.CheckCircle,
-                value = state.statistics.availableRequests.toString(),
-                label = "Available",
-                color = Color(0xFF4CAF50),
-                onClick = { onNavigateToRequests("Available") },
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                icon = Icons.Default.Pending,
-                value = state.statistics.pendingRequests.toString(),
-                label = "Pending",
-                color = Color(0xFFFF9800),
-                onClick = { onNavigateToRequests("Pending") },
-                modifier = Modifier.weight(1f)
-            )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard(
+                    icon = Icons.Default.Schedule,
+                    value = statistics.totalRequests.toString(),
+                    label = "Requests",
+                    color = MaterialTheme.colorScheme.primary,
+                    onClick = { onNavigateToRequests(null) }, // All requests
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    icon = Icons.Default.CheckCircle,
+                    value = statistics.availableRequests.toString(),
+                    label = "Available",
+                    color = Color(0xFF4CAF50),
+                    onClick = { onNavigateToRequests("Available") },
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    icon = Icons.Default.Pending,
+                    value = statistics.pendingRequests.toString(),
+                    label = "Pending",
+                    color = Color(0xFFFF9800),
+                    onClick = { onNavigateToRequests("Pending") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            
+            if (isRefreshingStats) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 8.dp)
+                        .height(2.dp),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(20.dp))
@@ -371,9 +424,9 @@ private fun ProfileContent(
                 // Movie Quota
                 QuotaRow(
                     label = "Movies",
-                    remaining = state.quota.movieRemaining,
-                    limit = state.quota.movieLimit,
-                    days = state.quota.movieDays
+                    remaining = quota.movieRemaining,
+                    limit = quota.movieLimit,
+                    days = quota.movieDays
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -381,9 +434,9 @@ private fun ProfileContent(
                 // TV Quota
                 QuotaRow(
                     label = "TV Shows",
-                    remaining = state.quota.tvRemaining,
-                    limit = state.quota.tvLimit,
-                    days = state.quota.tvDays
+                    remaining = quota.tvRemaining,
+                    limit = quota.tvLimit,
+                    days = quota.tvDays
                 )
             }
         }

@@ -165,3 +165,4 @@ fastlane/readme.md
 *.p12
 *.cer
 *.mobileprovision
+assets/screenshots/raw/

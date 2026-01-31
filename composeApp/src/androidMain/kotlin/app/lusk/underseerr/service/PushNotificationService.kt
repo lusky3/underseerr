@@ -48,16 +48,12 @@ class PushNotificationService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
         
-        logger.d(TAG, "onMessageReceived called. From: ${message.from}")
+        logger.d(TAG, "Message Data: ${message.data}")
         
         val type = message.data["type"]
         val payloadBase64 = message.data["payload"]
         val headersJson = message.data["headers"]
         
-        logger.d(TAG, "Message Type: $type")
-        logger.d(TAG, "Payload Length: ${payloadBase64?.length ?: 0}")
-        logger.d(TAG, "Headers: $headersJson")
-
         if (type == "webpush_encrypted") {
             if (payloadBase64 != null) {
                 try {
@@ -65,22 +61,43 @@ class PushNotificationService : FirebaseMessagingService() {
                     logger.d(TAG, "Decoding Base64 payload success. Size: ${encryptedPayload.size}")
                     
                     // Decryption involves crypto, doing it in runBlocking since this is a service callback
-                    val decryptedBytes = runBlocking { 
-                        logger.d(TAG, "Attempting decryption...")
-                        webPushKeyManager.decrypt(encryptedPayload) 
+                    val decryptedJson = runBlocking { 
+                        val headers = try {
+                            headersJson?.let { Json.decodeFromString<Map<String, String>>(it) } ?: emptyMap()
+                        } catch (e: Exception) {
+                            logger.e(TAG, "Failed to parse headers JSON: ${e.message}", e)
+                            emptyMap()
+                        }
+                        
+                        logger.d(TAG, "Attempting decryption with headers: $headers")
+                        webPushKeyManager.decrypt(encryptedPayload, headers) 
                     }
-                    val decryptedJson = String(decryptedBytes)
                     logger.d(TAG, "Successfully decrypted Web Push payload: $decryptedJson")
                     
                     val json = Json { ignoreUnknownKeys = true }
-                    val data = json.decodeFromString<Map<String, String>>(decryptedJson)
+                    val data = json.decodeFromString<Map<String, kotlinx.serialization.json.JsonElement>>(decryptedJson)
                     
-                    val title = data["subject"] ?: "Overseerr"
-                    val body = data["message"] ?: ""
-                    val image = data["image"]
-                    val deepLink = "underseerr://request" // Default deep link for now
+                    fun kotlinx.serialization.json.JsonElement?.toCleanString(): String? {
+                        return if (this is kotlinx.serialization.json.JsonPrimitive) {
+                            this.content
+                        } else {
+                            this?.toString()?.removeSurrounding("\"")
+                        }
+                    }
+
+                    val title = data["subject"].toCleanString() ?: "Underseerr"
+                    var body = data["message"].toCleanString() ?: "New notification"
+                    val image = data["image"].toCleanString()
+                    val deepLink = data["actionUrl"].toCleanString() ?: "underseerr://request"
                     
-                    processIncomingNotification(title, body, image, deepLink, data["notification_type"])
+                    val typeStr = (data["notificationType"] ?: data["notification_type"]).toCleanString()
+                    
+                    if (body.contains("undefined")) {
+                        val mediaType = data["mediaType"].toCleanString() ?: "media"
+                        body = body.replace("undefined", mediaType)
+                    }
+                    
+                    processIncomingNotification(title, body, image, deepLink, typeStr)
                     return
                 } catch (e: Exception) {
                     logger.e(TAG, "Failed to decrypt Web Push notification: ${e.message}", e)
@@ -91,8 +108,8 @@ class PushNotificationService : FirebaseMessagingService() {
         }
 
         // Fallback or Standard Plaintext Data
-        val title = message.notification?.title ?: message.data["title"] ?: "Overseerr"
-        val body = message.notification?.body ?: message.data["message"] ?: "New notification"
+        val title = message.notification?.title ?: message.data["title"] ?: "Underseerr"
+        val body = message.notification?.body ?: message.data["message"] ?: "Notification received"
         val imageUrl = message.notification?.imageUrl?.toString() ?: message.data["image"]
         val deepLink = message.data["url"]
         val notificationTypeString = message.data["type"]
@@ -121,24 +138,33 @@ class PushNotificationService : FirebaseMessagingService() {
         val lowerTitle = title.lowercase()
         val lowerBody = body.lowercase()
         
+        val type = notificationTypeString?.lowercase()
+        logger.d(TAG, "Filtering Check: type=$type, title=$title")
+        
         val shouldShow = when {
-            notificationTypeString == "media_approved" || lowerTitle.contains("approved") -> settings.requestApproved
-            notificationTypeString == "media_available" || lowerTitle.contains("available") -> settings.requestAvailable
-            notificationTypeString == "media_declined" || lowerTitle.contains("declined") -> settings.requestDeclined
-            notificationTypeString == "media_pending" || lowerTitle.contains("requested") -> settings.requestPendingApproval
-            notificationTypeString == "media_failed" || lowerTitle.contains("failed") -> settings.requestProcessingFailed
-            notificationTypeString == "issue_created" || lowerTitle.contains("reported") -> settings.issueReported
-            notificationTypeString == "issue_comment" || lowerTitle.contains("comment") -> settings.issueComment
-            notificationTypeString == "issue_resolved" || lowerTitle.contains("resolved") -> settings.issueResolved
-            notificationTypeString == "issue_reopened" || lowerTitle.contains("reopened") -> settings.issueReopened
-            else -> true
+            type == "media_approved" || lowerTitle.contains(" approved") -> settings.requestApproved
+            type == "media_auto_approved" || lowerTitle.contains("auto-approved") -> settings.requestAutoApproved
+            type == "media_available" || lowerTitle.contains("available") -> settings.requestAvailable
+            type == "media_declined" || lowerTitle.contains("declined") -> settings.requestDeclined
+            type == "media_pending" || lowerTitle.contains("requested") -> settings.requestPendingApproval
+            type == "media_failed" || lowerTitle.contains("failed") -> settings.requestProcessingFailed
+            type == "issue_created" || lowerTitle.contains("reported") -> settings.issueReported
+            type == "issue_comment" || lowerTitle.contains("comment") -> settings.issueComment
+            type == "issue_resolved" || lowerTitle.contains("resolved") -> settings.issueResolved
+            type == "issue_reopened" || lowerTitle.contains("reopened") -> settings.issueReopened
+            type == "media_auto_requested" -> settings.mediaAutoRequested
+            else -> {
+                logger.d(TAG, "No specific filter match for type '$type', defaulting to show.")
+                true
+            }
         }
         
         if (!shouldShow) {
-            logger.d(TAG, "Dropping notification: $title (Filtered by local settings)")
+            logger.d(TAG, "NOT SHOWING: Notification for '$type' is disabled in your app settings.")
             return
         }
         
+        logger.d(TAG, "SHOWING notification: $title")
         showNotification(title, body, imageUrl, deepLink)
     }
 

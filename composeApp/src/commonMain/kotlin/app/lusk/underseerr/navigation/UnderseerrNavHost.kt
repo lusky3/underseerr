@@ -21,26 +21,21 @@ import org.koin.compose.viewmodel.koinViewModel
 import app.lusk.underseerr.domain.model.MediaType
 import app.lusk.underseerr.presentation.auth.AuthViewModel
 import app.lusk.underseerr.presentation.auth.PlexAuthScreen
-import app.lusk.underseerr.presentation.discovery.DiscoveryViewModel
-import app.lusk.underseerr.presentation.discovery.MediaDetailsScreen
-import app.lusk.underseerr.presentation.discovery.CategoryResultsScreen
-import app.lusk.underseerr.presentation.discovery.HomeScreen
-import app.lusk.underseerr.presentation.discovery.SearchScreen
-import app.lusk.underseerr.presentation.issue.IssuesListScreen
-import app.lusk.underseerr.presentation.issue.IssueDetailsScreen
-import app.lusk.underseerr.presentation.profile.ProfileScreen
-import app.lusk.underseerr.presentation.request.RequestDetailsScreen
-import app.lusk.underseerr.presentation.request.RequestsListScreen
-import app.lusk.underseerr.presentation.request.RequestViewModel
-import app.lusk.underseerr.presentation.auth.ServerConfigScreen
-import app.lusk.underseerr.presentation.auth.SplashScreen
-import app.lusk.underseerr.presentation.settings.SettingsScreen
-import app.lusk.underseerr.presentation.settings.ServerManagementScreen
+import app.lusk.underseerr.presentation.discovery.*
+import app.lusk.underseerr.presentation.issue.*
+import app.lusk.underseerr.presentation.profile.*
+import app.lusk.underseerr.presentation.request.*
+import app.lusk.underseerr.presentation.auth.*
+import app.lusk.underseerr.presentation.settings.*
 
 @Composable
 fun UnderseerrNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
+    discoveryViewModel: DiscoveryViewModel = koinViewModel(),
+    requestViewModel: RequestViewModel = koinViewModel(),
+    issueViewModel: IssueViewModel = koinViewModel(),
+    profileViewModel: ProfileViewModel = koinViewModel(),
     startDestination: Screen = Screen.Splash
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -136,9 +131,8 @@ fun UnderseerrNavHost(
         }
         
         composable<Screen.Home> {
-            val viewModel: DiscoveryViewModel = koinViewModel()
             HomeScreen(
-                viewModel = viewModel,
+                viewModel = discoveryViewModel,
                 onMovieClick = { movieId ->
                     navController.navigate(Screen.MediaDetails("movie", movieId))
                 },
@@ -205,9 +199,8 @@ fun UnderseerrNavHost(
         }
 
         composable<Screen.Requests> {
-            val viewModel: RequestViewModel = koinViewModel()
             RequestsListScreen(
-                viewModel = viewModel,
+                viewModel = requestViewModel,
                 onRequestClick = { requestId ->
                     navController.navigate(Screen.RequestDetails(requestId))
                 }
@@ -235,6 +228,7 @@ fun UnderseerrNavHost(
         
         composable<Screen.Issues> {
             IssuesListScreen(
+                viewModel = issueViewModel,
                 onIssueClick = { issueId ->
                     navController.navigate(Screen.IssueDetails(issueId))
                 }
@@ -271,7 +265,8 @@ fun UnderseerrNavHost(
                      navController.navigate(Screen.ServerConfig()) {
                         popUpTo<Screen.Home> { inclusive = true }
                     }
-                }
+                },
+                viewModel = profileViewModel
             )
         }
         

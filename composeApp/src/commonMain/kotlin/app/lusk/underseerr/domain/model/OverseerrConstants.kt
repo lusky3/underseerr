@@ -5,8 +5,10 @@ object AppPermissions {
     const val MANAGE_SETTINGS = 4
     const val MANAGE_USERS = 8
     const val MANAGE_REQUESTS = 16
-    const val MANAGE_ISSUES = 32 // Check this value
-    // ... others
+    const val USER_SETTINGS = 32
+    const val MANAGE_ISSUES = 64
+    const val VIEW_ISSUES = 128
+    const val CREATE_ISSUES = 256
 }
 
 object NotificationTypeMask {
@@ -21,4 +23,5 @@ object NotificationTypeMask {
     const val ISSUE_COMMENT = 512
     const val ISSUE_RESOLVED = 1024
     const val ISSUE_REOPENED = 2048
+    const val MEDIA_AUTO_REQUESTED = 4096
 }

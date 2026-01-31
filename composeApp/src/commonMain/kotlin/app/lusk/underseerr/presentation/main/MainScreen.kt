@@ -15,10 +15,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import app.lusk.underseerr.navigation.UnderseerrNavHost
 import app.lusk.underseerr.navigation.Screen
-import app.lusk.underseerr.ui.adaptive.AdaptiveNavigation
-import app.lusk.underseerr.ui.adaptive.NavigationDestination
-import app.lusk.underseerr.ui.adaptive.calculateAdaptiveLayoutConfig
-import app.lusk.underseerr.ui.adaptive.defaultNavigationDestinations
+import app.lusk.underseerr.presentation.discovery.DiscoveryViewModel
+import app.lusk.underseerr.presentation.issue.IssueViewModel
+import app.lusk.underseerr.presentation.profile.ProfileViewModel
+import app.lusk.underseerr.presentation.request.RequestViewModel
+import org.koin.compose.viewmodel.koinViewModel
+import app.lusk.underseerr.ui.adaptive.*
 
 /**
  * Main screen with bottom navigation and content.
@@ -32,6 +34,12 @@ fun MainScreen(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    
+    // Shared ViewModels for main tabs to prevent recreation/refreshing
+    val discoveryViewModel: DiscoveryViewModel = koinViewModel()
+    val requestViewModel: RequestViewModel = koinViewModel()
+    val issueViewModel: IssueViewModel = koinViewModel()
+    val profileViewModel: ProfileViewModel = koinViewModel()
     
     // Simplified navigation visibility - just check if it's a main tab
     val showNavigation = currentDestination?.let { dest ->
@@ -103,6 +111,10 @@ fun MainScreen(
                 // Main content
                 UnderseerrNavHost(
                     navController = navController,
+                    discoveryViewModel = discoveryViewModel,
+                    requestViewModel = requestViewModel,
+                    issueViewModel = issueViewModel,
+                    profileViewModel = profileViewModel,
                     modifier = Modifier.fillMaxSize()
                 )
             }

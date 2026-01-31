@@ -1,6 +1,7 @@
 package app.lusk.underseerr.presentation.issue
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,6 +28,7 @@ import app.lusk.underseerr.domain.model.IssueCount
 import app.lusk.underseerr.domain.model.IssueStatus
 import app.lusk.underseerr.domain.model.IssueType
 import app.lusk.underseerr.ui.components.AsyncImage
+import app.lusk.underseerr.ui.components.PosterImage
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -44,43 +46,54 @@ fun IssuesListScreen(
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     
-    val tabs = listOf("Open", "All", "Resolved")
     val filterMap = mapOf("Open" to "open", "All" to "all", "Resolved" to "resolved")
-    var selectedTab by remember { mutableStateOf(0) }
-    
-    var showFilterMenu by remember { mutableStateOf(false) }
-    
+    val inverseFilterMap = filterMap.entries.associate { it.value to it.key }
+    val tabTitles = listOf("Open", "All", "Resolved")
+    val selectedTabIndex = tabTitles.indexOf(inverseFilterMap[selectedFilter] ?: "Open")
+
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
                 title = { Text("Issues") },
                 actions = {
-                    // Filter button
+                    var showFilterMenu by remember { mutableStateOf(false) }
+                    val tabs = listOf("Open", "All", "Resolved")
+                    
                     Box {
                         IconButton(onClick = { showFilterMenu = true }) {
                             Icon(
                                 Icons.Default.FilterList,
                                 "Filter",
-                                tint = if (selectedTab != 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                tint = if (selectedFilter != "open") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                         }
                         DropdownMenu(
                             expanded = showFilterMenu,
                             onDismissRequest = { showFilterMenu = false }
                         ) {
-                            tabs.forEachIndexed { index, title ->
+                            tabs.forEach { title ->
+                                val filter = filterMap[title] ?: "all"
                                 DropdownMenuItem(
                                     text = { 
                                         Text(
                                             title,
-                                            fontWeight = if (index == selectedTab) FontWeight.Bold else FontWeight.Normal
+                                            fontWeight = if (filter == selectedFilter) FontWeight.Bold else FontWeight.Normal
                                         )
                                     },
                                     onClick = {
-                                        selectedTab = index
-                                        viewModel.loadIssues(filterMap[title] ?: "open")
+                                        viewModel.loadIssues(filter)
                                         showFilterMenu = false
+                                    },
+                                    trailingIcon = {
+                                        if (filter == selectedFilter) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                     }
                                 )
                             }
@@ -103,23 +116,30 @@ fun IssuesListScreen(
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Issue counts summary
-                issueCounts?.let { counts ->
-                    IssueCountsCard(counts = counts)
+                val counts = issueCounts
+                if (counts != null) {
+                    IssueCountsCard(
+                        counts = counts,
+                        onCountClick = { filter ->
+                            viewModel.loadIssues(filter)
+                        }
+                    )
                 }
                 
                 // Content
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.weight(1f)) {
                     when (val state = uiState) {
                         is IssueListState.Loading -> {
-                            CircularProgressIndicator(
-                                modifier = Modifier.align(Alignment.Center)
-                            )
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
                         }
                         is IssueListState.Empty -> {
-                            EmptyIssuesDisplay(
-                                filter = tabs[selectedTab],
-                                modifier = Modifier.align(Alignment.Center)
-                            )
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                EmptyIssuesDisplay(
+                                    filter = tabTitles[selectedTabIndex]
+                                )
+                            }
                         }
                         is IssueListState.Success -> {
                             IssuesList(
@@ -131,11 +151,12 @@ fun IssuesListScreen(
                             )
                         }
                         is IssueListState.Error -> {
-                            app.lusk.underseerr.ui.components.ErrorState(
-                                message = state.message,
-                                onRetry = { viewModel.refresh() },
-                                modifier = Modifier.align(Alignment.Center)
-                            )
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                app.lusk.underseerr.ui.components.ErrorState(
+                                    message = state.message,
+                                    onRetry = { viewModel.refresh() }
+                                )
+                            }
                         }
                     }
                     
@@ -179,6 +200,7 @@ fun IssuesListScreen(
 @Composable
 private fun IssueCountsCard(
     counts: IssueCount,
+    onCountClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -186,8 +208,9 @@ private fun IssueCountsCard(
             .fillMaxWidth()
             .padding(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -199,19 +222,22 @@ private fun IssueCountsCard(
                 icon = Icons.Default.Warning,
                 count = counts.open,
                 label = "Open",
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
+                onClick = { onCountClick("open") }
             )
             IssueCountItem(
                 icon = Icons.Default.CheckCircle,
                 count = counts.closed,
                 label = "Resolved",
-                color = MaterialTheme.colorScheme.tertiary
+                color = MaterialTheme.colorScheme.tertiary,
+                onClick = { onCountClick("resolved") }
             )
             IssueCountItem(
                 icon = Icons.AutoMirrored.Filled.List,
                 count = counts.total,
                 label = "Total",
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                onClick = { onCountClick("all") }
             )
         }
     }
@@ -223,10 +249,14 @@ private fun IssueCountItem(
     count: Int,
     label: String,
     color: Color,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
@@ -262,7 +292,7 @@ private fun IssuesList(
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(issues, key = { it.id }) { issue ->
             IssueItem(
@@ -276,7 +306,6 @@ private fun IssuesList(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IssueItem(
     issue: Issue,
@@ -289,155 +318,166 @@ private fun IssueItem(
     var showMenu by remember { mutableStateOf(false) }
     
     Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.Top
+                .padding(12.dp)
         ) {
-            // Issue type icon
-            IssueTypeIcon(
-                issueType = issue.issueType,
-                modifier = Modifier.padding(end = 12.dp)
-            )
-            
-            // Issue details
-            Column(
-                modifier = Modifier.weight(1f)
+            // Poster with type badge
+            Box(
+                modifier = Modifier
+                    .width(70.dp)
+                    .height(100.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                Card(
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Text(
-                        text = issue.mediaTitle,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                    PosterImage(
+                        posterPath = issue.mediaPosterPath,
+                        title = issue.mediaTitle,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    
-                    IssueStatusChip(status = issue.status)
                 }
                 
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = "${issue.issueType.displayName} Issue",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                // Issue type icon badge on posters
+                IssueTypeIcon(
+                    issueType = issue.issueType,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(4.dp)
+                        .size(24.dp)
                 )
-                
-                if (issue.problemSeason != null) {
-                    Text(
-                        text = buildString {
-                            append("Season ${issue.problemSeason}")
-                            if (issue.problemEpisode != null) {
-                                append(", Episode ${issue.problemEpisode}")
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(100.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = issue.mediaTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            
+                            Spacer(modifier = Modifier.height(2.dp))
+                            
+                            Text(
+                                text = "${issue.issueType.displayName} Issue",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            if (issue.problemSeason != null) {
+                                Text(
+                                    text = buildString {
+                                        append("Season ${issue.problemSeason}")
+                                        if (issue.problemEpisode != null) {
+                                            append(", Episode ${issue.problemEpisode}")
+                                        }
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        }
+                        
+                        // Actions menu
+                        Box {
+                            IconButton(
+                                onClick = { showMenu = true },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More options",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                if (issue.status == IssueStatus.OPEN) {
+                                    DropdownMenuItem(
+                                        text = { Text("Resolve") },
+                                        onClick = {
+                                            showMenu = false
+                                            onResolve()
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.CheckCircle, null) }
+                                    )
+                                } else {
+                                    DropdownMenuItem(
+                                        text = { Text("Reopen") },
+                                        onClick = {
+                                            showMenu = false
+                                            onReopen()
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Refresh, null) }
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("Delete") },
+                                    onClick = {
+                                        showMenu = false
+                                        onDelete()
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
+                                )
+                            }
+                        }
+                    }
                 }
                 
-                Spacer(modifier = Modifier.height(8.dp))
-                
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // User info
-                    if (issue.createdByAvatar != null) {
-                        AsyncImage(
-                            imageUrl = issue.createdByAvatar,
-                            contentDescription = "User avatar",
-                            modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                    
-                    Text(
-                        text = issue.createdByName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
+                    // Larger colorful status badge
+                    IssueStatusBadge(status = issue.status)
                     
                     // Comment count
                     if (issue.comments.isNotEmpty()) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Comment,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = issue.comments.size.toString(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-            
-            // Actions menu
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More options"
-                    )
-                }
-                
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    if (issue.status == IssueStatus.OPEN) {
-                        DropdownMenuItem(
-                            text = { Text("Resolve") },
-                            onClick = {
-                                showMenu = false
-                                onResolve()
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.CheckCircle, null)
-                            }
-                        )
-                    } else {
-                        DropdownMenuItem(
-                            text = { Text("Reopen") },
-                            onClick = {
-                                showMenu = false
-                                onReopen()
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Refresh, null)
-                            }
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        onClick = {
-                            showMenu = false
-                            onDelete()
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Comment,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = issue.comments.size.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
@@ -450,16 +490,16 @@ private fun IssueTypeIcon(
     modifier: Modifier = Modifier
 ) {
     val (icon, color) = when (issueType) {
-        IssueType.VIDEO -> Icons.Default.Videocam to MaterialTheme.colorScheme.primary
-        IssueType.AUDIO -> Icons.AutoMirrored.Filled.VolumeUp to MaterialTheme.colorScheme.secondary
-        IssueType.SUBTITLES -> Icons.Default.Subtitles to MaterialTheme.colorScheme.tertiary
-        IssueType.OTHER -> Icons.AutoMirrored.Filled.HelpOutline to MaterialTheme.colorScheme.outline
+        IssueType.VIDEO -> Icons.Default.Videocam to Color(0xFFE91E63) // Pink/Red
+        IssueType.AUDIO -> Icons.AutoMirrored.Filled.VolumeUp to Color(0xFF2196F3) // Blue
+        IssueType.SUBTITLES -> Icons.Default.Subtitles to Color(0xFFFFC107) // Amber
+        IssueType.OTHER -> Icons.AutoMirrored.Filled.HelpOutline to Color(0xFF9C27B0) // Purple
     }
     
     Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = color.copy(alpha = 0.1f),
-        modifier = modifier.size(40.dp)
+        shape = RoundedCornerShape(6.dp),
+        color = Color.Black.copy(alpha = 0.7f),
+        modifier = modifier
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -469,40 +509,41 @@ private fun IssueTypeIcon(
                 imageVector = icon,
                 contentDescription = issueType.displayName,
                 tint = color,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(16.dp)
             )
         }
     }
 }
 
 @Composable
-private fun IssueStatusChip(
+private fun IssueStatusBadge(
     status: IssueStatus,
     modifier: Modifier = Modifier
 ) {
-    val (text, containerColor, contentColor) = when (status) {
+    val (backgroundColor, textColor, text) = when (status) {
         IssueStatus.OPEN -> Triple(
-            "Open",
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.onErrorContainer
+            MaterialTheme.colorScheme.error,
+            MaterialTheme.colorScheme.onError,
+            "Open"
         )
         IssueStatus.RESOLVED -> Triple(
-            "Resolved",
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.onTertiaryContainer
+            MaterialTheme.colorScheme.tertiary,
+            MaterialTheme.colorScheme.onTertiary,
+            "Resolved"
         )
     }
     
     Surface(
-        shape = RoundedCornerShape(4.dp),
-        color = containerColor,
+        color = backgroundColor,
+        shape = RoundedCornerShape(8.dp),
         modifier = modifier
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
         )
     }
 }
