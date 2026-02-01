@@ -29,6 +29,14 @@ fun sharedModule(context: PlatformContext) = module {
     single<IssueService> { IssueKtorService(get()) }
     single { SettingsKtorService(get()) }
     single { NotificationServerService(get()) }
+    single { 
+        val baseUrl = if (app.lusk.underseerr.shared.BuildKonfig.DEBUG) {
+            app.lusk.underseerr.shared.BuildKonfig.WORKER_ENDPOINT_STAGING
+        } else {
+            app.lusk.underseerr.shared.BuildKonfig.WORKER_ENDPOINT_PROD
+        }
+        SubscriptionKtorService(get(), baseUrl)
+    }
     
     // Database
     single { 
@@ -53,7 +61,7 @@ fun sharedModule(context: PlatformContext) = module {
     single<CacheRepository> { CacheRepositoryImpl(get(), get()) }
     single<NotificationRepository> { NotificationRepositoryImpl(get(), get(), get(), get(), get(), get(), get()) }
     single<IssueRepository> { IssueRepositoryImpl(get(), get()) }
-    single<SubscriptionRepository> { SubscriptionRepositoryImpl(get()) }
+    single<SubscriptionRepository> { SubscriptionRepositoryImpl(get(), get(), get(), get()) }
 }
 
 

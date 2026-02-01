@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import app.lusk.underseerr.util.nowMillis
 
 
 /**
@@ -80,14 +81,61 @@ class SettingsViewModel(
     
     private val _vibrantThemeColors = MutableStateFlow(app.lusk.underseerr.domain.repository.VibrantThemeColors())
     val vibrantThemeColors: StateFlow<app.lusk.underseerr.domain.repository.VibrantThemeColors> = _vibrantThemeColors.asStateFlow()
+
+    private val _notificationServerUrl = MutableStateFlow<String?>(null)
+    val notificationServerUrl: StateFlow<String?> = _notificationServerUrl.asStateFlow()
+
+    private val _notificationServerType = MutableStateFlow("HOSTED")
+    val notificationServerType: StateFlow<String> = _notificationServerType.asStateFlow()
     
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent: SharedFlow<String> = _uiEvent
+
+    private val _showTrialExpirationPopup = MutableStateFlow(false)
+    val showTrialExpirationPopup: StateFlow<Boolean> = _showTrialExpirationPopup.asStateFlow()
     
     init {
         loadSettings()
         fetchProfiles()
         checkBiometricAvailability()
+        
+        viewModelScope.launch {
+            settingsRepository.getNotificationServerUrl().collect {
+                _notificationServerUrl.value = it
+            }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.getNotificationServerType().collect {
+                _notificationServerType.value = it
+            }
+        }
+
+        // Trial Expiration Logic
+        viewModelScope.launch {
+            val currentType = settingsRepository.getNotificationServerType().first()
+            val trialStart = settingsRepository.getTrialStartDate().first()
+            if (currentType == "HOSTED" && trialStart == null && !subscriptionStatus.value.isPremium) {
+                settingsRepository.setTrialStartDate(app.lusk.underseerr.util.nowMillis())
+            }
+
+            subscriptionRepository.getSubscriptionStatus().collect { status ->
+                _subscriptionStatus.value = status
+                val currentType = settingsRepository.getNotificationServerType().first()
+                
+                if (status.tier == app.lusk.underseerr.domain.model.SubscriptionTier.FREE && status.expiresAt == null) {
+                    // Trial might have expired or not started
+                    val trialStart = settingsRepository.getTrialStartDate().first()
+                    if (trialStart != null) {
+                         // Trial was started but is now FREE tier -> Expired
+                         if (currentType == "HOSTED") {
+                             settingsRepository.setNotificationServerType("NONE")
+                             _showTrialExpirationPopup.value = true
+                         }
+                    }
+                }
+            }
+        }
     }
     
     private fun checkBiometricAvailability() {
@@ -298,23 +346,6 @@ class SettingsViewModel(
                (userPerms and permission.toLong()) != 0L
     }
 
-    private val _notificationServerUrl = MutableStateFlow<String?>(null)
-    val notificationServerUrl: StateFlow<String?> = _notificationServerUrl.asStateFlow()
-
-    init {
-        loadSettings()
-        fetchProfiles()
-        checkBiometricAvailability()
-        
-        viewModelScope.launch {
-            settingsRepository.getNotificationServerUrl().collect {
-                _notificationServerUrl.value = it
-            }
-        }
-    }
-
-    // ... (rest of methods)
-
     fun setNotificationServerUrl(url: String) {
         viewModelScope.launch {
             settingsRepository.setNotificationServerUrl(url)
@@ -354,6 +385,44 @@ class SettingsViewModel(
         }
     }
 
+    fun setNotificationServerType(type: String) {
+        viewModelScope.launch {
+            if (type == "HOSTED") {
+                val trialStart = settingsRepository.getTrialStartDate().first()
+                if (trialStart == null) {
+                    settingsRepository.setTrialStartDate(app.lusk.underseerr.util.nowMillis())
+                }
+            }
+            settingsRepository.setNotificationServerType(type)
+        }
+    }
+
+    fun dismissTrialPopup() {
+        _showTrialExpirationPopup.value = false
+    }
+
+    fun unlockWithSerialKey(key: String) {
+        viewModelScope.launch {
+            val result = subscriptionRepository.unlockWithSerialKey(key)
+            if (result.isSuccess) {
+                _uiEvent.emit("Premium features unlocked!")
+            } else {
+                _uiEvent.emit("Error: ${result.exceptionOrNull()?.message ?: "Invalid key"}")
+            }
+        }
+    }
+
+    fun restorePurchases() {
+        viewModelScope.launch {
+            val result = subscriptionRepository.restorePurchases()
+            if (result.isSuccess) {
+                _uiEvent.emit("Subscription restored successfully!")
+            } else {
+                _uiEvent.emit(result.exceptionOrNull()?.message ?: "Restore failed")
+            }
+        }
+    }
+    
     fun updateVibrantThemeColors(colors: app.lusk.underseerr.domain.repository.VibrantThemeColors) {
         viewModelScope.launch {
             settingsRepository.updateVibrantThemeColors(colors)

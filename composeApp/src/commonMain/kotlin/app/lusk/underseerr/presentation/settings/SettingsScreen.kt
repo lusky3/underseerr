@@ -37,6 +37,9 @@ fun SettingsScreen(
     val themePreference by viewModel.themePreference.collectAsState()
     val subscriptionStatus by viewModel.subscriptionStatus.collectAsState()
     
+    val notificationServerType by viewModel.notificationServerType.collectAsState()
+    val showTrialExpirationPopup by viewModel.showTrialExpirationPopup.collectAsState()
+    
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { message -> 
@@ -307,6 +310,21 @@ fun SettingsScreen(
             )
             
             HorizontalDivider()
+            
+            // Subscription Section
+            SettingsSectionHeader(title = "Subscription")
+            
+            SettingsItem(
+                title = "Subscription Status",
+                subtitle = when (subscriptionStatus.tier) {
+                    app.lusk.underseerr.domain.model.SubscriptionTier.PREMIUM -> "Premium Active"
+                    app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> "Trial Active (7 Days)"
+                    app.lusk.underseerr.domain.model.SubscriptionTier.FREE -> "Free Version"
+                },
+                onClick = { viewModel.restorePurchases() }
+            )
+
+            HorizontalDivider()
 
             // Webhook Configuration (Auto-Setup)
             SettingsSectionHeader(title = "Advanced Integration")
@@ -317,34 +335,67 @@ fun SettingsScreen(
             val notificationServerUrl by viewModel.notificationServerUrl.collectAsState()
 
             if (showUrlDialog) {
-                var isCustom by remember { mutableStateOf(!notificationServerUrl.isNullOrBlank()) }
+                var isCustom by remember { mutableStateOf(notificationServerType == "CUSTOM") }
+                var selectedType by remember { mutableStateOf(notificationServerType) }
                 var urlInput by remember { mutableStateOf(notificationServerUrl ?: "") }
                 
                 AlertDialog(
                     onDismissRequest = { showUrlDialog = false },
-                    title = { Text("Notification Server URL") },
+                    title = { Text("Notification Server") },
                     text = {
                         Column {
+                            // None option
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { 
-                                        if (subscriptionStatus.isPremium) {
+                                        selectedType = "NONE"
+                                        isCustom = false 
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedType == "NONE",
+                                    onClick = { 
+                                        selectedType = "NONE"
+                                        isCustom = false 
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text("None")
+                                    Text(
+                                        "Disable push notifications",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            // Hosted option
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { 
+                                        if (subscriptionStatus.isPremium || subscriptionStatus.tier == app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL) {
+                                            selectedType = "HOSTED"
                                             isCustom = false 
                                         } else {
-                                            showPaywallDialog = "Hosted notification server is a premium feature."
+                                            showPaywallDialog = "Hosted notification server requires a subscription or trial."
                                         }
                                     }
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
-                                    selected = !isCustom,
+                                    selected = selectedType == "HOSTED",
                                     onClick = { 
-                                        if (subscriptionStatus.isPremium) {
+                                        if (subscriptionStatus.isPremium || subscriptionStatus.tier == app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL) {
+                                            selectedType = "HOSTED"
                                             isCustom = false 
                                         } else {
-                                            showPaywallDialog = "Hosted notification server is a premium feature."
+                                            showPaywallDialog = "Hosted notification server requires a subscription or trial."
                                         }
                                     }
                                 )
@@ -352,7 +403,7 @@ fun SettingsScreen(
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text("Default (Hosted)")
-                                        if (!subscriptionStatus.isPremium) {
+                                        if (!subscriptionStatus.isPremium && subscriptionStatus.tier != app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL) {
                                             Icon(
                                                 imageVector = Icons.Default.Lock,
                                                 contentDescription = "Premium",
@@ -369,16 +420,23 @@ fun SettingsScreen(
                                 }
                             }
                             
+                            // Custom option
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { isCustom = true }
+                                    .clickable { 
+                                        selectedType = "CUSTOM"
+                                        isCustom = true 
+                                    }
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
-                                    selected = isCustom,
-                                    onClick = { isCustom = true }
+                                    selected = selectedType == "CUSTOM",
+                                    onClick = { 
+                                        selectedType = "CUSTOM"
+                                        isCustom = true 
+                                    }
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
@@ -405,15 +463,15 @@ fun SettingsScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                if (!isCustom) {
-                                    viewModel.setNotificationServerUrl("")
-                                    showUrlDialog = false
-                                } else if (urlInput.matches(Regex("^(https?://).+"))) {
+                                viewModel.setNotificationServerType(selectedType)
+                                if (selectedType == "CUSTOM" && urlInput.matches(Regex("^(https?://).+"))) {
                                     viewModel.setNotificationServerUrl(urlInput)
-                                    showUrlDialog = false
+                                } else if (selectedType != "CUSTOM") {
+                                    viewModel.setNotificationServerUrl("")
                                 }
+                                showUrlDialog = false
                             },
-                            enabled = !isCustom || urlInput.matches(Regex("^(https?://).+"))
+                            enabled = selectedType != "CUSTOM" || urlInput.matches(Regex("^(https?://).+"))
                         ) { Text("Save") }
                     },
                     dismissButton = {
@@ -424,7 +482,12 @@ fun SettingsScreen(
 
             SettingsItem(
                 title = "Notification Server",
-                subtitle = notificationServerUrl.takeUnless { it.isNullOrBlank() } ?: "Default (Hosted)",
+                subtitle = when (notificationServerType) {
+                    "NONE" -> "None"
+                    "HOSTED" -> "Default (Hosted)"
+                    "CUSTOM" -> notificationServerUrl ?: "Custom URL"
+                    else -> "Default (Hosted)"
+                },
                 onClick = { showUrlDialog = true }
             )
 
@@ -508,7 +571,35 @@ fun SettingsScreen(
                 viewModel.purchasePremium()
                 showPaywallDialog = null
             },
+            onUnlock = { key ->
+                viewModel.unlockWithSerialKey(key)
+                showPaywallDialog = null
+            },
             onDismiss = { showPaywallDialog = null }
+        )
+    }
+
+    // Trial Expiration Dialog
+    if (showTrialExpirationPopup) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissTrialPopup() },
+            title = { Text("Trial Expired") },
+            text = {
+                Text("Your 7-day trial for the hosted notification server has expired. Please subscribe to continue using push notifications or host your own server.")
+            },
+            confirmButton = {
+                Button(onClick = { 
+                    viewModel.dismissTrialPopup()
+                    showPaywallDialog = "Maintain your push notifications with Premium."
+                }) {
+                    Text("View Options")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissTrialPopup() }) {
+                    Text("Dismiss")
+                }
+            }
         )
     }
     
@@ -750,8 +841,12 @@ private fun QualityProfileDialog(
 private fun SubscriptionPaywallDialog(
     message: String,
     onPurchase: () -> Unit,
+    onUnlock: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var serialKey by remember { mutableStateOf("") }
+    var showSerialInput by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
@@ -771,20 +866,45 @@ private fun SubscriptionPaywallDialog(
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Support development and unlock all features with a one-time purchase.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                
+                if (!showSerialInput) {
+                    Text(
+                        text = "Support development and unlock all features with a one-time purchase.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = serialKey,
+                        onValueChange = { serialKey = it },
+                        label = { Text("Enter Serial Key") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+                
+                TextButton(onClick = { showSerialInput = !showSerialInput }) {
+                    Text(if (showSerialInput) "Back to purchase" else "Have a serial key?")
+                }
             }
         },
         confirmButton = {
-            Button(
-                onClick = onPurchase,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Get Premium (Mock)")
+            if (!showSerialInput) {
+                Button(
+                    onClick = onPurchase,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Get Premium (Mock)")
+                }
+            } else {
+                Button(
+                    onClick = { onUnlock(serialKey) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = serialKey.isNotBlank()
+                ) {
+                    Text("Unlock")
+                }
             }
         },
         dismissButton = {

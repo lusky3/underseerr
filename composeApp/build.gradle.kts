@@ -126,6 +126,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.process)
             implementation(libs.firebase.messaging)
             implementation(libs.androidx.core.ktx)
+            implementation(libs.android.billing)
         }
         
         iosMain.dependencies {

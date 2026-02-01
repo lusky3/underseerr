@@ -26,4 +26,14 @@ interface SubscriptionRepository {
      * Resets subscription to free (for testing).
      */
     suspend fun resetSubscription(): Result<Unit>
+    
+    /**
+     * Unlocks premium features using a serial key.
+     */
+    suspend fun unlockWithSerialKey(key: String): Result<Unit>
+    
+    /**
+     * Triggers a check of stored purchases on the device.
+     */
+    suspend fun restorePurchases(): Result<Unit>
 }

@@ -25,6 +25,12 @@ actual fun platformModule(): Module = module {
             activityProvider = { app.lusk.underseerr.util.CurrentActivityHolder.get() }
         )
     }
+    single<app.lusk.underseerr.domain.billing.BillingManager> {
+        app.lusk.underseerr.domain.billing.AndroidBillingManager(
+            context = get(),
+            activityProvider = { app.lusk.underseerr.util.CurrentActivityHolder.get() }
+        ).apply { startConnection() }
+    }
     // single<app.lusk.underseerr.domain.repository.FirestoreService> { 
     //     app.lusk.underseerr.data.repository.AndroidFirestoreService(get()) 
     // }

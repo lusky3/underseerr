@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
  */
 enum class SubscriptionTier {
     FREE,
+    TRIAL,
     PREMIUM
 }
 
