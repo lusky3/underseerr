@@ -60,7 +60,8 @@ class PreferencesManager(
     enum class ThemeMode {
         LIGHT,
         DARK,
-        SYSTEM
+        SYSTEM,
+        VIBRANT
     }
     
     // Server Configuration
@@ -282,6 +283,7 @@ class PreferencesManager(
                 ThemeMode.LIGHT -> ThemePreference.LIGHT
                 ThemeMode.DARK -> ThemePreference.DARK
                 ThemeMode.SYSTEM -> ThemePreference.SYSTEM
+                ThemeMode.VIBRANT -> ThemePreference.VIBRANT
             }
         }
     }
@@ -291,6 +293,7 @@ class PreferencesManager(
             ThemePreference.LIGHT -> ThemeMode.LIGHT
             ThemePreference.DARK -> ThemeMode.DARK
             ThemePreference.SYSTEM -> ThemeMode.SYSTEM
+            ThemePreference.VIBRANT -> ThemeMode.VIBRANT
         }
         setThemeMode(mode)
     }

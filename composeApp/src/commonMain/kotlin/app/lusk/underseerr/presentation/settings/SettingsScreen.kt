@@ -87,6 +87,7 @@ fun SettingsScreen(
                     ThemePreference.LIGHT -> "Light"
                     ThemePreference.DARK -> "Dark"
                     ThemePreference.SYSTEM -> "System default"
+                    ThemePreference.VIBRANT -> "Vibrant"
                 },
                 onClick = { showThemeDialog = true }
             )
@@ -563,6 +564,7 @@ private fun ThemeSelectionDialog(
                                 ThemePreference.LIGHT -> "Light"
                                 ThemePreference.DARK -> "Dark"
                                 ThemePreference.SYSTEM -> "System default"
+                                ThemePreference.VIBRANT -> "Vibrant"
                             }
                         )
                         if (theme == currentTheme) {

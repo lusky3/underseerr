@@ -86,6 +86,37 @@ private val DarkColorScheme = darkColorScheme(
     surfaceTint = md_theme_dark_surfaceTint
 )
 
+private val VibrantColorScheme = darkColorScheme(
+    primary = vibrant_primary,
+    onPrimary = vibrant_onPrimary,
+    primaryContainer = vibrant_primaryContainer,
+    onPrimaryContainer = vibrant_onPrimaryContainer,
+    secondary = vibrant_secondary,
+    onSecondary = vibrant_onSecondary,
+    secondaryContainer = vibrant_secondaryContainer,
+    onSecondaryContainer = vibrant_onSecondaryContainer,
+    tertiary = vibrant_tertiary,
+    onTertiary = vibrant_onTertiary,
+    tertiaryContainer = vibrant_tertiaryContainer,
+    onTertiaryContainer = vibrant_onTertiaryContainer,
+    error = vibrant_error,
+    onError = vibrant_onError,
+    errorContainer = vibrant_errorContainer,
+    onErrorContainer = vibrant_onErrorContainer,
+    background = vibrant_background,
+    onBackground = vibrant_onBackground,
+    surface = vibrant_surface,
+    onSurface = vibrant_onSurface,
+    surfaceVariant = vibrant_surfaceVariant,
+    onSurfaceVariant = vibrant_onSurfaceVariant,
+    outline = vibrant_outline,
+    outlineVariant = vibrant_outlineVariant,
+    inverseSurface = vibrant_inverseSurface,
+    inverseOnSurface = vibrant_inverseOnSurface,
+    inversePrimary = vibrant_inversePrimary,
+    surfaceTint = vibrant_surfaceTint
+)
+
 /**
  * Main theme composable with Material You dynamic theming support.
  * 
@@ -101,11 +132,12 @@ fun UnderseerrTheme(
 ) {
     val darkTheme = when (themePreference) {
         ThemePreference.LIGHT -> false
-        ThemePreference.DARK -> true
+        ThemePreference.DARK, ThemePreference.VIBRANT -> true
         ThemePreference.SYSTEM -> isSystemInDarkTheme()
     }
     
     val colorScheme = when {
+        themePreference == ThemePreference.VIBRANT -> VibrantColorScheme
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)

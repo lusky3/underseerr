@@ -145,7 +145,8 @@ interface SettingsRepository {
 enum class ThemePreference {
     LIGHT,
     DARK,
-    SYSTEM
+    SYSTEM,
+    VIBRANT
 }
 
 /**
