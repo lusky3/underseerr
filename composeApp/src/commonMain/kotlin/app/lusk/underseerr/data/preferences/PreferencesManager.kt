@@ -52,6 +52,7 @@ class PreferencesManager(
         val HAS_REQUESTED_NOTIFICATIONS = booleanPreferencesKey("has_requested_notifications")
         val PUSH_TOKEN = stringPreferencesKey("push_token")
         val NOTIFICATION_SERVER_URL = stringPreferencesKey("notification_server_url")
+        val IS_PREMIUM = booleanPreferencesKey("is_premium")
     }
     
     /**
@@ -439,6 +440,18 @@ class PreferencesManager(
     fun getNotificationServerUrl(): Flow<String?> {
         return dataStore.data.map { preferences ->
             preferences[PreferenceKeys.NOTIFICATION_SERVER_URL]
+        }
+    }
+
+    suspend fun setIsPremium(isPremium: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.IS_PREMIUM] = isPremium
+        }
+    }
+
+    fun getIsPremium(): Flow<Boolean> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.IS_PREMIUM] ?: false
         }
     }
 }

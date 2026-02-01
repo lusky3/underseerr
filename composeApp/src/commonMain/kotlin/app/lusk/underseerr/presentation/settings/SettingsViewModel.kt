@@ -8,6 +8,8 @@ import app.lusk.underseerr.domain.repository.NotificationSettings
 import app.lusk.underseerr.domain.repository.ServerConfig
 import app.lusk.underseerr.domain.repository.SettingsRepository
 import app.lusk.underseerr.domain.repository.ThemePreference
+import app.lusk.underseerr.domain.model.SubscriptionStatus
+import app.lusk.underseerr.domain.repository.SubscriptionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,7 +35,8 @@ class SettingsViewModel(
     private val requestRepository: app.lusk.underseerr.domain.repository.RequestRepository,
     private val biometricManager: app.lusk.underseerr.domain.security.BiometricManager,
     private val permissionManager: app.lusk.underseerr.domain.permission.PermissionManager,
-    private val notificationRepository: app.lusk.underseerr.domain.repository.NotificationRepository
+    private val notificationRepository: app.lusk.underseerr.domain.repository.NotificationRepository,
+    private val subscriptionRepository: SubscriptionRepository
 ) : ViewModel() {
     
     private val _themePreference = MutableStateFlow(ThemePreference.SYSTEM)
@@ -71,6 +74,9 @@ class SettingsViewModel(
 
     private val _currentUser = MutableStateFlow<UserProfile?>(null)
     val currentUser: StateFlow<UserProfile?> = _currentUser.asStateFlow()
+
+    private val _subscriptionStatus = MutableStateFlow(SubscriptionStatus())
+    val subscriptionStatus: StateFlow<SubscriptionStatus> = _subscriptionStatus.asStateFlow()
     
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent: SharedFlow<String> = _uiEvent
@@ -125,6 +131,12 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.getCurrentServerUrl().collect {
                 _currentServerUrl.value = it
+            }
+        }
+
+        viewModelScope.launch {
+            subscriptionRepository.getSubscriptionStatus().collect {
+                _subscriptionStatus.value = it
             }
         }
 
@@ -323,6 +335,13 @@ class SettingsViewModel(
             } else if (result is app.lusk.underseerr.domain.model.Result.Error) {
                 _uiEvent.emit("Failed: ${result.error.message ?: "Unknown error"}")
             }
+        }
+    }
+
+    fun purchasePremium() {
+        viewModelScope.launch {
+            subscriptionRepository.purchasePremium()
+            _uiEvent.emit("Premium unlocked!")
         }
     }
 }

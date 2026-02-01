@@ -53,6 +53,7 @@ fun sharedModule(context: PlatformContext) = module {
     single<CacheRepository> { CacheRepositoryImpl(get(), get()) }
     single<NotificationRepository> { NotificationRepositoryImpl(get(), get(), get(), get(), get(), get(), get()) }
     single<IssueRepository> { IssueRepositoryImpl(get(), get()) }
+    single<SubscriptionRepository> { SubscriptionRepositoryImpl(get()) }
 }
 
 

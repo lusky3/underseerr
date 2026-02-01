@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +34,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val themePreference by viewModel.themePreference.collectAsState()
+    val subscriptionStatus by viewModel.subscriptionStatus.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) {
@@ -53,6 +56,7 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showMovieProfileDialog by remember { mutableStateOf(false) }
     var showTvProfileDialog by remember { mutableStateOf(false) }
+    var showPaywallDialog by remember { mutableStateOf<String?>(null) } // Context message
     
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -306,16 +310,45 @@ fun SettingsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { isCustom = false }
+                                    .clickable { 
+                                        if (subscriptionStatus.isPremium) {
+                                            isCustom = false 
+                                        } else {
+                                            showPaywallDialog = "Hosted notification server is a premium feature."
+                                        }
+                                    }
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
                                     selected = !isCustom,
-                                    onClick = { isCustom = false }
+                                    onClick = { 
+                                        if (subscriptionStatus.isPremium) {
+                                            isCustom = false 
+                                        } else {
+                                            showPaywallDialog = "Hosted notification server is a premium feature."
+                                        }
+                                    }
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Default (Hosted)")
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Default (Hosted)")
+                                        if (!subscriptionStatus.isPremium) {
+                                            Icon(
+                                                imageVector = Icons.Default.Lock,
+                                                contentDescription = "Premium",
+                                                modifier = Modifier.size(14.dp).padding(start = 4.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        "Secure relay for push notifications",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                             
                             Row(
@@ -330,7 +363,14 @@ fun SettingsScreen(
                                     onClick = { isCustom = true }
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Custom")
+                                Column {
+                                    Text("Custom")
+                                    Text(
+                                        "Use your own Cloudflare Worker",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
 
                             if (isCustom) {
@@ -429,11 +469,28 @@ fun SettingsScreen(
     if (showThemeDialog) {
         ThemeSelectionDialog(
             currentTheme = themePreference,
+            subscriptionStatus = subscriptionStatus,
             onThemeSelected = { theme ->
-                viewModel.setThemePreference(theme)
-                showThemeDialog = false
+                if (theme == ThemePreference.VIBRANT && !subscriptionStatus.isPremium) {
+                    showPaywallDialog = "The Vibrant theme is a premium feature."
+                } else {
+                    viewModel.setThemePreference(theme)
+                    showThemeDialog = false
+                }
             },
             onDismiss = { showThemeDialog = false }
+        )
+    }
+
+    // Paywall Dialog
+    showPaywallDialog?.let { context ->
+        SubscriptionPaywallDialog(
+            message = context,
+            onPurchase = {
+                viewModel.purchasePremium()
+                showPaywallDialog = null
+            },
+            onDismiss = { showPaywallDialog = null }
         )
     }
     
@@ -542,6 +599,7 @@ private fun SettingsSwitchItem(
 @Composable
 private fun ThemeSelectionDialog(
     currentTheme: ThemePreference,
+    subscriptionStatus: app.lusk.underseerr.domain.model.SubscriptionStatus,
     onThemeSelected: (ThemePreference) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -559,14 +617,24 @@ private fun ThemeSelectionDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = when (theme) {
-                                ThemePreference.LIGHT -> "Light"
-                                ThemePreference.DARK -> "Dark"
-                                ThemePreference.SYSTEM -> "System default"
-                                ThemePreference.VIBRANT -> "Vibrant"
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = when (theme) {
+                                    ThemePreference.LIGHT -> "Light"
+                                    ThemePreference.DARK -> "Dark"
+                                    ThemePreference.SYSTEM -> "System default"
+                                    ThemePreference.VIBRANT -> "Vibrant"
+                                }
+                            )
+                            if (theme == ThemePreference.VIBRANT && !subscriptionStatus.isPremium) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = "Premium",
+                                    modifier = Modifier.size(16.dp).padding(start = 8.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                             }
-                        )
+                        }
                         if (theme == currentTheme) {
                             Icon(
                                 imageVector = Icons.Default.Check,
@@ -655,6 +723,58 @@ private fun QualityProfileDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun SubscriptionPaywallDialog(
+    message: String,
+    onPurchase: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = { Text("Unlock Premium") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Support development and unlock all features with a one-time purchase.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onPurchase,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Get Premium (Mock)")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Not Now")
             }
         }
     )

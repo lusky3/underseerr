@@ -484,6 +484,7 @@ private fun ProfileContent(
                     ThemePreference.LIGHT -> "Light"
                     ThemePreference.DARK -> "Dark"
                     ThemePreference.SYSTEM -> "System"
+                    ThemePreference.VIBRANT -> "Vibrant"
                 }
 
                 SettingsRow(
@@ -517,6 +518,7 @@ private fun ProfileContent(
                                         ThemePreference.LIGHT -> "Light"
                                         ThemePreference.DARK -> "Dark"
                                         ThemePreference.SYSTEM -> "System"
+                                        ThemePreference.VIBRANT -> "Vibrant"
                                     }
                                     Row(
                                         modifier = Modifier
