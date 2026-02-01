@@ -2,10 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <application
-        android:name="app.lusk.underseerr.DebugUnderseerrApplication"
-        android:usesCleartextTraffic="true"
-        tools:replace="android:name,android:usesCleartextTraffic">
+    <application>
         
         <activity
             android:name=".MainActivity"

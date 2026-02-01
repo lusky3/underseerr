@@ -201,16 +201,6 @@ fun PlexAuthScreen(
                         Text("Sign in with Plex")
                     }
                     
-                    if (app.lusk.underseerr.util.AppConfig.isDebug) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = { viewModel.handleAuthCallback("debug_token_12345") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Debug: Skip to App (Mock Auth)")
-                        }
-                    }
-                    
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
