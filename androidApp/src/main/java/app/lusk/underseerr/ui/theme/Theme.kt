@@ -10,9 +10,11 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.view.WindowCompat
 import app.lusk.underseerr.domain.repository.ThemePreference
 
@@ -127,6 +129,7 @@ private val VibrantColorScheme = darkColorScheme(
 @Composable
 fun UnderseerrTheme(
     themePreference: ThemePreference = ThemePreference.SYSTEM,
+    vibrantColors: app.lusk.underseerr.domain.repository.VibrantThemeColors = app.lusk.underseerr.domain.repository.VibrantThemeColors(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -146,18 +149,147 @@ fun UnderseerrTheme(
         else -> LightColorScheme
     }
     
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+    val gradients = when {
+        themePreference == ThemePreference.VIBRANT -> {
+            app.lusk.underseerr.ui.theme.UnderseerrGradients(
+                primary = androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(parseColor(vibrantColors.primaryStart), parseColor(vibrantColors.primaryEnd))
+                ),
+                secondary = androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(parseColor(vibrantColors.secondaryStart), parseColor(vibrantColors.secondaryEnd))
+                ),
+                tertiary = androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(parseColor(vibrantColors.tertiaryStart), parseColor(vibrantColors.tertiaryEnd))
+                ),
+                background = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(parseColor(vibrantColors.backgroundStart), parseColor(vibrantColors.backgroundEnd))
+                ),
+                surface = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(parseColor(vibrantColors.surfaceStart), parseColor(vibrantColors.surfaceEnd))
+                ),
+                accent = androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(parseColor(vibrantColors.accentStart), parseColor(vibrantColors.accentEnd))
+                ),
+                highlight = androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(parseColor(vibrantColors.highlightStart), parseColor(vibrantColors.highlightEnd))
+                ),
+                appBar = androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(parseColor(vibrantColors.appBarStart), parseColor(vibrantColors.appBarEnd))
+                ),
+                navBar = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(parseColor(vibrantColors.navBarStart), parseColor(vibrantColors.navBarEnd))
+                ),
+                settings = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(parseColor(vibrantColors.settingsStart), parseColor(vibrantColors.settingsEnd))
+                ),
+                profiles = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(parseColor(vibrantColors.profilesStart), parseColor(vibrantColors.profilesEnd))
+                ),
+                requestDetails = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(parseColor(vibrantColors.requestDetailsStart), parseColor(vibrantColors.requestDetailsEnd))
+                ),
+                issueDetails = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(parseColor(vibrantColors.issueDetailsStart), parseColor(vibrantColors.issueDetailsEnd))
+                ),
+                onPrimary = contentColorFor(parseColor(vibrantColors.primaryStart)),
+                onSecondary = contentColorFor(parseColor(vibrantColors.secondaryStart)),
+                onTertiary = contentColorFor(parseColor(vibrantColors.tertiaryStart)),
+                onBackground = contentColorFor(parseColor(vibrantColors.backgroundStart)),
+                onSurface = contentColorFor(parseColor(vibrantColors.surfaceStart)),
+                onAccent = contentColorFor(parseColor(vibrantColors.accentStart)),
+                onHighlight = contentColorFor(parseColor(vibrantColors.highlightStart)),
+                onAppBar = contentColorFor(parseColor(vibrantColors.appBarStart)),
+                onNavBar = contentColorFor(parseColor(vibrantColors.navBarStart)),
+                onSettings = contentColorFor(parseColor(vibrantColors.settingsStart)),
+                onProfiles = contentColorFor(parseColor(vibrantColors.profilesStart)),
+                onRequestDetails = contentColorFor(parseColor(vibrantColors.requestDetailsStart)),
+                onIssueDetails = contentColorFor(parseColor(vibrantColors.issueDetailsStart)),
+                statusBadgeShape = if (vibrantColors.usePillShape) 
+                    androidx.compose.foundation.shape.CircleShape 
+                else 
+                    androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                isVibrant = true
+            )
         }
+        darkTheme -> DefaultDarkGradients.copy(
+            onPrimary = Color.White,
+            onSecondary = Color.White,
+            onTertiary = Color.White,
+            onBackground = Color.White,
+            onSurface = Color.White,
+            onAccent = Color.White,
+            onHighlight = Color.White,
+            onAppBar = Color.White,
+            onNavBar = Color.White,
+            onSettings = Color.White,
+            onProfiles = Color.White,
+            onRequestDetails = Color.White,
+            onIssueDetails = Color.White
+        )
+        else -> DefaultLightGradients.copy(
+            onPrimary = Color.White,
+            onSecondary = Color.White,
+            onTertiary = Color.White,
+            onBackground = Color.Black,
+            onSurface = Color.Black,
+            onAccent = Color.White,
+            onHighlight = Color.White,
+            onAppBar = Color.White,
+            onNavBar = Color.Black,
+            onSettings = Color.Black,
+            onProfiles = Color.Black,
+            onRequestDetails = Color.Black,
+            onIssueDetails = Color.Black
+        )
     }
-    
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        shapes = Shapes,
-        content = content
-    )
+
+    CompositionLocalProvider(
+        LocalUnderseerrGradients provides gradients
+    ) {
+        val view = LocalView.current
+        if (!view.isInEditMode) {
+            SideEffect {
+                val window = (view.context as Activity).window
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            }
+        }
+
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            shapes = Shapes,
+            content = content
+        )
+    }
+}
+
+private fun parseColor(hex: String): Color {
+    return try {
+        val cleanHex = hex.removePrefix("#")
+        if (cleanHex.length == 8) {
+            val a = cleanHex.substring(0, 2).toInt(16)
+            val r = cleanHex.substring(2, 4).toInt(16)
+            val g = cleanHex.substring(4, 6).toInt(16)
+            val b = cleanHex.substring(6, 8).toInt(16)
+            Color(r, g, b, a)
+        } else {
+            val r = cleanHex.substring(0, 2).toInt(16)
+            val g = cleanHex.substring(2, 4).toInt(16)
+            val b = cleanHex.substring(4, 6).toInt(16)
+            Color(r, g, b, 255)
+        }
+    } catch (e: Exception) {
+        Color.White
+    }
+}
+
+private fun Color.luminance(): Float {
+    val r = red
+    val g = green
+    val b = blue
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b
+}
+
+private fun contentColorFor(color: Color): Color {
+    return if (color.luminance() > 0.5f) Color.Black else Color.White
 }

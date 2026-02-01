@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToServerManagement: () -> Unit,
+    onNavigateToVibrantCustomization: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val themePreference by viewModel.themePreference.collectAsState()
@@ -61,21 +62,30 @@ fun SettingsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
+            val gradients = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text("Settings", color = gradients.onAppBar) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = gradients.onAppBar
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = gradients.onAppBar,
+                    actionIconContentColor = gradients.onAppBar
+                ),
+                modifier = Modifier.background(gradients.appBar)
             )
         },
         contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        val gradients = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current
+        Box(modifier = Modifier.fillMaxSize().background(gradients.settings).padding(paddingValues)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -95,6 +105,14 @@ fun SettingsScreen(
                 },
                 onClick = { showThemeDialog = true }
             )
+
+            if (themePreference == ThemePreference.VIBRANT) {
+                SettingsItem(
+                    title = "Customize Vibrant Colors",
+                    subtitle = "Adjust gradients and accents",
+                    onClick = onNavigateToVibrantCustomization
+                )
+            }
             
             HorizontalDivider()
             
@@ -528,7 +546,7 @@ private fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
+        color = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current.onSettings,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }

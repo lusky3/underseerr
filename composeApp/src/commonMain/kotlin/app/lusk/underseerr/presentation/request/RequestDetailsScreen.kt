@@ -53,25 +53,34 @@ fun RequestDetailsScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
+            val gradients = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current
             TopAppBar(
-                title = { Text("Request Details") },
+                title = { Text("Request Details", color = gradients.onAppBar) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = gradients.onAppBar)
                     }
                 },
                 actions = {
                     if (request?.status == RequestStatus.PENDING) {
                         IconButton(onClick = { showCancelDialog = true }) {
-                            Icon(Icons.Default.Delete, "Cancel Request")
+                            Icon(Icons.Default.Delete, "Cancel Request", tint = gradients.onAppBar)
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = gradients.onAppBar,
+                    actionIconContentColor = gradients.onAppBar
+                ),
+                modifier = Modifier.background(gradients.appBar)
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier
     ) { paddingValues ->
+        val gradients = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current
+        Box(modifier = Modifier.fillMaxSize().background(gradients.requestDetails)) {
         androidx.compose.material3.pulltorefresh.PullToRefreshBox(
             isRefreshing = pullRefreshing,
             onRefresh = {
@@ -146,6 +155,7 @@ fun RequestDetailsScreen(
             }
         }
     }
+}
     
     if (showCancelDialog && request != null) {
         CancelRequestDialog(
@@ -224,7 +234,8 @@ private fun RequestDetailsContent(
                 ) {
                     Text(
                         text = request.title,
-                        style = MaterialTheme.typography.headlineMedium
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current.onRequestDetails
                     )
                     
                     StatusChip(status = request.status)
@@ -232,7 +243,7 @@ private fun RequestDetailsContent(
                     Text(
                         text = request.mediaType.name,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current.onRequestDetails.copy(alpha = 0.7f)
                     )
                 }
             }

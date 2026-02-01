@@ -24,19 +24,21 @@ import androidx.compose.material3.pulltorefresh.*
 import app.lusk.underseerr.domain.model.MediaRequest
 import app.lusk.underseerr.domain.model.RequestStatus
 import app.lusk.underseerr.ui.components.AsyncImage
+import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestsListScreen(
     viewModel: RequestViewModel,
     onRequestClick: (Int) -> Unit,
+    initialFilter: String? = null,
     modifier: Modifier = Modifier
 ) {
     val userRequests by viewModel.userRequests.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     
-    var selectedFilter by remember { mutableStateOf("All") }
+    var selectedFilter by remember { mutableStateOf(initialFilter ?: "All") }
     val filters = listOf("All", "Pending", "Approved", "Available", "Declined")
     var showFilterMenu by remember { mutableStateOf(false) }
     
@@ -48,11 +50,12 @@ fun RequestsListScreen(
         }
     }
 
+    val gradients = LocalUnderseerrGradients.current
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
-                title = { Text("Requests") },
+                title = { Text("Requests", color = gradients.onAppBar) },
                 actions = {
                     // Filter button
                     Box {
@@ -60,7 +63,7 @@ fun RequestsListScreen(
                             Icon(
                                 Icons.Default.FilterList,
                                 "Filter",
-                                tint = if (selectedFilter != "All") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                tint = if (selectedFilter != "All") MaterialTheme.colorScheme.primary else gradients.onAppBar
                             )
                         }
                         DropdownMenu(
@@ -94,12 +97,19 @@ fun RequestsListScreen(
                         }
                     }
                     IconButton(onClick = { viewModel.refreshRequests() }) {
-                        Icon(Icons.Default.Refresh, "Refresh")
+                        Icon(Icons.Default.Refresh, "Refresh", tint = gradients.onAppBar)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = gradients.onAppBar,
+                    actionIconContentColor = gradients.onAppBar
+                ),
+                modifier = Modifier.background(gradients.appBar)
             )
         },
-        modifier = modifier
+        modifier = modifier.background(gradients.background),
+        containerColor = Color.Transparent
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = pullRefreshing,
@@ -153,37 +163,6 @@ fun RequestsListScreen(
                     )
                 }
 
-                // Top fade gradient overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(16.dp)
-                        .align(Alignment.TopCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.surface,
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
-
-                // Bottom fade gradient overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(32.dp)
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    MaterialTheme.colorScheme.background
-                                )
-                            )
-                        )
-                )
                 
                 // Offline Banner
                 app.lusk.underseerr.ui.components.OfflineBanner(
@@ -222,77 +201,80 @@ private fun RequestItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val gradients = LocalUnderseerrGradients.current
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            containerColor = Color.Transparent
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            // Poster with rounded corners
-            Card(
-                shape = RoundedCornerShape(8.dp),
+        Box(modifier = Modifier.background(gradients.surface)) {
+            Row(
                 modifier = Modifier
-                    .width(70.dp)
-                    .height(100.dp)
+                    .fillMaxWidth()
+                    .padding(12.dp)
             ) {
-                AsyncImage(
-                    imageUrl = request.posterPath?.let { "https://image.tmdb.org/t/p/w200$it" },
-                    contentDescription = request.title,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(100.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = request.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                // Poster with rounded corners
+                Card(
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .width(70.dp)
+                        .height(100.dp)
+                ) {
+                    AsyncImage(
+                        imageUrl = request.posterPath?.let { "https://image.tmdb.org/t/p/w200$it" },
+                        contentDescription = request.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    Text(
-                        text = "Requested ${request.mediaType.name.lowercase().replaceFirstChar { it.uppercase() }}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    val seasons = request.seasons
-                    if (!seasons.isNullOrEmpty()) {
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(100.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
                         Text(
-                            text = if (seasons.contains(0)) {
-                                "All seasons"
-                            } else {
-                                "Seasons: ${seasons.joinToString(", ")}"
-                            },
+                            text = request.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        Text(
+                            text = "Requested ${request.mediaType.name.lowercase().replaceFirstChar { it.uppercase() }}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        
+                        val seasons = request.seasons
+                        if (!seasons.isNullOrEmpty()) {
+                            Text(
+                                text = if (seasons.contains(0)) {
+                                    "All seasons"
+                                } else {
+                                    "Seasons: ${seasons.joinToString(", ")}"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
+                    
+                    // Large colorful status badge
+                    StatusBadge(status = request.status)
                 }
-                
-                // Large colorful status badge
-                StatusBadge(status = request.status)
             }
         }
     }
@@ -326,9 +308,10 @@ private fun StatusBadge(
         )
     }
     
+    val gradients = LocalUnderseerrGradients.current
     Surface(
         color = backgroundColor,
-        shape = RoundedCornerShape(8.dp),
+        shape = gradients.statusBadgeShape,
         modifier = modifier
     ) {
         Text(

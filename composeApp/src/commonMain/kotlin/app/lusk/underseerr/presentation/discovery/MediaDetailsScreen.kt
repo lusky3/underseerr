@@ -35,6 +35,7 @@ import app.lusk.underseerr.presentation.request.RequestViewModel
 import app.lusk.underseerr.ui.components.PosterImage
 import app.lusk.underseerr.ui.components.BackdropImage
 import app.lusk.underseerr.ui.components.AsyncImage
+import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -75,9 +76,11 @@ fun MediaDetailsScreen(
         }
     }
     
+    val gradients = LocalUnderseerrGradients.current
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = modifier,
+        modifier = modifier.background(gradients.background),
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
@@ -257,6 +260,7 @@ private fun MediaDetailsContent(
 
             // Info Card overlapping backdrop
             item {
+                val gradients = LocalUnderseerrGradients.current
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -264,13 +268,14 @@ private fun MediaDetailsContent(
                         .offset(y = (-48).dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        containerColor = Color.Transparent
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
+                    Box(modifier = Modifier.background(gradients.surface)) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
                         // Title and Year row
                         Text(
                             text = details.title,
@@ -341,16 +346,25 @@ private fun MediaDetailsContent(
                             details.isPartialRequestsEnabled && 
                             details.numberOfSeasons > 0
 
+                        val gradients = LocalUnderseerrGradients.current
+                        val isEnabled = (!details.isAvailable && !details.isRequested) || canModifyRequest
+
                         Button(
                             onClick = onRequestClick,
-                            enabled = (!details.isAvailable && !details.isRequested) || canModifyRequest,
+                            enabled = isEnabled,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .height(48.dp)
+                                .then(
+                                    if (isEnabled) Modifier.background(gradients.primary, shape = RoundedCornerShape(24.dp))
+                                    else Modifier
+                                ),
                             shape = RoundedCornerShape(24.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                                containerColor = if (isEnabled) Color.Transparent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                contentColor = if (isEnabled) Color.White else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            ),
+                            contentPadding = PaddingValues()
                         ) {
                             Text(
                                 text = when {
@@ -362,6 +376,7 @@ private fun MediaDetailsContent(
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
+                        
                         
                         // Report Issue button
                         if (details.isAvailable || details.isRequested) {
@@ -377,8 +392,7 @@ private fun MediaDetailsContent(
                     }
                 }
             }
-
-            // Genres section
+        }
             if (details.genres.isNotEmpty()) {
                 item {
                     Column(

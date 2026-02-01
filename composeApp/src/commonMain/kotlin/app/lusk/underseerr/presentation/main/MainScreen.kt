@@ -52,7 +52,7 @@ fun MainScreen(
     // Get current screen for highlighting nav item
     val currentScreen = when {
         currentDestination?.hasRoute(Screen.Home::class) == true -> Screen.Home
-        currentDestination?.hasRoute(Screen.Requests::class) == true -> Screen.Requests
+        currentDestination?.hasRoute(Screen.Requests::class) == true -> Screen.Requests()
         currentDestination?.hasRoute(Screen.Issues::class) == true -> Screen.Issues
         currentDestination?.hasRoute(Screen.Profile::class) == true -> Screen.Profile
         else -> Screen.Home

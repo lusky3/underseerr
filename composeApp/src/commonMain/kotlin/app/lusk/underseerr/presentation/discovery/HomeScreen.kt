@@ -31,6 +31,7 @@ import app.lusk.underseerr.ui.components.PosterImage
 import app.lusk.underseerr.ui.components.ImageError
 import app.lusk.underseerr.ui.components.SimpleImagePlaceholder
 import app.lusk.underseerr.ui.components.OfflineBanner
+import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,22 +83,31 @@ fun HomeScreen(
         43 to "FOX"
     )
 
+    val gradients = LocalUnderseerrGradients.current
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
-                title = { Text("Discover") },
+                title = { Text("Discover", color = gradients.onAppBar) },
                 actions = {
                     IconButton(onClick = onSearchClick) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search"
+                            contentDescription = "Search",
+                            tint = gradients.onAppBar
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = gradients.onAppBar,
+                    actionIconContentColor = gradients.onAppBar
+                ),
+                modifier = Modifier.background(gradients.appBar)
             )
         },
-        modifier = modifier
+        modifier = modifier.background(gradients.background),
+        containerColor = Color.Transparent
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,

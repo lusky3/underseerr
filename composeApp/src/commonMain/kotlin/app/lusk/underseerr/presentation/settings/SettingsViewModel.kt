@@ -78,6 +78,9 @@ class SettingsViewModel(
     private val _subscriptionStatus = MutableStateFlow(SubscriptionStatus())
     val subscriptionStatus: StateFlow<SubscriptionStatus> = _subscriptionStatus.asStateFlow()
     
+    private val _vibrantThemeColors = MutableStateFlow(app.lusk.underseerr.domain.repository.VibrantThemeColors())
+    val vibrantThemeColors: StateFlow<app.lusk.underseerr.domain.repository.VibrantThemeColors> = _vibrantThemeColors.asStateFlow()
+    
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent: SharedFlow<String> = _uiEvent
     
@@ -137,6 +140,12 @@ class SettingsViewModel(
         viewModelScope.launch {
             subscriptionRepository.getSubscriptionStatus().collect {
                 _subscriptionStatus.value = it
+            }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.getVibrantThemeColors().collect {
+                _vibrantThemeColors.value = it
             }
         }
 
@@ -342,6 +351,12 @@ class SettingsViewModel(
         viewModelScope.launch {
             subscriptionRepository.purchasePremium()
             _uiEvent.emit("Premium unlocked!")
+        }
+    }
+
+    fun updateVibrantThemeColors(colors: app.lusk.underseerr.domain.repository.VibrantThemeColors) {
+        viewModelScope.launch {
+            settingsRepository.updateVibrantThemeColors(colors)
         }
     }
 }

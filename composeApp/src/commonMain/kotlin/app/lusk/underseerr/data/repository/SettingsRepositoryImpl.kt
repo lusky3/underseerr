@@ -149,4 +149,11 @@ class SettingsRepositoryImpl(
     override suspend fun setNotificationServerUrl(url: String) {
         preferencesManager.setNotificationServerUrl(url)
     }
+
+    override fun getVibrantThemeColors(): Flow<app.lusk.underseerr.domain.repository.VibrantThemeColors> =
+        preferencesManager.getVibrantThemeColors()
+
+    override suspend fun updateVibrantThemeColors(colors: app.lusk.underseerr.domain.repository.VibrantThemeColors) {
+        preferencesManager.setVibrantThemeColors(colors)
+    }
 }

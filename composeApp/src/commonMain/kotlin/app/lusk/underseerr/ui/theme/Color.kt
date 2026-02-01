@@ -2,13 +2,6 @@ package app.lusk.underseerr.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-/**
- * Material You color palette for Underseerr.
- * Generated using Material Theme Builder.
- * Feature: underseerr
- * Validates: Requirements 9.1, 9.2
- */
-
 // Light theme colors
 val md_theme_light_primary = Color(0xFF6750A4)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
@@ -72,7 +65,7 @@ val md_theme_dark_inversePrimary = Color(0xFF6750A4)
 val md_theme_dark_surfaceTint = Color(0xFFD0BCFF)
 
 // Vibrant theme colors (Icon-based)
-val vibrant_primary = Color(0xFFAA00FF)
+val vibrant_primary = Color(0xFF7A31AC)
 val vibrant_onPrimary = Color(0xFFFFFFFF)
 val vibrant_primaryContainer = Color(0xFF4F007A)
 val vibrant_onPrimaryContainer = Color(0xFFF7D8FF)
@@ -98,5 +91,5 @@ val vibrant_outline = Color(0xFF998D96)
 val vibrant_outlineVariant = Color(0xFF4D444C)
 val vibrant_inverseSurface = Color(0xFFE6E1E5)
 val vibrant_inverseOnSurface = Color(0xFF313033)
-val vibrant_inversePrimary = Color(0xFFAA00FF)
-val vibrant_surfaceTint = Color(0xFFAA00FF)
+val vibrant_inversePrimary = Color(0xFF7A31AC)
+val vibrant_surfaceTint = Color(0xFF7A31AC)

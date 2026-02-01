@@ -198,9 +198,11 @@ fun UnderseerrNavHost(
             )
         }
 
-        composable<Screen.Requests> {
+        composable<Screen.Requests> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.Requests>()
             RequestsListScreen(
                 viewModel = requestViewModel,
+                initialFilter = args.filter,
                 onRequestClick = { requestId ->
                     navController.navigate(Screen.RequestDetails(requestId))
                 }
@@ -258,8 +260,8 @@ fun UnderseerrNavHost(
                     navController.navigate(Screen.About)
                 },
                 onNavigateToRequests = { filter ->
-                    // Navigate to requests tab - the filter will be applied in the screen
-                    navController.navigate(Screen.Requests)
+                    // Navigate to requests tab with specific filter
+                    navController.navigate(Screen.Requests(filter))
                 },
                 onLogout = {
                      navController.navigate(Screen.ServerConfig()) {
@@ -280,6 +282,20 @@ fun UnderseerrNavHost(
                 onNavigateToServerManagement = {
                     navController.navigate(Screen.ServerManagement)
                 },
+                onNavigateToVibrantCustomization = {
+                    navController.navigate(Screen.VibrantCustomization)
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable<Screen.VibrantCustomization>(
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+        ) {
+            VibrantCustomizationScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

@@ -67,11 +67,12 @@ fun IssueDetailsScreen(
     
     Scaffold(
         topBar = {
+            val gradients = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current
             TopAppBar(
-                title = { Text("Issue Details") },
+                title = { Text("Issue Details", color = gradients.onAppBar) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = gradients.onAppBar)
                     }
                 },
                 actions = {
@@ -79,7 +80,7 @@ fun IssueDetailsScreen(
                         var showMenu by remember { mutableStateOf(false) }
                         
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, "More options")
+                            Icon(Icons.Default.MoreVert, "More options", tint = gradients.onAppBar)
                         }
                         
                         DropdownMenu(
@@ -131,7 +132,13 @@ fun IssueDetailsScreen(
                             }
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = gradients.onAppBar,
+                    actionIconContentColor = gradients.onAppBar
+                ),
+                modifier = Modifier.background(gradients.appBar)
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -205,6 +212,8 @@ fun IssueDetailsScreen(
         },
         modifier = modifier
     ) { paddingValues ->
+        val gradients = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current
+        Box(modifier = Modifier.fillMaxSize().background(gradients.issueDetails)) {
         var pullRefreshing by remember { mutableStateOf(false) }
         
         androidx.compose.material3.pulltorefresh.PullToRefreshBox(
@@ -302,6 +311,7 @@ fun IssueDetailsScreen(
         }
     }
 }
+}
 
 @Composable
 private fun IssueDetailsContent(
@@ -392,7 +402,8 @@ private fun IssueHeaderCard(
             Text(
                 text = issue.mediaTitle,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current.onIssueDetails
             )
             
             // Season/Episode info

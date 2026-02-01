@@ -43,7 +43,7 @@ val defaultNavigationDestinations = listOf(
         label = "Home"
     ),
     NavigationDestination(
-        screen = Screen.Requests,
+        screen = Screen.Requests(),
         icon = Icons.Default.PlayArrow,
         label = "Requests"
     ),
@@ -70,8 +70,13 @@ fun AdaptiveNavigation(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val gradients = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current
     if (layoutConfig.useNavigationRail) {
-        NavigationRail(modifier = modifier) {
+        NavigationRail(
+            modifier = modifier.background(gradients.navBar),
+            containerColor = Color.Transparent,
+            contentColor = gradients.onNavBar
+        ) {
             Spacer(modifier = Modifier.height(16.dp))
             destinations.forEach { destination ->
                 NavigationRailItem(
@@ -94,7 +99,9 @@ fun AdaptiveNavigation(
 
             // Solid navigation bar
             NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.background(gradients.navBar),
+                containerColor = Color.Transparent,
+                contentColor = gradients.onNavBar,
                 tonalElevation = 0.dp
             ) {
                 destinations.forEach { destination ->
@@ -104,11 +111,17 @@ fun AdaptiveNavigation(
                         icon = {
                             Icon(
                                 imageVector = destination.icon,
-                                contentDescription = destination.label
+                                contentDescription = destination.label,
+                                tint = if (currentScreen == destination.screen) MaterialTheme.colorScheme.primary else gradients.onNavBar.copy(alpha = 0.6f)
                             )
                         },
                         label = if (layoutConfig.showNavigationLabels) {
-                            { Text(destination.label) }
+                            { 
+                                Text(
+                                    destination.label, 
+                                    color = if (currentScreen == destination.screen) MaterialTheme.colorScheme.primary else gradients.onNavBar.copy(alpha = 0.6f)
+                                ) 
+                            }
                         } else null
                     )
                 }

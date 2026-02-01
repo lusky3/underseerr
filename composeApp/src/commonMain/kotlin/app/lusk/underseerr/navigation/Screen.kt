@@ -25,7 +25,7 @@ sealed class Screen {
     data object Search : Screen()
     
     @Serializable
-    data object Requests : Screen()
+    data class Requests(val filter: String? = null) : Screen()
     
     @Serializable
     data object Issues : Screen()
@@ -53,6 +53,9 @@ sealed class Screen {
     
     @Serializable
     data object About : Screen()
+
+    @Serializable
+    data object VibrantCustomization : Screen()
     
     companion object {
         fun parseDeepLink(uri: String): Screen? {

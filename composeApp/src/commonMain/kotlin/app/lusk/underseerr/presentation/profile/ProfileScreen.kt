@@ -33,6 +33,7 @@ import app.lusk.underseerr.domain.repository.ThemePreference
 import app.lusk.underseerr.domain.repository.NotificationSettings
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Brush
+import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
 
 /**
  * Masks an email address for privacy display.
@@ -115,8 +116,9 @@ fun ProfileScreen(
         contentWindowInsets = WindowInsets(0.dp),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
+            val gradients = LocalUnderseerrGradients.current
             TopAppBar(
-                title = { Text("Profile") },
+                title = { Text("Profile", color = gradients.onAppBar) },
                 actions = {
                     val hasData = profile != null && quota != null && statistics != null
                     IconButton(onClick = { 
@@ -128,17 +130,25 @@ fun ProfileScreen(
                     }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh"
+                            contentDescription = "Refresh",
+                            tint = gradients.onAppBar
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = gradients.onAppBar,
+                    actionIconContentColor = gradients.onAppBar
+                ),
+                modifier = Modifier.background(gradients.appBar)
             )
         }
         ) { paddingValues ->
             val hasData = profile != null && quota != null && statistics != null
             val isOffline = error != null && hasData
+            val gradients = LocalUnderseerrGradients.current
 
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize().background(gradients.profiles)) {
                 // Content Layer
                 PullToRefreshBox(
                     isRefreshing = isLoading && pullRefreshing,
@@ -324,7 +334,8 @@ private fun ProfileContent(
                     Text(
                         text = profile.displayName,
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = LocalUnderseerrGradients.current.onProfiles
                     )
                     
                     Spacer(modifier = Modifier.height(4.dp))
@@ -332,7 +343,7 @@ private fun ProfileContent(
                     Text(
                         text = maskEmail(profile.email),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = LocalUnderseerrGradients.current.onProfiles.copy(alpha = 0.7f)
                     )
                     
                     Spacer(modifier = Modifier.height(8.dp))
@@ -356,6 +367,7 @@ private fun ProfileContent(
         Spacer(modifier = Modifier.height(20.dp))
         
         // Statistics Cards Row - Clickable to navigate to Requests with filter
+        val gradients = LocalUnderseerrGradients.current
         Box(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -367,7 +379,8 @@ private fun ProfileContent(
                     label = "Requests",
                     color = MaterialTheme.colorScheme.primary,
                     onClick = { onNavigateToRequests(null) }, // All requests
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    backgroundBrush = gradients.primary
                 )
                 StatCard(
                     icon = Icons.Default.CheckCircle,
@@ -375,7 +388,8 @@ private fun ProfileContent(
                     label = "Available",
                     color = Color(0xFF4CAF50),
                     onClick = { onNavigateToRequests("Available") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    backgroundBrush = gradients.secondary
                 )
                 StatCard(
                     icon = Icons.Default.Pending,
@@ -383,7 +397,8 @@ private fun ProfileContent(
                     label = "Pending",
                     color = Color(0xFFFF9800),
                     onClick = { onNavigateToRequests("Pending") },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    backgroundBrush = gradients.tertiary
                 )
             }
             
@@ -448,7 +463,8 @@ private fun ProfileContent(
             text = "Settings",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = LocalUnderseerrGradients.current.onProfiles
         )
         
         Card(
@@ -604,14 +620,19 @@ private fun StatCard(
     label: String,
     color: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backgroundBrush: Brush? = null
 ) {
+    val gradients = LocalUnderseerrGradients.current
     Card(
         onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.then(
+            if (backgroundBrush != null && gradients.isVibrant) Modifier.background(backgroundBrush, shape = gradients.statusBadgeShape)
+            else Modifier
+        ),
+        shape = gradients.statusBadgeShape,
         colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.15f)
+            containerColor = if (backgroundBrush != null && gradients.isVibrant) Color.Transparent else color.copy(alpha = 0.15f)
         )
     ) {
         Column(
@@ -623,7 +644,7 @@ private fun StatCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = color,
+                tint = if (backgroundBrush != null && gradients.isVibrant) Color.White else gradients.onProfiles,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -631,12 +652,12 @@ private fun StatCard(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = color
+                color = if (backgroundBrush != null && gradients.isVibrant) Color.White else gradients.onProfiles
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (backgroundBrush != null && gradients.isVibrant) Color.White.copy(alpha = 0.8f) else gradients.onProfiles.copy(alpha = 0.6f)
             )
         }
     }
@@ -651,6 +672,7 @@ private fun SettingsRow(
     onClick: () -> Unit,
     trailing: @Composable (() -> Unit)? = null
 ) {
+    val gradients = LocalUnderseerrGradients.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -662,7 +684,7 @@ private fun SettingsRow(
             imageVector = icon,
             contentDescription = null,
             tint = if (titleColor == MaterialTheme.colorScheme.error) titleColor 
-                   else MaterialTheme.colorScheme.onSurfaceVariant,
+                   else gradients.onProfiles,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
@@ -670,13 +692,13 @@ private fun SettingsRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                color = titleColor
+                color = if (titleColor == MaterialTheme.colorScheme.onSurface) gradients.onProfiles else titleColor
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = gradients.onProfiles.copy(alpha = 0.6f)
                 )
             }
         }
@@ -782,6 +804,7 @@ private fun QuotaRow(
     limit: Int?,
     days: Int?
 ) {
+    val gradients = LocalUnderseerrGradients.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -789,7 +812,8 @@ private fun QuotaRow(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            color = gradients.onProfiles
         )
         
         if (limit != null && remaining != null) {
@@ -804,7 +828,7 @@ private fun QuotaRow(
                     Text(
                         text = "per $days days",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = gradients.onProfiles.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -812,7 +836,7 @@ private fun QuotaRow(
             Text(
                 text = "Unlimited",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = gradients.onProfiles.copy(alpha = 0.6f)
             )
         }
     }

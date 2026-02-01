@@ -53,6 +53,7 @@ class MainActivity : FragmentActivity() {
         
         setContent {
             val themePreference by viewModel.themePreference.collectAsState()
+            val vibrantColors by viewModel.vibrantThemeColors.collectAsState()
             val isAppLocked by viewModel.isAppLocked.collectAsState()
             val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsState()
             val scope = rememberCoroutineScope()
@@ -70,7 +71,10 @@ class MainActivity : FragmentActivity() {
                 }
             }
             
-            UnderseerrTheme(themePreference = themePreference) {
+            UnderseerrTheme(
+                themePreference = themePreference,
+                vibrantColors = vibrantColors
+            ) {
                 if (isAppLocked) {
                     LockScreen(
                         onUnlockClick = {

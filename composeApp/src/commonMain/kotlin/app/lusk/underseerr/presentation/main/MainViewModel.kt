@@ -41,6 +41,13 @@ class MainViewModel(
             initialValue = null
         )
 
+    val vibrantThemeColors: StateFlow<app.lusk.underseerr.domain.repository.VibrantThemeColors> = settingsRepository.getVibrantThemeColors()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = app.lusk.underseerr.domain.repository.VibrantThemeColors()
+        )
+
     private val _isAppLocked = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isAppLocked: StateFlow<Boolean> = _isAppLocked.asStateFlow()
 

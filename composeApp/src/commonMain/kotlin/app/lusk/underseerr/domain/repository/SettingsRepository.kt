@@ -137,6 +137,16 @@ interface SettingsRepository {
      * Set Notification Server URL.
      */
     suspend fun setNotificationServerUrl(url: String)
+
+    /**
+     * Get custom vibrant theme colors.
+     */
+    fun getVibrantThemeColors(): Flow<VibrantThemeColors>
+
+    /**
+     * Update custom vibrant theme colors.
+     */
+    suspend fun updateVibrantThemeColors(colors: VibrantThemeColors)
 }
 
 /**
@@ -176,4 +186,39 @@ data class ServerConfig(
     val url: String,
     val name: String,
     val isActive: Boolean = false
+)
+
+/**
+ * Custom colors for the Vibrant theme.
+ * Hex strings in ARGB format (e.g., #FFFFFFFF)
+ */
+@Serializable
+data class VibrantThemeColors(
+    val primaryStart: String = "#FF5D63EA",
+    val primaryEnd: String = "#FF7A31AC",
+    val secondaryStart: String = "#FF0FEE8D",
+    val secondaryEnd: String = "#FF09AA9D",
+    val tertiaryStart: String = "#FFFF9800",
+    val tertiaryEnd: String = "#FFFF5722",
+    val backgroundStart: String = "#FF0A001F",
+    val backgroundEnd: String = "#FF1A0033",
+    val surfaceStart: String = "#FF1A0033",
+    val surfaceEnd: String = "#FF2D0055",
+    val accentStart: String = "#FF00C6FF",
+    val accentEnd: String = "#FF0072FF",
+    val highlightStart: String = "#FFFF4B2B",
+    val highlightEnd: String = "#FFFF416C",
+    val appBarStart: String = "#FF5D63EA",
+    val appBarEnd: String = "#FF7A31AC",
+    val navBarStart: String = "#FF0A001F",
+    val navBarEnd: String = "#FF1A0033",
+    val settingsStart: String = "#FF0A001F",
+    val settingsEnd: String = "#FF1A0033",
+    val profilesStart: String = "#FF0A001F",
+    val profilesEnd: String = "#FF1A0033",
+    val requestDetailsStart: String = "#FF0A001F",
+    val requestDetailsEnd: String = "#FF1A0033",
+    val issueDetailsStart: String = "#FF0A001F",
+    val issueDetailsEnd: String = "#FF1A0033",
+    val usePillShape: Boolean = true
 )

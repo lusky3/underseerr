@@ -53,6 +53,7 @@ class PreferencesManager(
         val PUSH_TOKEN = stringPreferencesKey("push_token")
         val NOTIFICATION_SERVER_URL = stringPreferencesKey("notification_server_url")
         val IS_PREMIUM = booleanPreferencesKey("is_premium")
+        val VIBRANT_THEME_COLORS = stringPreferencesKey("vibrant_theme_colors")
     }
     
     /**
@@ -452,6 +453,27 @@ class PreferencesManager(
     fun getIsPremium(): Flow<Boolean> {
         return dataStore.data.map { preferences ->
             preferences[PreferenceKeys.IS_PREMIUM] ?: false
+        }
+    }
+
+    fun getVibrantThemeColors(): Flow<app.lusk.underseerr.domain.repository.VibrantThemeColors> {
+        return dataStore.data.map { preferences ->
+            val json = preferences[PreferenceKeys.VIBRANT_THEME_COLORS]
+            if (json != null) {
+                try {
+                    Json.decodeFromString<app.lusk.underseerr.domain.repository.VibrantThemeColors>(json)
+                } catch (e: Exception) {
+                    app.lusk.underseerr.domain.repository.VibrantThemeColors()
+                }
+            } else {
+                app.lusk.underseerr.domain.repository.VibrantThemeColors()
+            }
+        }
+    }
+
+    suspend fun setVibrantThemeColors(colors: app.lusk.underseerr.domain.repository.VibrantThemeColors) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.VIBRANT_THEME_COLORS] = Json.encodeToString(colors)
         }
     }
 }
