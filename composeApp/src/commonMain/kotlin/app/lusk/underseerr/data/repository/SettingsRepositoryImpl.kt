@@ -156,4 +156,18 @@ class SettingsRepositoryImpl(
     override suspend fun updateVibrantThemeColors(colors: app.lusk.underseerr.domain.repository.VibrantThemeColors) {
         preferencesManager.setVibrantThemeColors(colors)
     }
+
+    override fun getNotificationServerType(): Flow<String> =
+        preferencesManager.getNotificationServerType()
+
+    override suspend fun setNotificationServerType(type: String) {
+        preferencesManager.setNotificationServerType(type)
+    }
+
+    override fun getTrialStartDate(): Flow<Long?> =
+        preferencesManager.getTrialStartDate()
+
+    override suspend fun setTrialStartDate(date: Long?) {
+        preferencesManager.setTrialStartDate(date)
+    }
 }

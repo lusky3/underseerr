@@ -178,6 +178,63 @@ class AuthRepositoryImpl(
             )
         }
     }
+
+    override suspend fun authenticateLocal(username: String, password: String): Result<UserProfile> {
+        return try {
+            val result = safeApiCall {
+                authKtorService.loginLocal(username, password)
+            }
+            
+            when (result) {
+                is Result.Success -> {
+                    val response = result.data
+                    val apiUserProfile: app.lusk.underseerr.data.remote.model.ApiUserProfile = response.body()
+                    
+                    // Store session cookie
+                    val setCookieHeader = response.headers["Set-Cookie"]
+                    if (setCookieHeader != null) {
+                        val cookieValue = setCookieHeader.split(";").firstOrNull()
+                        if (cookieValue != null) {
+                             securityManager.storeSecureData("cookie_auth_token", cookieValue)
+                        }
+                    }
+                    
+                    // Store session marker and user ID
+                    val sessionMarker = "SESSION_COOKIE"
+                    securityManager.storeSecureData(API_KEY_STORAGE_KEY, sessionMarker)
+                    preferencesManager.setApiKey(sessionMarker)
+                    preferencesManager.setUserId(apiUserProfile.id)
+                    
+                    Result.success(apiUserProfile.toDomain())
+                }
+                is Result.Error -> result
+                is Result.Loading -> Result.loading()
+            }
+        } catch (e: Exception) {
+            Result.error(app.lusk.underseerr.domain.model.AppError.AuthError("Local authentication failed: ${e.message}"))
+        }
+    }
+
+    override suspend fun authenticateWithApiKey(apiKey: String): Result<UserProfile> {
+        return try {
+            // First store the API key so subsequent calls use it
+            securityManager.storeSecureData(API_KEY_STORAGE_KEY, apiKey)
+            preferencesManager.setApiKey(apiKey)
+            
+            // Validate the key by fetching current user
+            val result = getCurrentUser()
+            
+            if (result is Result.Error) {
+                // Clear if invalid
+                securityManager.clearSecureData()
+                preferencesManager.clearAuthData()
+            }
+            
+            result
+        } catch (e: Exception) {
+            Result.error(app.lusk.underseerr.domain.model.AppError.AuthError("API key validation failed: ${e.message}"))
+        }
+    }
     
     override suspend fun initiatePlexLogin(): Result<Pair<Int, String>> {
         return try {

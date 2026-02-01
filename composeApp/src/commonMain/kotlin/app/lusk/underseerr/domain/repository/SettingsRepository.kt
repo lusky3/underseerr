@@ -147,6 +147,26 @@ interface SettingsRepository {
      * Update custom vibrant theme colors.
      */
     suspend fun updateVibrantThemeColors(colors: VibrantThemeColors)
+
+    /**
+     * Get the type of notification server being used.
+     */
+    fun getNotificationServerType(): Flow<String>
+
+    /**
+     * Set the type of notification server.
+     */
+    suspend fun setNotificationServerType(type: String)
+
+    /**
+     * Get the trial start date in millis.
+     */
+    fun getTrialStartDate(): Flow<Long?>
+
+    /**
+     * Set the trial start date.
+     */
+    suspend fun setTrialStartDate(date: Long?)
 }
 
 /**

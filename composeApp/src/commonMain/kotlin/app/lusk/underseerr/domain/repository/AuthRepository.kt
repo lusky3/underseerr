@@ -24,6 +24,16 @@ interface AuthRepository {
      * Property 2: Token Exchange Integrity
      */
     suspend fun authenticateWithPlex(plexToken: String): Result<UserProfile>
+    
+    /**
+     * Authenticate with local username/email and password.
+     */
+    suspend fun authenticateLocal(username: String, password: String): Result<UserProfile>
+
+    /**
+     * Authenticate using an API key directly.
+     */
+    suspend fun authenticateWithApiKey(apiKey: String): Result<UserProfile>
 
     /**
      * Initiate Plex login by requesting a PIN.

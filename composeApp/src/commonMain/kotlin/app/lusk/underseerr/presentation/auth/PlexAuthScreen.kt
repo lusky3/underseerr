@@ -161,6 +161,17 @@ fun PlexAuthScreen(
                     }
                 }
                 
+                is AuthState.Authenticating -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Authenticating...",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                
                 is AuthState.ExchangingToken -> {
                     CircularProgressIndicator(
                         modifier = Modifier.size(64.dp)
@@ -201,6 +212,51 @@ fun PlexAuthScreen(
                         Text("Sign in with Plex")
                     }
                     
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    
+                    Text(
+                        text = "Other Options",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    
+                    var showLocalLoginForm by remember { mutableStateOf(false) }
+                    var showApiKeyForm by remember { mutableStateOf(false) }
+                    
+                    if (!showLocalLoginForm && !showApiKeyForm) {
+                        OutlinedButton(
+                            onClick = { showLocalLoginForm = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Sign in with Local Account")
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        OutlinedButton(
+                            onClick = { showApiKeyForm = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Sign in with API Key")
+                        }
+                    }
+                    
+                    if (showLocalLoginForm) {
+                        LocalLoginForm(
+                            onLogin = { email, password -> viewModel.loginLocal(email, password) },
+                            onCancel = { showLocalLoginForm = false }
+                        )
+                    }
+                    
+                    if (showApiKeyForm) {
+                        ApiKeyForm(
+                            onLogin = { key -> viewModel.loginWithApiKey(key) },
+                            onCancel = { showApiKeyForm = false }
+                        )
+                    }
+                    
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
@@ -210,6 +266,92 @@ fun PlexAuthScreen(
                         textAlign = TextAlign.Center
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocalLoginForm(
+    onLogin: (String, String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email / Username") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) {
+                Text("Cancel")
+            }
+            Button(
+                onClick = { onLogin(email, password) },
+                modifier = Modifier.weight(1f),
+                enabled = email.isNotBlank() && password.isNotBlank()
+            ) {
+                Text("Login")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ApiKeyForm(
+    onLogin: (String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var apiKey by remember { mutableStateOf("") }
+    
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedTextField(
+            value = apiKey,
+            onValueChange = { apiKey = it },
+            label = { Text("Overseerr API Key") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        Text(
+            text = "You can find your API key in Settings > General",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) {
+                Text("Cancel")
+            }
+            Button(
+                onClick = { onLogin(apiKey) },
+                modifier = Modifier.weight(1f),
+                enabled = apiKey.isNotBlank()
+            ) {
+                Text("Verify Key")
             }
         }
     }

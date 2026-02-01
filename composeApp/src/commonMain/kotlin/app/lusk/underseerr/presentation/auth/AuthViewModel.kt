@@ -187,6 +187,48 @@ class AuthViewModel(
             }
         }
     }
+
+    /**
+     * Login with local credentials.
+     */
+    fun loginLocal(username: String, password: String) {
+        viewModelScope.launch {
+            logger.d("AuthViewModel", "Logging in with local account...")
+            _authState.value = AuthState.Authenticating
+            when (val result = authRepository.authenticateLocal(username, password)) {
+                is Result.Success -> {
+                    logger.d("AuthViewModel", "Local login successful!")
+                    _authState.value = AuthState.Authenticated
+                }
+                is Result.Error -> {
+                    logger.e("AuthViewModel", "Local login failed: ${result.error.message}")
+                    _authState.value = AuthState.Error(result.error.message)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    /**
+     * Login with API key.
+     */
+    fun loginWithApiKey(apiKey: String) {
+        viewModelScope.launch {
+            logger.d("AuthViewModel", "Verifying API key...")
+            _authState.value = AuthState.Authenticating
+            when (val result = authRepository.authenticateWithApiKey(apiKey)) {
+                is Result.Success -> {
+                    logger.d("AuthViewModel", "API key verification successful!")
+                    _authState.value = AuthState.Authenticated
+                }
+                is Result.Error -> {
+                    logger.e("AuthViewModel", "API key verification failed: ${result.error.message}")
+                    _authState.value = AuthState.Error(result.error.message)
+                }
+                else -> {}
+            }
+        }
+    }
     
     /**
      * Logout user.
@@ -240,6 +282,7 @@ sealed class AuthState {
     data object Initial : AuthState()
     data object Unauthenticated : AuthState()
     data object AuthenticatingWithPlex : AuthState()
+    data object Authenticating : AuthState()
     data class WaitingForPlex(val pinId: Int, val authUrl: String) : AuthState()
     data object ExchangingToken : AuthState()
     data object Authenticated : AuthState()

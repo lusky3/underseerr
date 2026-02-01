@@ -54,6 +54,9 @@ class PreferencesManager(
         val NOTIFICATION_SERVER_URL = stringPreferencesKey("notification_server_url")
         val IS_PREMIUM = booleanPreferencesKey("is_premium")
         val VIBRANT_THEME_COLORS = stringPreferencesKey("vibrant_theme_colors")
+        val TRIAL_START_DATE = longPreferencesKey("trial_start_date")
+        val NOTIFICATION_SERVER_TYPE = stringPreferencesKey("notification_server_type")
+        val PREMIUM_EXPIRES_AT = longPreferencesKey("premium_expires_at")
     }
     
     /**
@@ -474,6 +477,50 @@ class PreferencesManager(
     suspend fun setVibrantThemeColors(colors: app.lusk.underseerr.domain.repository.VibrantThemeColors) {
         dataStore.edit { preferences ->
             preferences[PreferenceKeys.VIBRANT_THEME_COLORS] = Json.encodeToString(colors)
+        }
+    }
+
+    suspend fun setTrialStartDate(date: Long?) {
+        dataStore.edit { preferences ->
+            if (date != null) {
+                preferences[PreferenceKeys.TRIAL_START_DATE] = date
+            } else {
+                preferences.remove(PreferenceKeys.TRIAL_START_DATE)
+            }
+        }
+    }
+
+    fun getTrialStartDate(): Flow<Long?> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.TRIAL_START_DATE]
+        }
+    }
+
+    suspend fun setNotificationServerType(type: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.NOTIFICATION_SERVER_TYPE] = type
+        }
+    }
+
+    fun getNotificationServerType(): Flow<String> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.NOTIFICATION_SERVER_TYPE] ?: "HOSTED"
+        }
+    }
+
+    suspend fun setPremiumExpiresAt(date: Long?) {
+        dataStore.edit { preferences ->
+            if (date != null) {
+                preferences[PreferenceKeys.PREMIUM_EXPIRES_AT] = date
+            } else {
+                preferences.remove(PreferenceKeys.PREMIUM_EXPIRES_AT)
+            }
+        }
+    }
+
+    fun getPremiumExpiresAt(): Flow<Long?> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.PREMIUM_EXPIRES_AT]
         }
     }
 }

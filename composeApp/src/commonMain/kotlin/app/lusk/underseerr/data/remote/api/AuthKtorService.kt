@@ -19,6 +19,12 @@ class AuthKtorService(private val client: HttpClient) {
             setBody(PlexAuthRequest(authToken))
         }
     }
+
+    suspend fun loginLocal(username: String, password: String): io.ktor.client.statement.HttpResponse {
+        return client.post("/api/v1/auth/local") {
+            setBody(LocalAuthRequest(username, password))
+        }
+    }
     
     suspend fun getCurrentUser(): ApiUserProfile {
         return client.get("/api/v1/auth/me").body()
@@ -37,4 +43,12 @@ class AuthKtorService(private val client: HttpClient) {
 data class PlexAuthRequest(
     @SerialName("authToken")
     val authToken: String
+)
+
+@Serializable
+data class LocalAuthRequest(
+    @SerialName("email")
+    val email: String,
+    @SerialName("password")
+    val password: String
 )
