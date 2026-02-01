@@ -10,6 +10,14 @@ A native, multiplatform client for [Overseerr](https://overseerr.dev/) built wit
 * **Push Notifications**: Real-time alerts for request approvals and media availability (via Firebase).
 * **Material Design**: Modern "Material You" interface with dynamic theming.
 
+## 🔔 Notifications & Self-Hosting
+
+Underseerr uses a secure relay for push notifications. By default, the app uses a hosted relay (included with a trial/subscription), but users are encouraged to self-host their own relay for maximum privacy and control.
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/lusky3/underseerr/tree/main/notification-relay)
+
+See the [Notification Relay Guide](./notification-relay/README.md) for detailed instructions.
+
 ## 🛠️ Tech Stack
 
 * **Language**: Kotlin 2.3+ (Multiplatform)
