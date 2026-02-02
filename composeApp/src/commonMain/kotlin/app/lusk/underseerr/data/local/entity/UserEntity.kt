@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "user_profile")
 data class UserEntity(
     @PrimaryKey val id: Int,
-    val email: String,
+    val email: String?,
     val displayName: String,
     val avatar: String?,
     val isPlexUser: Boolean,

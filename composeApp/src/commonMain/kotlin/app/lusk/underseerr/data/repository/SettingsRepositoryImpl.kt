@@ -170,4 +170,11 @@ class SettingsRepositoryImpl(
     override suspend fun setTrialStartDate(date: Long?) {
         preferencesManager.setTrialStartDate(date)
     }
+
+    override fun getWebhookSecret(): Flow<String?> =
+        preferencesManager.getWebhookSecret()
+
+    override suspend fun updateWebhookSecret(secret: String?) {
+        preferencesManager.setWebhookSecret(secret)
+    }
 }

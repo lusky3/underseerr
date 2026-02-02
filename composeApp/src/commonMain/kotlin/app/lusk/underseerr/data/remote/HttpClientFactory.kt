@@ -46,14 +46,9 @@ class HttpClientFactory(
         }
         
         scope.launch {
-            preferencesManager.getApiKey().collectLatest { key ->
-                currentApiKey = key
-            }
-        }
-        
-        scope.launch {
             preferencesManager.getUserId().collectLatest { _ ->
-                 // Reload cookie when user logs in/out
+                 // Reload both cookie and API key when user identity changes
+                 currentApiKey = securityManager.retrieveSecureData("underseerr_api_key")
                  currentCookie = securityManager.retrieveSecureData("cookie_auth_token")
             }
         }

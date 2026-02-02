@@ -12,3 +12,11 @@ CREATE TABLE IF NOT EXISTS serial_keys (
     status TEXT DEFAULT 'available', -- 'available', 'used'
     used_by TEXT
 );
+
+-- Table to map hashed emails to user IDs for subscription gating
+CREATE TABLE IF NOT EXISTS email_mapping (
+    email_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    webhook_secret TEXT,
+    updated_at INTEGER
+);

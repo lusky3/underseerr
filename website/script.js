@@ -118,4 +118,4 @@ window.addEventListener('scroll', () => {
 // Console easter egg
 console.log('%c🎬 Lusk', 'font-size: 24px; font-weight: bold; color: #8b5cf6;');
 console.log('%cA native Android client for Overseerr', 'font-size: 14px; color: #a0a0b0;');
-console.log('%cCheck out the source code: https://github.com/lusky3/overseerr-requests', 'font-size: 12px; color: #06b6d4;');
+console.log('%cCheck out the source code: https://github.com/lusky3/underseerr', 'font-size: 12px; color: #06b6d4;');

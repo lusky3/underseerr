@@ -3,6 +3,8 @@ export interface Env {
     DB: D1Database;
     // Secret: Google Service Account JSON string
     GOOGLE_APPLICATION_CREDENTIALS_JSON: string;
+    // Optional: Secret for webhook authorization
+    WEBHOOK_SECRET?: string;
 }
 
 // Minimal JWT signing for Google Auth (FCM)
@@ -104,7 +106,7 @@ export default {
         // --- Licensing Endpoints ---
 
         if (request.method === 'POST' && url.pathname === '/validate-key') {
-            const { key, userId } = await request.json() as any;
+            const { key, userId } = await request.json() as { key: string, userId: string };
             if (!key || !userId) return new Response("Missing key or userId", { status: 400 });
 
             const license = await env.DB.prepare(
@@ -134,6 +136,49 @@ export default {
             return new Response(JSON.stringify(status));
         }
 
+        if (request.method === 'POST' && url.pathname === '/verify-purchase') {
+            const { userId, productId, purchaseToken, packageName } = await request.json() as any;
+            if (!userId || !productId || !purchaseToken || !packageName) {
+                return new Response("Missing required fields", { status: 400 });
+            }
+
+            try {
+                const serviceAccountJson = env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+                let sa = serviceAccountJson;
+                if (!sa.trim().startsWith('{')) sa = atob(sa);
+
+                const accessToken = await getAccessToken(sa);
+                const verifyUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`;
+
+                const verifyRes = await fetch(verifyUrl, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+
+                if (!verifyRes.ok) {
+                    const error = await verifyRes.text();
+                    console.error("Google Play Verification Failed:", error);
+                    return new Response(JSON.stringify({ isPremium: false, error: "Validation failed" }), { status: 401 });
+                }
+
+                const purchaseData: any = await verifyRes.json();
+
+                // Check if subscription is active (expiryTimeMillis > now)
+                const expiryTime = parseInt(purchaseData.expiryTimeMillis);
+                const isPremium = expiryTime > Date.now();
+
+                if (isPremium) {
+                    // Update database
+                    await env.DB.prepare(
+                        "INSERT INTO licenses (user_id, serial_key, expires_at, status) VALUES (?, ?, ?, 'active')"
+                    ).bind(userId, `google_play_${purchaseToken.substring(0, 16)}`, expiryTime).run();
+                }
+
+                return new Response(JSON.stringify({ isPremium, expiresAt: expiryTime }));
+            } catch (e: any) {
+                return new Response(`Verification Error: ${e.message}`, { status: 500 });
+            }
+        }
+
         // --- Notification Logic (With Gating) ---
 
         if (request.method === 'POST' && (url.pathname === '/webhook' || url.pathname === '/register')) {
@@ -146,9 +191,22 @@ export default {
         if (request.method === 'POST' && url.pathname === '/register') {
             try {
                 const body: any = await request.json();
-                if (!body.email || !body.token) return new Response("Missing email or token", { status: 400 });
+                if (!body.email || !body.token || !body.userId) {
+                    return new Response("Missing email, token, or userId", { status: 400 });
+                }
                 const emailHash = await hashEmail(body.email);
+
+                // 1. Store FCM token in KV (Email -> Token)
                 await env.TOKENS.put(emailHash, body.token);
+                // 1b. Store Reverse Mapping (Token -> Email) for efficient gating on /push
+                await env.TOKENS.put(`rev:${body.token}`, emailHash);
+
+                // 2. Map hashed email to userId in D1 (for gating)
+                await env.DB.prepare(
+                    "INSERT INTO email_mapping (email_hash, user_id, webhook_secret, updated_at) VALUES (?, ?, ?, ?) " +
+                    "ON CONFLICT(email_hash) DO UPDATE SET user_id=excluded.user_id, webhook_secret=COALESCE(excluded.webhook_secret, email_mapping.webhook_secret), updated_at=excluded.updated_at"
+                ).bind(emailHash, body.userId, body.webhookSecret || null, Date.now()).run();
+
                 return new Response(JSON.stringify({ success: true }));
             } catch (e: any) {
                 return new Response(`Error: ${e.message}`, { status: 500 });
@@ -157,6 +215,14 @@ export default {
 
         if (request.method === 'POST' && url.pathname === '/webhook') {
             try {
+                // Verify Webhook Secret if configured
+                if (env.WEBHOOK_SECRET) {
+                    const authHeader = request.headers.get("X-Underseerr-Secret");
+                    if (authHeader !== env.WEBHOOK_SECRET) {
+                        return new Response("Unauthorized Webhook", { status: 401 });
+                    }
+                }
+
                 const payload: any = await request.json();
                 const validEmail = payload.email || payload.notifyuser_email || payload.requestedBy_email;
                 if (!validEmail) return new Response("No target email", { status: 400 });
@@ -165,9 +231,30 @@ export default {
                 const fcmToken = await env.TOKENS.get(emailHash);
                 if (!fcmToken) return new Response(`No device registered`, { status: 404 });
 
-                // GATING: Check if this email is associated with a premium account
-                // (Need a mapping table: email_hash -> user_id)
-                // For MVP, we skip gating here but the infrastructure is ready in checkLicense()
+                // --- GATING LOGIC ---
+                // 1. Find the User ID and Secret associated with this email hash
+                const mapping = await env.DB.prepare(
+                    "SELECT user_id, webhook_secret FROM email_mapping WHERE email_hash = ?"
+                ).bind(emailHash).first();
+
+                if (!mapping) {
+                    return new Response("User context not found", { status: 403 });
+                }
+
+                // 2. Verify Webhook Secret (Tenant-Specific)
+                if (mapping.webhook_secret) {
+                    const clientSecret = request.headers.get("X-Underseerr-Secret");
+                    if (clientSecret !== mapping.webhook_secret) {
+                        return new Response("Invalid Webhook Secret", { status: 401 });
+                    }
+                }
+
+                // 3. Check if that user has an active premium subscription
+                const status = await checkLicense(mapping.user_id as string, env.DB);
+                if (!status.isPremium) {
+                    return new Response("Premium subscription required for hosted notifications", { status: 402 });
+                }
+                // --- END GATING ---
 
                 if (!env.GOOGLE_APPLICATION_CREDENTIALS_JSON) return new Response("Config Error", { status: 500 });
 
@@ -214,6 +301,70 @@ export default {
                 return new Response(JSON.stringify({ success: true, messageId: responseData.name }));
             } catch (e: any) {
                 return new Response(`Processing Error`, { status: 500 });
+            }
+        }
+
+        // --- Web Push Proxy (Blind) ---
+        // POST /push/:token
+        if (request.method === 'POST' && url.pathname.startsWith('/push/')) {
+            try {
+                const token = url.pathname.split('/').pop();
+                if (!token) return new Response("Missing token in path", { status: 400 });
+
+                // --- GATING LOGIC ---
+                // For direct push registration, Overseerr doesn't send email in the path.
+                // We use the reverse mapping in KV.
+                const emailHash = await env.TOKENS.get(`rev:${token}`);
+
+                if (!emailHash) return new Response("Device not registered", { status: 403 });
+
+                const mapping = await env.DB.prepare(
+                    "SELECT user_id FROM email_mapping WHERE email_hash = ?"
+                ).bind(emailHash).first();
+
+                if (!mapping) return new Response("User context not found", { status: 403 });
+
+                const status = await checkLicense(mapping.user_id as string, env.DB);
+                if (!status.isPremium) return new Response("Premium required", { status: 402 });
+                // --- END GATING ---
+
+                if (!env.GOOGLE_APPLICATION_CREDENTIALS_JSON) return new Response("Config Error", { status: 500 });
+                let sa = env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+                if (!sa.trim().startsWith('{')) sa = atob(sa);
+                const accessToken = await getAccessToken(sa);
+                const projectId = JSON.parse(sa).project_id;
+                const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
+                const body = await request.arrayBuffer();
+                const uint8 = new Uint8Array(body);
+                let binary = '';
+                for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+                const bodyBase64 = btoa(binary);
+
+                const headers: any = {};
+                ['encryption', 'crypto-key', 'content-encoding', 'ttl', 'content-type'].forEach(h => {
+                    const val = request.headers.get(h);
+                    if (val) headers[h] = val;
+                });
+
+                const messageBody = {
+                    message: {
+                        token: token,
+                        data: { type: "webpush_encrypted", payload: bodyBase64, headers: JSON.stringify(headers) },
+                        android: { priority: "high" }
+                    }
+                };
+
+                const fcmRes = await fetch(fcmUrl, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(messageBody)
+                });
+
+                if (!fcmRes.ok) return new Response(`FCM Error`, { status: 502 });
+                return new Response(JSON.stringify({ success: true }), { status: 201 });
+            } catch (e: any) {
+                return new Response(`Error: ${e.message}`, { status: 500 });
             }
         }
 

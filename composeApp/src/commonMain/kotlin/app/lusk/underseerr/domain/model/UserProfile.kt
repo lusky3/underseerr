@@ -5,7 +5,7 @@ package app.lusk.underseerr.domain.model
  */
 data class UserProfile(
     val id: Int,
-    val email: String,
+    val email: String?,
     val displayName: String,
     val avatar: String?,
     val requestCount: Int,

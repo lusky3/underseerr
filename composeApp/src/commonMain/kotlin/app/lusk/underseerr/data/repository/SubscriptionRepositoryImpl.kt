@@ -8,16 +8,23 @@ import app.lusk.underseerr.util.nowMillis
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /**
  * Implementation of SubscriptionRepository using DataStore for mock persistence.
  */
 class SubscriptionRepositoryImpl(
     private val preferencesManager: PreferencesManager,
+    private val securityManager: app.lusk.underseerr.domain.security.SecurityManager,
     private val subscriptionKtorService: app.lusk.underseerr.data.remote.api.SubscriptionKtorService,
     private val authRepository: app.lusk.underseerr.domain.repository.AuthRepository,
     private val billingManager: app.lusk.underseerr.domain.billing.BillingManager
 ) : SubscriptionRepository {
+
+    private companion object {
+        const val SECURE_IS_PREMIUM = "underseerr_is_premium"
+        const val SECURE_PREMIUM_EXPIRES_AT = "underseerr_premium_expires_at"
+    }
 
     private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
 
@@ -25,10 +32,46 @@ class SubscriptionRepositoryImpl(
         scope.launch {
             billingManager.isSubscribed.collect { isSubscribed ->
                 if (isSubscribed) {
-                    preferencesManager.setIsPremium(true)
+                    setPremiumSecure(true)
                 }
             }
         }
+
+        scope.launch {
+            billingManager.purchaseDetails.collect { details ->
+                val userResult = authRepository.getCurrentUser()
+                if (userResult is app.lusk.underseerr.domain.model.Result.Success) {
+                    try {
+                        val response = subscriptionKtorService.verifyPurchase(userResult.data.id.toString(), details)
+                        if (response.isPremium) {
+                            setPremiumSecure(true, response.expiresAt)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun setPremiumSecure(isPremium: Boolean, expiresAt: Long? = null) {
+        securityManager.storeSecureData(SECURE_IS_PREMIUM, isPremium.toString())
+        if (expiresAt != null) {
+            securityManager.storeSecureData(SECURE_PREMIUM_EXPIRES_AT, expiresAt.toString())
+        } else {
+            securityManager.storeSecureData(SECURE_PREMIUM_EXPIRES_AT, "")
+        }
+        // Also update preferences for UI flow
+        preferencesManager.setIsPremium(isPremium)
+        preferencesManager.setPremiumExpiresAt(expiresAt)
+    }
+
+    private suspend fun getIsPremiumSecure(): Boolean {
+        return securityManager.retrieveSecureData(SECURE_IS_PREMIUM)?.toBoolean() ?: false
+    }
+
+    private suspend fun getPremiumExpiresAtSecure(): Long? {
+        return securityManager.retrieveSecureData(SECURE_PREMIUM_EXPIRES_AT)?.toLongOrNull()
     }
 
     override fun getSubscriptionStatus(): Flow<SubscriptionStatus> {
@@ -37,6 +80,8 @@ class SubscriptionRepositoryImpl(
             preferencesManager.getTrialStartDate(),
             preferencesManager.getPremiumExpiresAt()
         ) { isPremium, trialStartDate, premiumExpiresAt ->
+            // In a production app, we could double check against SecurityManager here,
+            // but for reactive Flow, DataStore is sufficient for UI.
             val now = nowMillis()
             val trialDuration = 7L * 24 * 60 * 60 * 1000 // 7 days in ms
             
@@ -63,8 +108,7 @@ class SubscriptionRepositoryImpl(
                 val userId = userResult.data.id.toString()
                 val response = subscriptionKtorService.checkSubscriptionStatus(userId)
                 
-                preferencesManager.setIsPremium(response.isPremium)
-                preferencesManager.setPremiumExpiresAt(response.expiresAt)
+                setPremiumSecure(response.isPremium, response.expiresAt)
                 
                 Result.success(SubscriptionStatus(
                     tier = if (response.isPremium) SubscriptionTier.PREMIUM else SubscriptionTier.FREE,
@@ -83,21 +127,25 @@ class SubscriptionRepositoryImpl(
     }
 
     override suspend fun resetSubscription(): Result<Unit> {
-        preferencesManager.setIsPremium(false)
+        setPremiumSecure(false, null)
         preferencesManager.setTrialStartDate(null)
-        preferencesManager.setPremiumExpiresAt(null)
         return Result.success(Unit)
     }
 
     override suspend fun unlockWithSerialKey(key: String): Result<Unit> {
         return try {
-            val response = subscriptionKtorService.validateSerialKey(key)
-            if (response.isPremium) {
-                preferencesManager.setIsPremium(true)
-                preferencesManager.setPremiumExpiresAt(response.expiresAt)
-                Result.success(Unit)
+            val userResult = authRepository.getCurrentUser()
+            if (userResult is app.lusk.underseerr.domain.model.Result.Success) {
+                val userId = userResult.data.id.toString()
+                val response = subscriptionKtorService.validateSerialKey(key, userId)
+                if (response.isPremium) {
+                    setPremiumSecure(true, response.expiresAt)
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Invalid serial key"))
+                }
             } else {
-                Result.failure(Exception("Invalid serial key"))
+                Result.failure(Exception("Not logged in"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -107,8 +155,8 @@ class SubscriptionRepositoryImpl(
     override suspend fun restorePurchases(): Result<Unit> {
         return try {
             val isPremium = billingManager.isSubscribed("premium_subscription")
-            preferencesManager.setIsPremium(isPremium)
             if (isPremium) {
+                setPremiumSecure(true)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("No active subscription found."))

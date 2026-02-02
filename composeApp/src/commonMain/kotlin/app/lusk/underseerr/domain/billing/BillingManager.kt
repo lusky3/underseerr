@@ -5,6 +5,13 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Interface for platform-specific billing implementations.
  */
+@kotlinx.serialization.Serializable
+data class PurchaseDetails(
+    val productId: String,
+    val purchaseToken: String,
+    val packageName: String
+)
+
 interface BillingManager {
     /**
      * Start the billing connection.
@@ -26,4 +33,9 @@ interface BillingManager {
      * Provides the current subscription status as a flow.
      */
     val isSubscribed: StateFlow<Boolean>
+
+    /**
+     * Flow of new successful purchases that need server-side verification.
+     */
+    val purchaseDetails: kotlinx.coroutines.flow.SharedFlow<PurchaseDetails>
 }

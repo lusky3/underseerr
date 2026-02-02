@@ -10,7 +10,7 @@ import app.lusk.underseerr.domain.model.UserProfile
 fun ApiUserProfile.toDomain(): UserProfile {
     return UserProfile(
         id = id,
-        email = email ?: "",
+        email = email,
         displayName = displayName ?: username ?: "User $id",
         avatar = avatar,
         requestCount = requestCount,

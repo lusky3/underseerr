@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.map
  */
 class NotificationRepositoryImpl(
     private val notificationDao: NotificationDao,
+    private val authRepository: app.lusk.underseerr.domain.repository.AuthRepository,
     private val userKtorService: UserKtorService,
     private val settingsKtorService: SettingsKtorService,
     private val settingsRepository: app.lusk.underseerr.domain.repository.SettingsRepository,
@@ -58,6 +59,25 @@ class NotificationRepositoryImpl(
         
         logger.d(TAG, "Registering for Web Push Proxy: endpoint=$endpoint")
         
+        // Register token with our Notification Worker/Proxy for subscription gating
+        val userResult = authRepository.getCurrentUser()
+        if (userResult is app.lusk.underseerr.domain.model.Result.Success) {
+            val user = userResult.data
+            try {
+                val webhookSecret = preferencesManager.getWebhookSecret().first()
+                notificationServerService.registerToken(
+                    serverUrl = cleanUrl,
+                    email = user.email ?: "",
+                    token = token,
+                    userId = user.id.toString(),
+                    webhookSecret = webhookSecret
+                )
+            } catch (e: Exception) {
+                logger.e(TAG, "Failed to register token with Underseerr Worker", e)
+                // We continue anyway, as the Overseerr registration is main priority
+            }
+        }
+
         return safeApiCall {
             // Register the subscription on Overseerr
             val subscription = ApiRegisterPushSubscription(

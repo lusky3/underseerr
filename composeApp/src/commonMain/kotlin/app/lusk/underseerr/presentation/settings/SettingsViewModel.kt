@@ -87,6 +87,9 @@ class SettingsViewModel(
 
     private val _notificationServerType = MutableStateFlow("HOSTED")
     val notificationServerType: StateFlow<String> = _notificationServerType.asStateFlow()
+
+    private val _webhookSecret = MutableStateFlow<String?>(null)
+    val webhookSecret: StateFlow<String?> = _webhookSecret.asStateFlow()
     
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent: SharedFlow<String> = _uiEvent
@@ -108,6 +111,12 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.getNotificationServerType().collect {
                 _notificationServerType.value = it
+            }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.getWebhookSecret().collect {
+                _webhookSecret.value = it
             }
         }
 
@@ -427,5 +436,21 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.updateVibrantThemeColors(colors)
         }
+    }
+
+    fun updateWebhookSecret(secret: String?) {
+        viewModelScope.launch {
+            settingsRepository.updateWebhookSecret(secret)
+            // Trigger re-registration to update server
+            notificationRepository.registerForPushNotifications()
+        }
+    }
+
+    fun generateWebhookSecret() {
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        val secret = (1..16)
+            .map { chars.random() }
+            .joinToString("")
+        updateWebhookSecret(secret)
     }
 }

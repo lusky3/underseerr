@@ -167,6 +167,16 @@ interface SettingsRepository {
      * Set the trial start date.
      */
     suspend fun setTrialStartDate(date: Long?)
+
+    /**
+     * Get webhook secret for notification relay.
+     */
+    fun getWebhookSecret(): Flow<String?>
+
+    /**
+     * Set webhook secret for notification relay.
+     */
+    suspend fun updateWebhookSecret(secret: String?)
 }
 
 /**

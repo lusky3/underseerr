@@ -57,6 +57,7 @@ class PreferencesManager(
         val TRIAL_START_DATE = longPreferencesKey("trial_start_date")
         val NOTIFICATION_SERVER_TYPE = stringPreferencesKey("notification_server_type")
         val PREMIUM_EXPIRES_AT = longPreferencesKey("premium_expires_at")
+        val WEBHOOK_SECRET = stringPreferencesKey("webhook_secret")
     }
     
     /**
@@ -521,6 +522,22 @@ class PreferencesManager(
     fun getPremiumExpiresAt(): Flow<Long?> {
         return dataStore.data.map { preferences ->
             preferences[PreferenceKeys.PREMIUM_EXPIRES_AT]
+        }
+    }
+
+    suspend fun setWebhookSecret(secret: String?) {
+        dataStore.edit { preferences ->
+            if (secret != null) {
+                preferences[PreferenceKeys.WEBHOOK_SECRET] = secret
+            } else {
+                preferences.remove(PreferenceKeys.WEBHOOK_SECRET)
+            }
+        }
+    }
+
+    fun getWebhookSecret(): Flow<String?> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.WEBHOOK_SECRET]
         }
     }
 }

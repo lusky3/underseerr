@@ -31,6 +31,7 @@ actual fun platformModule(): Module = module {
             override suspend fun purchaseProduct(productId: String): Result<Unit> = Result.failure(Exception("iOS Billing not implemented"))
             override suspend fun isSubscribed(productId: String): Boolean = false
             override val isSubscribed: kotlinx.coroutines.flow.StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
+            override val purchaseDetails: kotlinx.coroutines.flow.SharedFlow<app.lusk.underseerr.domain.billing.PurchaseDetails> = kotlinx.coroutines.flow.MutableSharedFlow()
         }
     }
 }

@@ -10,7 +10,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RegisterTokenRequest(
     val email: String,
-    val token: String
+    val token: String,
+    val userId: String,
+    val webhookSecret: String? = null
 )
 
 class NotificationServerService(private val client: HttpClient) {
@@ -18,7 +20,7 @@ class NotificationServerService(private val client: HttpClient) {
     /**
      * Registers the FCM token with the Cloudflare Worker (or other backend).
      */
-    suspend fun registerToken(serverUrl: String, email: String, token: String) {
+    suspend fun registerToken(serverUrl: String, email: String, token: String, userId: String, webhookSecret: String? = null) {
         // Construct the full URL: serverUrl + /register
         // Ensure serverUrl doesn't end with slash to avoid double slash
         val cleanUrl = serverUrl.trimEnd('/')
@@ -26,7 +28,7 @@ class NotificationServerService(private val client: HttpClient) {
 
         client.post(url) {
             contentType(ContentType.Application.Json)
-            setBody(RegisterTokenRequest(email, token))
+            setBody(RegisterTokenRequest(email, token, userId, webhookSecret))
         }
     }
 }

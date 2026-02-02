@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+
 /**
  * Android implementation of [BillingManager] using Google Play Billing Library.
  */
@@ -26,6 +29,9 @@ class AndroidBillingManager(
 
     private val _isSubscribed = MutableStateFlow(false)
     override val isSubscribed: StateFlow<Boolean> = _isSubscribed.asStateFlow()
+
+    private val _purchaseDetails = kotlinx.coroutines.flow.MutableSharedFlow<PurchaseDetails>()
+    override val purchaseDetails = _purchaseDetails.asSharedFlow()
 
     private val scope = CoroutineScope(Dispatchers.Main)
 
@@ -122,6 +128,17 @@ class AndroidBillingManager(
 
     private fun handlePurchase(purchase: Purchase) {
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
+            // Emit for server-side verification
+            scope.launch {
+                _purchaseDetails.emit(
+                    PurchaseDetails(
+                        productId = purchase.products.firstOrNull() ?: "",
+                        purchaseToken = purchase.purchaseToken,
+                        packageName = context.packageName
+                    )
+                )
+            }
+
             if (!purchase.isAcknowledged) {
                 val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
                     .setPurchaseToken(purchase.purchaseToken)

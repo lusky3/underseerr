@@ -19,7 +19,7 @@ plugins {
 
 sonar {
     properties {
-        property("sonar.projectKey", "lusky3_overseerr-requests")
+        property("sonar.projectKey", "lusky3_underseerr")
         property("sonar.organization", "lusk")
         property("sonar.host.url", "https://sonarcloud.io")
     }

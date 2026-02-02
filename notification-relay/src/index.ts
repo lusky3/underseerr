@@ -2,6 +2,8 @@ export interface Env {
     TOKENS: KVNamespace;
     // Secret: Google Service Account JSON string
     GOOGLE_APPLICATION_CREDENTIALS_JSON: string;
+    // Optional: Global secret for webhook authorization
+    WEBHOOK_SECRET?: string;
 }
 
 // Minimal JWT signing for Google Auth (FCM)
@@ -102,6 +104,7 @@ export default {
                 if (!body.email || !body.token) {
                     return new Response("Missing email or token", { status: 400 });
                 }
+                // Note: body.userId ignored in community mode as it has no D1 mapping
 
                 // Privacy: Hash email before storage
                 const emailHash = await hashEmail(body.email);
@@ -122,6 +125,14 @@ export default {
         // POST /webhook
         if (request.method === 'POST' && url.pathname === '/webhook') {
             try {
+                // Verify Webhook Secret if configured
+                if (env.WEBHOOK_SECRET) {
+                    const authHeader = request.headers.get("X-Underseerr-Secret");
+                    if (authHeader !== env.WEBHOOK_SECRET) {
+                        return new Response("Unauthorized Webhook", { status: 401 });
+                    }
+                }
+
                 const payload: any = await request.json();
 
                 // Determine Target Email

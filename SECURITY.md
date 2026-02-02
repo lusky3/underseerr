@@ -6,7 +6,7 @@ We take the security of our project seriously. If you find a vulnerability, plea
 
 ### GitHub Private Reporting (Preferred)
 
-The best way to report a vulnerability is via the [GitHub Private Vulnerability Reporting](https://github.com/lusky3/overseerr-requests/security/advisories/new) feature. This allows you to open a private issue where we can discuss the problem and collaborate on a fix securely.
+The best way to report a vulnerability is via the [GitHub Private Vulnerability Reporting](https://github.com/lusky3/underseerr/security/advisories/new) feature. This allows you to open a private issue where we can discuss the problem and collaborate on a fix securely.
 
 ### Email (Backup)
 

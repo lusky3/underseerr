@@ -119,7 +119,6 @@ class AuthRepositoryImpl(
             )
             val debugKey = "debug_session_key_12345"
             securityManager.storeSecureData(API_KEY_STORAGE_KEY, debugKey)
-            preferencesManager.setApiKey(debugKey)
             preferencesManager.setUserId(1)
             println("AuthRepositoryImpl: Stored dummy user ID 1 and debug API key.")
             return Result.success(dummyUser)
@@ -157,7 +156,6 @@ class AuthRepositoryImpl(
                     
                     // Store session marker
                     securityManager.storeSecureData(API_KEY_STORAGE_KEY, sessionMarker)
-                    preferencesManager.setApiKey(sessionMarker)
                     
                     // Store user ID
                     preferencesManager.setUserId(apiUserProfile.id)
@@ -202,7 +200,6 @@ class AuthRepositoryImpl(
                     // Store session marker and user ID
                     val sessionMarker = "SESSION_COOKIE"
                     securityManager.storeSecureData(API_KEY_STORAGE_KEY, sessionMarker)
-                    preferencesManager.setApiKey(sessionMarker)
                     preferencesManager.setUserId(apiUserProfile.id)
                     
                     Result.success(apiUserProfile.toDomain())
@@ -219,7 +216,6 @@ class AuthRepositoryImpl(
         return try {
             // First store the API key so subsequent calls use it
             securityManager.storeSecureData(API_KEY_STORAGE_KEY, apiKey)
-            preferencesManager.setApiKey(apiKey)
             
             // Validate the key by fetching current user
             val result = getCurrentUser()
