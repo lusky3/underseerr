@@ -16,7 +16,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import io.ktor.client.plugins.logging.Logger
 
@@ -99,12 +101,36 @@ class HttpClientFactory(
             }
 
             // Apply Base URL
-            val baseUrl = currentBaseUrl
+            var baseUrl = currentBaseUrl
+            
+            // Fallback: If baseUrl is empty but we should be initialized, try reading flow directly
+            // This handles the race condition where 'initialUrlLoaded' is true (default?) or flow is slow
+            if (baseUrl.isEmpty()) {
+                val directUrl = kotlinx.coroutines.runBlocking { 
+                     // Best effort to get URL if missing
+                     preferencesManager.getServerUrl().first() 
+                }
+                if (!directUrl.isNullOrEmpty()) {
+                    currentBaseUrl = directUrl
+                    baseUrl = directUrl
+                    println("HttpClient: Recovered Base URL from direct read: $baseUrl")
+                }
+            }
+            
+            println("HttpClient: Intercepting request to ${context.url.buildString()}, currentBaseUrl: '$baseUrl', initial loaded: ${initialUrlLoaded.isCompleted}")
+            
             if (baseUrl.isNotEmpty()) {
-                val url = Url(baseUrl)
-                context.url.protocol = url.protocol
-                context.url.host = url.host
-                context.url.port = url.port
+                try {
+                    val url = Url(baseUrl)
+                    context.url.protocol = url.protocol
+                    context.url.host = url.host
+                    context.url.port = url.port
+                    println("HttpClient: Applied Base URL: ${url.protocol}://${url.host}:${url.port}")
+                } catch (e: Exception) {
+                    println("HttpClient: Failed to parse/apply base URL '$baseUrl': ${e.message}")
+                }
+            } else {
+                println("HttpClient: WARNING - Base URL is empty! Request may fail to localhost.")
             }
             
             // Apply Credentials - Read fresh from Secure Storage to avoid race conditions
