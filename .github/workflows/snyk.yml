@@ -79,7 +79,7 @@ jobs:
           snyk code test --sarif-file-output=snyk-code.sarif || echo "Snyk Code found issues"
           if [ -s snyk-code.sarif ]; then
              # Standardize single-run format for SAST as well
-             jq 'if .runs and (.runs | length > 1) then .runs = [ (.runs[0] | .results = ([.runs[].results // []] | flatten)) ] else . end' snyk-code.sarif > snyk-code-fixed.sarif
+             jq '{ "$schema": .["$schema"], version: .version, runs: [ .runs[0] + { results: ([.runs[].results // []] | flatten) } ] }' snyk-code.sarif > snyk-code-fixed.sarif
           fi
 
       - name: Snyk Open Source Test
@@ -88,7 +88,7 @@ jobs:
           snyk test --all-projects --sarif-file-output=snyk-deps.sarif || echo "Snyk found vulnerabilities"
           if [ -s snyk-deps.sarif ]; then
             echo "Merging Snyk SARIF runs..."
-            jq 'if .runs then .runs = [ (.runs[0] | .results = ([.runs[].results // []] | flatten)) ] else . end' snyk-deps.sarif > snyk-deps-fixed.sarif
+            jq '{ "$schema": .["$schema"], version: .version, runs: [ .runs[0] + { results: ([.runs[].results // []] | flatten) } ] }' snyk-deps.sarif > snyk-deps-fixed.sarif
             if [ ! -s snyk-deps-fixed.sarif ]; then
               echo "Error: Failed to generate snyk-deps-fixed.sarif or file is empty"
               exit 1
