@@ -87,7 +87,7 @@ class ProfileViewModel(
             listOf(profileJob, quotaJob, statsJob).forEach { it.join() }
             
             // Background refresh requests to update stats
-            requestRepository.refreshRequests()
+            requestRepository.refreshRequests(1, 20)
             
             // Re-fetch stats after sync
             val finalStats = profileRepository.getUserStatistics()
@@ -107,7 +107,7 @@ class ProfileViewModel(
     fun refreshStatistics() {
         viewModelScope.launch {
             _isRefreshingStats.value = true
-            requestRepository.refreshRequests()
+            requestRepository.refreshRequests(1, 20)
             val finalStats = profileRepository.getUserStatistics()
             if (finalStats is Result.Success) {
                 _statistics.value = finalStats.data

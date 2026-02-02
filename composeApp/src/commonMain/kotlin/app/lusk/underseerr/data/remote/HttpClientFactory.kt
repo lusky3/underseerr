@@ -50,14 +50,7 @@ class HttpClientFactory(
                 }
             }
         }
-        
-        scope.launch {
-            preferencesManager.getUserId().collectLatest { _ ->
-                 // Reload both cookie and API key when user identity changes
-                 currentApiKey = securityManager.retrieveSecureData("underseerr_api_key")
-                 currentCookie = securityManager.retrieveSecureData("cookie_auth_token")
-            }
-        }
+        // Removed credential caching flow to prevent race conditions
     }
 
     fun create(): HttpClient {
@@ -112,12 +105,10 @@ class HttpClientFactory(
                 context.url.protocol = url.protocol
                 context.url.host = url.host
                 context.url.port = url.port
-                // Note: deeply nested paths in baseUrl might need careful handling, 
-                // but for standard scheme://host:port usage, this preserves the request path.
             }
             
-            // Apply API Key if available
-            val apiKey = currentApiKey
+            // Apply Credentials - Read fresh from Secure Storage to avoid race conditions
+            val apiKey = securityManager.retrieveSecureData("underseerr_api_key")
             
             if (!apiKey.isNullOrEmpty() && 
                 apiKey != "SESSION_COOKIE" && 
@@ -127,7 +118,6 @@ class HttpClientFactory(
                 context.headers["X-Api-Key"] = apiKey
             } else {
                 // If no API key, check for session cookie from SecurityManager
-                // This ensures we get the latest persisted cookie even after app restart
                 val cookie = securityManager.retrieveSecureData("cookie_auth_token")
                 if (!cookie.isNullOrEmpty()) {
                      context.headers["Cookie"] = cookie

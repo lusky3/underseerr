@@ -215,7 +215,7 @@ class RequestRepositoryImpl(
      * Refresh requests from server.
      * Property 18: Pull-to-Refresh Data Freshness
      */
-    override suspend fun refreshRequests(page: Int, pageSize: Int): Result<Unit> = safeApiCall {
+    override suspend fun refreshRequests(page: Int, pageSize: Int): Result<Int> = safeApiCall {
         // Calculate offset
         val skip = (page - 1) * pageSize
         
@@ -272,6 +272,8 @@ class RequestRepositoryImpl(
             println("DB Error in refreshRequests: ${e.message}")
             e.printStackTrace()
         }
+        
+        hydratedRequests.size
     }
     
     /**
