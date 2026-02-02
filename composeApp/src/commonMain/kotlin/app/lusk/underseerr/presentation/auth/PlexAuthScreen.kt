@@ -61,6 +61,9 @@ fun PlexAuthScreen(
         }
     }
     
+    // State for local auth forms - Hoisted to persist across AuthState changes
+    var showLocalLoginForm by remember { mutableStateOf(false) }
+    var showApiKeyForm by remember { mutableStateOf(false) }
     
     // Handle success/error states
     LaunchedEffect(authState) {
@@ -221,9 +224,6 @@ fun PlexAuthScreen(
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
-                    
-                    var showLocalLoginForm by remember { mutableStateOf(false) }
-                    var showApiKeyForm by remember { mutableStateOf(false) }
                     
                     if (!showLocalLoginForm && !showApiKeyForm) {
                         OutlinedButton(
