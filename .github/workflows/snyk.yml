@@ -75,16 +75,26 @@ jobs:
       # Snyk Code (SAST) - Static Application Security Testing
       - name: Snyk Code Test
         continue-on-error: true
-        run: snyk code test --sarif-file-output=snyk-code.sarif
+        run: |
+          snyk code test --sarif-file-output=snyk-code.sarif || echo "Snyk Code found issues"
+          if [ -s snyk-code.sarif ]; then
+             # Standardize single-run format for SAST as well
+             jq 'if .runs and (.runs | length > 1) then .runs = [ (.runs[0] | .results = ([.runs[].results // []] | flatten)) ] else . end' snyk-code.sarif > snyk-code-fixed.sarif
+          fi
 
-      # Snyk Open Source (SCA) - Dependency vulnerability scanning
       - name: Snyk Open Source Test
         continue-on-error: true
         run: |
-          snyk test --all-projects --sarif-file-output=snyk-deps.sarif
-          # Merge multiple runs into one for compatibility with upload-sarif@v4
-          if [ -f snyk-deps.sarif ]; then
-            jq '.runs = [ (.runs[0] | .results = ([.runs[].results // []] | flatten)) ]' snyk-deps.sarif > snyk-deps-fixed.sarif
+          snyk test --all-projects --sarif-file-output=snyk-deps.sarif || echo "Snyk found vulnerabilities"
+          if [ -s snyk-deps.sarif ]; then
+            echo "Merging Snyk SARIF runs..."
+            jq 'if .runs then .runs = [ (.runs[0] | .results = ([.runs[].results // []] | flatten)) ] else . end' snyk-deps.sarif > snyk-deps-fixed.sarif
+            if [ ! -s snyk-deps-fixed.sarif ]; then
+              echo "Error: Failed to generate snyk-deps-fixed.sarif or file is empty"
+              exit 1
+            fi
+          else
+            echo "Warning: snyk-deps.sarif not found or empty"
           fi
 
       # Monitor project on Snyk dashboard for continuous tracking
@@ -95,15 +105,15 @@ jobs:
       # Upload SAST results to GitHub Code Scanning
       - name: Upload Snyk Code results to GitHub
         uses: github/codeql-action/upload-sarif@v4
-        if: always() && hashFiles('snyk-code.sarif') != ''
+        if: always() && (hashFiles('snyk-code-fixed.sarif') != '' || hashFiles('snyk-code.sarif') != '')
         with:
-          sarif_file: snyk-code.sarif
+          sarif_file: ${{ hashFiles('snyk-code-fixed.sarif') != '' && 'snyk-code-fixed.sarif' || 'snyk-code.sarif' }}
           category: snyk-code
 
       # Upload SCA results to GitHub Code Scanning
       - name: Upload Snyk dependency results to GitHub
         uses: github/codeql-action/upload-sarif@v4
-        if: always() && hashFiles('snyk-deps-fixed.sarif') != ''
+        if: always() && (hashFiles('snyk-deps-fixed.sarif') != '' || hashFiles('snyk-deps.sarif') != '')
         with:
-          sarif_file: snyk-deps-fixed.sarif
+          sarif_file: ${{ hashFiles('snyk-deps-fixed.sarif') != '' && 'snyk-deps-fixed.sarif' || 'snyk-deps.sarif' }}
           category: snyk-dependencies
