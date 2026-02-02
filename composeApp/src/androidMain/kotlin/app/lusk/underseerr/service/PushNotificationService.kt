@@ -97,7 +97,10 @@ class PushNotificationService : FirebaseMessagingService() {
                         body = body.replace("undefined", mediaType)
                     }
                     
-                    processIncomingNotification(title, body, image, deepLink, typeStr)
+                    // Convert JsonObject to Map<String, String?> for easier handling
+                    val dataMap = data.mapValues { it.value.toCleanString() }
+                    
+                    processIncomingNotification(title, body, image, deepLink, typeStr, dataMap)
                     return
                 } catch (e: Exception) {
                     logger.e(TAG, "Failed to decrypt Web Push notification: ${e.message}", e)
@@ -114,15 +117,36 @@ class PushNotificationService : FirebaseMessagingService() {
         val deepLink = message.data["url"]
         val notificationTypeString = message.data["type"]
 
-        processIncomingNotification(title, body, imageUrl, deepLink, notificationTypeString)
+        processIncomingNotification(title, body, imageUrl, deepLink, notificationTypeString, message.data)
     }
 
+        if (!shouldShow) {
+            logger.d(TAG, "NOT SHOWING: Notification for '$type' is disabled in your app settings.")
+            return
+        }
+        
+        // 3. Construct Deep Link if missing or generic
+        val finalDeepLink = deepLink ?: constructDeepLinkFromData(notificationTypeString, title, body, imageUrl)
+        
+        logger.d(TAG, "SHOWING notification: $title with deepLink: $finalDeepLink")
+        showNotification(title, body, imageUrl, finalDeepLink)
+    }
+
+    private fun constructDeepLinkFromData(type: String?, title: String, body: String, extraData: String?): String? {
+        // Since we don't have the raw data map here easily without refactoring, 
+        // we'll rely on what we can parse or what passed-in arguments allow.
+        // ideally, processIncomingNotification would take the raw data map.
+        return null 
+    }
+
+    // Refactored to pass raw data map
     private fun processIncomingNotification(
         title: String, 
         body: String, 
         imageUrl: String?, 
         deepLink: String?, 
-        notificationTypeString: String?
+        notificationTypeString: String?,
+        dataMap: Map<String, String?>
     ) {
         // 1. Get current local settings
         val settings = runBlocking { 
@@ -136,8 +160,6 @@ class PushNotificationService : FirebaseMessagingService() {
         }
         
         val lowerTitle = title.lowercase()
-        val lowerBody = body.lowercase()
-        
         val type = notificationTypeString?.lowercase()
         logger.d(TAG, "Filtering Check: type=$type, title=$title")
         
@@ -164,8 +186,36 @@ class PushNotificationService : FirebaseMessagingService() {
             return
         }
         
-        logger.d(TAG, "SHOWING notification: $title")
-        showNotification(title, body, imageUrl, deepLink)
+        // 3. Construct Deep Link dynamically based on identifiers in data
+        // Priority: Provided Action URL -> Constructed ID-based Link -> Default Request Link
+        var finalDeepLink = deepLink
+        
+        if (finalDeepLink.isNullOrEmpty() || finalDeepLink == "underseerr://request") {
+             // Try to find IDs
+             val tmdbId = dataMap["tmdbId"]?.takeIf { it.isNotEmpty() }
+             val mediaId = dataMap["mediaId"]?.takeIf { it.isNotEmpty() }
+             val requestId = dataMap["requestId"]?.takeIf { it.isNotEmpty() }
+             val mediaType = dataMap["mediaType"]?.takeIf { it.isNotEmpty() } ?: "movie"
+             
+             finalDeepLink = when {
+                 // Issues usually attach a media ID
+                 type?.contains("issue") == true && !mediaId.isNullOrEmpty() -> "underseerr://media/$mediaType/$mediaId"
+                 
+                 // Availability/Approval usually relates to a specific request
+                 (type == "media_pending" || type == "media_approved" || type == "media_declined") && !requestId.isNullOrEmpty() -> "underseerr://request/$requestId"
+                 
+                 // If we have a direct TMDB ID (common in availability), go to media
+                 !tmdbId.isNullOrEmpty() -> "underseerr://media/$mediaType/$tmdbId"
+                 
+                 // Fallback: if we only have a generic mediaId (could be TMDB or internal), try media route
+                 !mediaId.isNullOrEmpty() -> "underseerr://media/$mediaType/$mediaId"
+                 
+                 else -> "underseerr://request"
+             }
+        }
+
+        logger.d(TAG, "SHOWING notification: $title with deepLink: $finalDeepLink")
+        showNotification(title, body, imageUrl, finalDeepLink)
     }
 
     private fun showNotification(title: String, body: String, imageUrl: String?, deepLink: String?) {
