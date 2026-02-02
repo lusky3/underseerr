@@ -5,8 +5,10 @@ on:
     tags:
       - 'v*'
     branches:
-      - main
       - 'release/*'
+  schedule:
+    - cron: '0 0 * * *' # Every 24 hours at midnight
+  workflow_dispatch:
 
 jobs:
   release:
@@ -26,18 +28,35 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Needed for Sentry release
+        fetch-depth: 0
+
+    - name: Check for changes (Dayly/Nightly only)
+      id: check_changes
+      if: github.event_name == 'schedule'
+      run: |
+        # Check for changes in APK-relevant paths in the last 24h
+        CHANGES=$(git log --since="24 hours ago" --name-only -- . ':!website' ':!docs' ':!.github' | grep -E '^(androidApp|composeApp|gradle|build\.gradle\.kts|settings\.gradle\.kts)' || true)
+        if [ -z "$CHANGES" ]; then
+          echo "No APK-relevant changes found. Skipping build."
+          echo "skip=true" >> $GITHUB_OUTPUT
+        else
+          echo "Changes found. Building APK."
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Set up JDK 21
+      if: steps.check_changes.outputs.skip != 'true'
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '21'
 
     - name: Setup Gradle
+      if: steps.check_changes.outputs.skip != 'true'
       uses: gradle/actions/setup-gradle@v4
 
     - name: Write Google Services JSON (Release)
+      if: steps.check_changes.outputs.skip != 'true'
       env:
         FIREBASE_GOOGLE_SERVICES_JSON_PROD: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON_PROD }}
       run: |
@@ -50,12 +69,13 @@ jobs:
         fi
 
     - name: Get version
+      if: steps.check_changes.outputs.skip != 'true'
       id: version
       run: |
         if [[ $GITHUB_REF == refs/tags/* ]]; then
           echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-        elif [[ $GITHUB_REF == refs/heads/main ]]; then
-          echo "VERSION=nightly-$(date +'%Y.%m.%d')-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        elif [[ $GITHUB_EVENT_NAME == 'schedule' ]] || [[ $GITHUB_REF == refs/heads/main ]]; then
+          echo "VERSION=nightly" >> $GITHUB_OUTPUT
         else
           # For release branches: release/v1.0 -> v1.0-rc
           VERSION_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')
@@ -63,19 +83,23 @@ jobs:
         fi
 
     - name: Build Release APK
+      if: steps.check_changes.outputs.skip != 'true'
       run: ./gradlew :androidApp:assembleRelease
 
     - name: Create Sentry release
       uses: getsentry/action-release@v3
-      if: env.SENTRY_AUTH_TOKEN != ''
+      if: steps.check_changes.outputs.skip != 'true' && env.SENTRY_AUTH_TOKEN != ''
       with:
         environment: production
         release: ${{ steps.version.outputs.VERSION }}
 
     - name: Create Release
+      if: steps.check_changes.outputs.skip != 'true'
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
         files: androidApp/build/outputs/apk/release/*.apk
         generate_release_notes: true
         draft: false
-        prerelease: ${{ github.ref == 'refs/heads/main' || contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        make_latest: ${{ github.event_name != 'schedule' }}
+        prerelease: ${{ github.event_name == 'schedule' || contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
