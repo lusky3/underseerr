@@ -9,6 +9,7 @@ jobs:
   release:
     name: Build & Release
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: write
 
