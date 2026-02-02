@@ -117,6 +117,19 @@ class HttpClientFactory(
                 }
             }
             
+            // Double fallback: check configured servers list if still empty
+            if (baseUrl.isEmpty()) {
+                val configuredServers = kotlinx.coroutines.runBlocking {
+                    preferencesManager.getConfiguredServers().first()
+                }
+                val firstServer = configuredServers.firstOrNull()
+                if (firstServer != null) {
+                    currentBaseUrl = firstServer.url
+                    baseUrl = firstServer.url
+                    println("HttpClient: Recovered Base URL from Configured Servers: $baseUrl")
+                }
+            }
+            
             println("HttpClient: Intercepting request to ${context.url.buildString()}, currentBaseUrl: '$baseUrl', initial loaded: ${initialUrlLoaded.isCompleted}")
             
             if (baseUrl.isNotEmpty()) {
