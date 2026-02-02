@@ -61,6 +61,12 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            
+            // Inclusion of native debug symbols for Google Play Console
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
+
             // Sentry DSN - empty by default, set via SENTRY_DSN env var
             buildConfigField("String", "SENTRY_DSN", "\"${System.getenv("SENTRY_DSN") ?: ""}\"")
         }
