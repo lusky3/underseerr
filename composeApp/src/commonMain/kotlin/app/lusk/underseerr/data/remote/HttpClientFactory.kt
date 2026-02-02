@@ -30,29 +30,13 @@ class HttpClientFactory(
     private val preferencesManager: PreferencesManager,
     private val securityManager: SecurityManager
 ) {
-    private var currentBaseUrl: String = ""
-    private var currentApiKey: String? = null
-    private var currentCookie: String? = null
-    private val scope = CoroutineScope(Dispatchers.IO)
+    // Removed local caching to prevent synchronization issues
+    // private var currentBaseUrl: String = "" 
     
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
         prettyPrint = true
-    }
-
-    private val initialUrlLoaded = kotlinx.coroutines.CompletableDeferred<Unit>()
-
-    init {
-        scope.launch {
-            preferencesManager.getServerUrl().collectLatest { url ->
-                currentBaseUrl = url ?: ""
-                if (!initialUrlLoaded.isCompleted) {
-                    initialUrlLoaded.complete(Unit)
-                }
-            }
-        }
-        // Removed credential caching flow to prevent race conditions
     }
 
     fun create(): HttpClient {
@@ -88,49 +72,31 @@ class HttpClientFactory(
 
         // Intercept requests to inject headers asynchronously
         client.requestPipeline.intercept(io.ktor.client.request.HttpRequestPipeline.State) {
-            // Wait for initial URL to be loaded from preferences
-            if (!initialUrlLoaded.isCompleted) {
-                try {
-                    // Timeout after 2 seconds to avoid blocking forever if something is wrong
-                    kotlinx.coroutines.withTimeout(2000) {
-                        initialUrlLoaded.await()
-                    }
-                } catch (e: Exception) {
-                    // Ignore timeout, proceed with (potentially empty) URL
-                }
-            }
-
-            // Apply Base URL
-            var baseUrl = currentBaseUrl
-            
-            // Fallback: If baseUrl is empty but we should be initialized, try reading flow directly
-            // This handles the race condition where 'initialUrlLoaded' is true (default?) or flow is slow
-            if (baseUrl.isEmpty()) {
-                val directUrl = kotlinx.coroutines.runBlocking { 
-                     // Best effort to get URL if missing
-                     preferencesManager.getServerUrl().first() 
-                }
-                if (!directUrl.isNullOrEmpty()) {
-                    currentBaseUrl = directUrl
-                    baseUrl = directUrl
-                    println("HttpClient: Recovered Base URL from direct read: $baseUrl")
-                }
+            // Read Base URL directly from preferences (suspend call is allowed here)
+            var baseUrl = try {
+                 preferencesManager.getServerUrl().first() ?: ""
+            } catch (e: Exception) {
+                 println("HttpClient: Error reading server URL: ${e.message}")
+                 ""
             }
             
-            // Double fallback: check configured servers list if still empty
+            // Fallback: check configured servers list if empty
             if (baseUrl.isEmpty()) {
-                val configuredServers = kotlinx.coroutines.runBlocking {
+                val configuredServers = try {
                     preferencesManager.getConfiguredServers().first()
+                } catch (e: Exception) {
+                    emptyList()
                 }
+                
                 val firstServer = configuredServers.firstOrNull()
                 if (firstServer != null) {
-                    currentBaseUrl = firstServer.url
                     baseUrl = firstServer.url
+                    // Also attempt to self-heal the preference? No, just use it for now.
                     println("HttpClient: Recovered Base URL from Configured Servers: $baseUrl")
                 }
             }
             
-            println("HttpClient: Intercepting request to ${context.url.buildString()}, currentBaseUrl: '$baseUrl', initial loaded: ${initialUrlLoaded.isCompleted}")
+            println("HttpClient: Intercepting request to ${context.url.buildString()}, resolved baseUrl: '$baseUrl'")
             
             if (baseUrl.isNotEmpty()) {
                 try {
@@ -138,7 +104,7 @@ class HttpClientFactory(
                     context.url.protocol = url.protocol
                     context.url.host = url.host
                     context.url.port = url.port
-                    println("HttpClient: Applied Base URL: ${url.protocol}://${url.host}:${url.port}")
+                    // println("HttpClient: Applied Base URL: ${url.protocol}://${url.host}:${url.port}")
                 } catch (e: Exception) {
                     println("HttpClient: Failed to parse/apply base URL '$baseUrl': ${e.message}")
                 }
@@ -146,7 +112,7 @@ class HttpClientFactory(
                 println("HttpClient: WARNING - Base URL is empty! Request may fail to localhost.")
             }
             
-            // Apply Credentials - Read fresh from Secure Storage to avoid race conditions
+            // Apply Credentials - Read fresh from Secure Storage
             val apiKey = securityManager.retrieveSecureData("underseerr_api_key")
             
             if (!apiKey.isNullOrEmpty() && 
