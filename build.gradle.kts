@@ -35,8 +35,9 @@ buildscript {
                 because("Fixes Denial of Service vulnerability")
             }
             // Fix transitive vulnerabilities in AGP (Netty, JDOM, Jose4j, Guava)
-            classpath("io.netty:netty-codec-http2:4.2.9.Final") { because("Fixes CVE-2024-xxxx") }
-            classpath("io.netty:netty-handler:4.2.9.Final") { because("Fixes CVE-2024-xxxx") }
+            classpath("io.netty:netty-codec:4.2.9.Final") { because("Fixes security vulnerabilities") }
+            classpath("io.netty:netty-codec-http2:4.2.9.Final") { because("Fixes security vulnerabilities") }
+            classpath("io.netty:netty-handler:4.2.9.Final") { because("Fixes security vulnerabilities") }
             classpath("org.jdom:jdom2:2.0.6.1") { because("Fixes XXE vulnerability") }
             classpath("org.bitbucket.b_c:jose4j:0.9.6") { because("Fixes DoS vulnerability") }
             classpath("com.google.guava:guava:33.0.0-android") { because("Fixes insecure temp dir") }
