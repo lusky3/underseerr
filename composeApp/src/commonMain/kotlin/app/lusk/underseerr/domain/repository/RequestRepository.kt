@@ -61,7 +61,7 @@ interface RequestRepository {
      * Refresh requests from server.
      * Property 18: Pull-to-Refresh Data Freshness
      */
-    suspend fun refreshRequests(): Result<Unit>
+    suspend fun refreshRequests(page: Int = 1, pageSize: Int = 20): Result<Unit>
     
     /**
      * Check if media is already requested.

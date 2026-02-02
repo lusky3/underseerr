@@ -215,9 +215,12 @@ class RequestRepositoryImpl(
      * Refresh requests from server.
      * Property 18: Pull-to-Refresh Data Freshness
      */
-    override suspend fun refreshRequests(): Result<Unit> = safeApiCall {
-        // Get current user's requests (would need user ID from auth)
-        val response = requestKtorService.getRequests(take = 100, skip = 0)
+    override suspend fun refreshRequests(page: Int = 1, pageSize: Int = 20): Result<Unit> = safeApiCall {
+        // Calculate offset
+        val skip = (page - 1) * pageSize
+        
+        // Get requests page
+        val response = requestKtorService.getRequests(take = pageSize, skip = skip)
         val requests = response.results.map { it.toMediaRequest() }
         
         // Parallel fetch details for requests missing data
@@ -251,9 +254,19 @@ class RequestRepositoryImpl(
             }
         }
         
-        // Clear old cache and insert fresh data
+        // Update cache
         try {
-            mediaRequestDao.deleteAll()
+            if (page == 1) {
+                // If refreshing the first page, we might want to keep existing data until new data arrives
+                // but to ensure consistency with a "Pull to Refresh" from top, we often clear or overwrite.
+                
+                // However, for "requests disappear" issue:
+                // Be careful not to delete EVERYTHING if we are only fetching page 1 
+                // if we intend to support partial updates.
+                // But typically page 1 refresh implies "reset list".
+                mediaRequestDao.deleteAll()
+            }
+            
             mediaRequestDao.insertAll(hydratedRequests.map { it.toEntity() })
         } catch (e: Exception) {
             println("DB Error in refreshRequests: ${e.message}")

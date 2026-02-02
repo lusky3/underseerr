@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -115,7 +116,7 @@ fun RequestsListScreen(
             isRefreshing = pullRefreshing,
             onRefresh = {
                 pullRefreshing = true
-                viewModel.refreshRequests()
+                viewModel.refreshRequests(isPullToRefresh = true)
             },
             modifier = Modifier
                 .fillMaxSize()
@@ -142,7 +143,9 @@ fun RequestsListScreen(
                         RequestsList(
                             requests = filteredRequests,
                             onRequestClick = onRequestClick,
-                            contentPadding = PaddingValues(top = if (isOffline) 48.dp else 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp)
+                            contentPadding = PaddingValues(top = if (isOffline) 48.dp else 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
+                            onLoadMore = { viewModel.loadMoreRequests() },
+                            isLoadingMore = isLoading && !pullRefreshing
                         )
                     }
                     isOffline -> {
@@ -179,9 +182,24 @@ private fun RequestsList(
     requests: List<MediaRequest>,
     onRequestClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp)
+    contentPadding: PaddingValues = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
+    onLoadMore: () -> Unit = {},
+    isLoadingMore: Boolean = false
 ) {
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    
+    // Pagination trigger
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastIndex ->
+                if (lastIndex != null && lastIndex >= requests.size - 2 && !isLoadingMore) {
+                    onLoadMore()
+                }
+            }
+    }
+
     LazyColumn(
+        state = listState,
         modifier = modifier.fillMaxSize(),
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -191,6 +209,14 @@ private fun RequestsList(
                 request = request,
                 onClick = { onRequestClick(request.id) }
             )
+        }
+        
+        if (isLoadingMore) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                }
+            }
         }
     }
 }
