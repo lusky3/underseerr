@@ -217,6 +217,22 @@ fun PlexAuthScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
+                    if (authState is AuthState.Error) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = MaterialTheme.shapes.small,
+                            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth()
+                        ) {
+                            Text(
+                                text = (authState as AuthState.Error).message,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                     
                     Text(
@@ -286,7 +302,7 @@ private fun LocalLoginForm(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email / Username") },
+            label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )

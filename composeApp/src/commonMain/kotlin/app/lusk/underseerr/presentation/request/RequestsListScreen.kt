@@ -160,7 +160,7 @@ fun RequestsListScreen(
                 }
                 
                 // 2. Overlays
-                if (isLoading && !pullRefreshing) {
+                if (isLoading && !pullRefreshing && !hasCachedData) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )

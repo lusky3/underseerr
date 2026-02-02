@@ -38,10 +38,15 @@ class HttpClientFactory(
         prettyPrint = true
     }
 
+    private val initialUrlLoaded = kotlinx.coroutines.CompletableDeferred<Unit>()
+
     init {
         scope.launch {
             preferencesManager.getServerUrl().collectLatest { url ->
                 currentBaseUrl = url ?: ""
+                if (!initialUrlLoaded.isCompleted) {
+                    initialUrlLoaded.complete(Unit)
+                }
             }
         }
         
@@ -78,10 +83,7 @@ class HttpClientFactory(
             // Base URL configuration
             expectSuccess = true
             defaultRequest {
-                val baseUrl = currentBaseUrl
-                if (baseUrl.isNotEmpty()) {
-                    url(baseUrl)
-                }
+                // We don't set URL here because we can't suspend to wait for initialization
                 contentType(ContentType.Application.Json)
                 header("Accept", "application/json")
                 header("User-Agent", "Underseerr/1.0.0 (Android)")
@@ -90,6 +92,24 @@ class HttpClientFactory(
 
         // Intercept requests to inject headers asynchronously
         client.requestPipeline.intercept(io.ktor.client.request.HttpRequestPipeline.State) {
+            // Wait for initial URL to be loaded from preferences
+            if (!initialUrlLoaded.isCompleted) {
+                try {
+                    // Timeout after 2 seconds to avoid blocking forever if something is wrong
+                    kotlinx.coroutines.withTimeout(2000) {
+                        initialUrlLoaded.await()
+                    }
+                } catch (e: Exception) {
+                    // Ignore timeout, proceed with (potentially empty) URL
+                }
+            }
+
+            // Apply Base URL
+            val baseUrl = currentBaseUrl
+            if (baseUrl.isNotEmpty()) {
+                context.url(baseUrl)
+            }
+            
             // Apply API Key if available
             val apiKey = currentApiKey
             

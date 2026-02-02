@@ -36,7 +36,7 @@ class ProfileViewModel(
     private val _statistics = MutableStateFlow<app.lusk.underseerr.domain.model.UserStatistics?>(null)
     val statistics: StateFlow<app.lusk.underseerr.domain.model.UserStatistics?> = _statistics.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
+    private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _isRefreshingStats = MutableStateFlow(false)
