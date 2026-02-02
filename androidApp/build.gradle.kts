@@ -32,6 +32,18 @@ android {
         }
     }
 
+    signingConfigs {
+        val keystorePath = System.getenv("KEYSTORE_PATH")
+        if (keystorePath != null) {
+            create("release") {
+                storeFile = rootProject.file(keystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
@@ -48,7 +60,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug") // TODO: Configure release signing
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             // Sentry DSN - empty by default, set via SENTRY_DSN env var
             buildConfigField("String", "SENTRY_DSN", "\"${System.getenv("SENTRY_DSN") ?: ""}\"")
         }

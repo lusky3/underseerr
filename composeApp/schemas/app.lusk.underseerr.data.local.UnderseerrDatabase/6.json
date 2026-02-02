@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 6,
-    "identityHash": "a2433969f6bbd8fb6c65fda647e2dec2",
+    "identityHash": "a7582ca327b0f531b51eafd3aeb1cb39",
     "entities": [
       {
         "tableName": "cached_movies",
@@ -336,7 +336,7 @@
       },
       {
         "tableName": "user_profile",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `email` TEXT NOT NULL, `displayName` TEXT NOT NULL, `avatar` TEXT, `isPlexUser` INTEGER NOT NULL, `permissions` INTEGER NOT NULL, `requestCount` INTEGER NOT NULL, `movieLimit` INTEGER, `movieRemaining` INTEGER, `movieDays` INTEGER, `tvLimit` INTEGER, `tvRemaining` INTEGER, `tvDays` INTEGER, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `email` TEXT, `displayName` TEXT NOT NULL, `avatar` TEXT, `isPlexUser` INTEGER NOT NULL, `permissions` INTEGER NOT NULL, `requestCount` INTEGER NOT NULL, `movieLimit` INTEGER, `movieRemaining` INTEGER, `movieDays` INTEGER, `tvLimit` INTEGER, `tvRemaining` INTEGER, `tvDays` INTEGER, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -347,8 +347,7 @@
           {
             "fieldPath": "email",
             "columnName": "email",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "displayName",
@@ -456,7 +455,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a2433969f6bbd8fb6c65fda647e2dec2')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a7582ca327b0f531b51eafd3aeb1cb39')"
     ]
   }
 }

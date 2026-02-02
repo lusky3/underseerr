@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.view.WindowCompat
+import androidx.compose.ui.unit.dp
 import app.lusk.underseerr.domain.repository.ThemePreference
 
 /**

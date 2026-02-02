@@ -22,13 +22,17 @@
 -keepclasseswithmembers class kotlinx.serialization.json.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class com.example.overseerr_client.**$$serializer { *; }
--keepclassmembers class com.example.overseerr_client.** {
+
+-keep,includedescriptorclasses class app.lusk.underseerr.**$$serializer { *; }
+-keepclassmembers class app.lusk.underseerr.** {
     *** Companion;
 }
--keepclasseswithmembers class com.example.overseerr_client.** {
+-keepclasseswithmembers class app.lusk.underseerr.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# Kotlin 2.3+ workaround
+-dontwarn kotlin.time.**
 
 # OkHttp
 -dontwarn okhttp3.**
@@ -48,5 +52,5 @@
 }
 
 # Keep data classes
--keep class com.example.overseerr_client.data.** { *; }
--keep class com.example.overseerr_client.domain.** { *; }
+-keep class app.lusk.underseerr.data.** { *; }
+-keep class app.lusk.underseerr.domain.** { *; }

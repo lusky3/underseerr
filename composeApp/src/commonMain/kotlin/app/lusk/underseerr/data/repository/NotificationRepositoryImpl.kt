@@ -64,7 +64,7 @@ class NotificationRepositoryImpl(
         if (userResult is app.lusk.underseerr.domain.model.Result.Success) {
             val user = userResult.data
             try {
-                val webhookSecret = preferencesManager.getWebhookSecret().first()
+                val webhookSecret = settingsRepository.getWebhookSecret().first()
                 notificationServerService.registerToken(
                     serverUrl = cleanUrl,
                     email = user.email ?: "",

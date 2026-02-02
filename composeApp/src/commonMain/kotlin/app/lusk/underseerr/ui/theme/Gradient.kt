@@ -4,9 +4,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 
 fun solidBrush(color: Color): Brush = Brush.linearGradient(listOf(color, color))

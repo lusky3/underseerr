@@ -39,7 +39,8 @@ import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
  * Masks an email address for privacy display.
  * Example: "example@email.com" -> "ex*****@e****.com"
  */
-private fun maskEmail(email: String): String {
+private fun maskEmail(email: String?): String {
+    if (email == null) return ""
     if (!email.contains("@")) return email
     
     val parts = email.split("@")

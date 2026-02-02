@@ -24,7 +24,7 @@ class AndroidBillingManager(
 
     private val billingClient = BillingClient.newBuilder(context)
         .setListener(this)
-        .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimePurchases().build())
+        .enablePendingPurchases(PendingPurchasesParams.newBuilder().build())
         .build()
 
     private val _isSubscribed = MutableStateFlow(false)

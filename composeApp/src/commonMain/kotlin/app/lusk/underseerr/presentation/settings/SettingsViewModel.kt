@@ -263,6 +263,7 @@ class SettingsViewModel(
                      settingsRepository.updateNotificationSettings(settings)
                      
                      // Force re-registration to ensure server Web Push setting is enabled
+                     val webhookSecret = settingsRepository.getWebhookSecret().first()
                      val cachedToken = settingsRepository.getPushToken().first()
                      if (cachedToken != null) {
                         launch {
@@ -442,7 +443,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.updateWebhookSecret(secret)
             // Trigger re-registration to update server
-            notificationRepository.registerForPushNotifications()
+            val token = settingsRepository.getPushToken().first()
+            if (token != null) {
+                notificationRepository.registerForPushNotifications(token)
+            }
         }
     }
 
