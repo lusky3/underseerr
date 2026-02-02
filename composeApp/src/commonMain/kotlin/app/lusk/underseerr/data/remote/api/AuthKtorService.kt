@@ -34,8 +34,8 @@ class AuthKtorService(private val client: HttpClient) {
         client.post("/api/v1/auth/logout")
     }
     
-    suspend fun getServerInfo(): ApiServerInfo {
-        return client.get("/api/v1/status").body()
+    suspend fun getServerInfo(): io.ktor.client.statement.HttpResponse {
+        return client.get("/api/v1/status")
     }
 }
 

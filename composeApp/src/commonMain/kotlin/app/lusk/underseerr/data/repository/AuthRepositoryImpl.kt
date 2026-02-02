@@ -62,7 +62,16 @@ class AuthRepositoryImpl(
             
             // Try to fetch server info to validate connectivity
             val result = safeApiCall {
-                authKtorService.getServerInfo()
+                val response = authKtorService.getServerInfo()
+                println("AuthRepository: Status: ${response.status}, Content-Type: ${response.headers["Content-Type"]}")
+                val bodyString = response.body<String>()
+                println("AuthRepository: Body: $bodyString")
+                
+                val json = kotlinx.serialization.json.Json { 
+                    ignoreUnknownKeys = true 
+                    coerceInputValues = true
+                }
+                json.decodeFromString<app.lusk.underseerr.data.remote.model.ApiServerInfo>(bodyString)
             }
             
             when (result) {
