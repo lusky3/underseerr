@@ -18,36 +18,40 @@
     },
     "env": {
         "staging": {
-            "name": "underseerr-notifications-staging",
+            "name": "underseerr-pro-api-staging",
             "vars": {
                 "MODE": "STAGING"
             },
             "kv_namespaces": [
                 {
-                    "binding": "TOKENS"
+                    "binding": "TOKENS",
+                    "id": "PRO_TOKENS_KV_ID_STAGING"
                 }
             ],
             "d1_databases": [
                 {
                     "binding": "DB",
-                    "database_name": "underseerr-billing-staging"
+                    "database_name": "underseerr-pro-api-d1-staging",
+                    "database_id": "PRO_BILLING_D1_ID_STAGING"
                 }
             ]
         },
         "production": {
-            "name": "underseerr-notifications-prod",
+            "name": "underseerr-pro-api-prod",
             "vars": {
                 "MODE": "PRO"
             },
             "kv_namespaces": [
                 {
-                    "binding": "TOKENS"
+                    "binding": "TOKENS",
+                    "id": "PRO_TOKENS_KV_ID_PROD"
                 }
             ],
             "d1_databases": [
                 {
                     "binding": "DB",
-                    "database_name": "underseerr-billing-prod"
+                    "database_name": "underseerr-pro-api-d1-prod",
+                    "database_id": "PRO_BILLING_D1_ID_PROD"
                 }
             ]
         }

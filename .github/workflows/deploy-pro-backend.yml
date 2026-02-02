@@ -60,7 +60,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_STAGING }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON_STAGING }}
+          
+          # Resource IDs
+          KV_ID: ${{ secrets.CLOUDFLARE_UNDERSEERR_PRO_KV_ID_STAGING }}
+          D1_ID: ${{ secrets.CLOUDFLARE_UNDERSEERR_PRO_D1_ID_STAGING }}
         run: |
+          # Inject Resource IDs
+          sed -i "s/PRO_TOKENS_KV_ID_STAGING/$KV_ID/g" wrangler.jsonc
+          sed -i "s/PRO_BILLING_D1_ID_STAGING/$D1_ID/g" wrangler.jsonc
+        
           echo "$GOOGLE_CREDENTIALS" | npx wrangler secret put GOOGLE_APPLICATION_CREDENTIALS_JSON --env staging
           npx wrangler deploy --env staging
 
@@ -87,7 +95,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_PROD }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON_PROD }}
+          
+          # Resource IDs
+          KV_ID: ${{ secrets.CLOUDFLARE_UNDERSEERR_PRO_KV_ID_PROD }}
+          D1_ID: ${{ secrets.CLOUDFLARE_UNDERSEERR_PRO_D1_ID_PROD }}
         run: |
+          # Inject Resource IDs
+          sed -i "s/PRO_TOKENS_KV_ID_PROD/$KV_ID/g" wrangler.jsonc
+          sed -i "s/PRO_BILLING_D1_ID_PROD/$D1_ID/g" wrangler.jsonc
+        
           # Upload Secret exactly as is (Base64)
           echo "$GOOGLE_CREDENTIALS" | npx wrangler secret put GOOGLE_APPLICATION_CREDENTIALS_JSON --env production
           
