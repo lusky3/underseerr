@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -72,61 +73,124 @@ class HttpClientFactory(
 
         // Intercept requests to inject headers asynchronously
         client.requestPipeline.intercept(io.ktor.client.request.HttpRequestPipeline.State) {
-            // Read Base URL directly from preferences (suspend call is allowed here)
+            // 1. Initial resolution
             var baseUrl = try {
-                 preferencesManager.getServerUrl().first() ?: ""
-            } catch (e: Exception) {
-                 println("HttpClient: Error reading server URL: ${e.message}")
-                 ""
-            }
+                 preferencesManager.getServerUrl().first()?.trim() ?: ""
+            } catch (e: Exception) { "" }
+
+            // 2. Determine if this is an API request that needs a server URL
+            // If the URL is currently targeting localhost, it means we're making a relative API call
+            val isApiRequest = context.url.host == "localhost" || context.url.host.isEmpty()
             
-            // Fallback: check configured servers list if empty
-            if (baseUrl.isEmpty()) {
-                val configuredServers = try {
-                    preferencesManager.getConfiguredServers().first()
-                } catch (e: Exception) {
-                    emptyList()
+            // 3. Identify if we have ANY authentication data (API key or Session Cookie)
+            val existingApiKey = securityManager.retrieveSecureData("underseerr_api_key")
+            val existingCookie = securityManager.retrieveSecureData("cookie_auth_token")
+            val hasAuthData = (!existingApiKey.isNullOrEmpty() && existingApiKey != "no_api_key") || 
+                              !existingCookie.isNullOrEmpty()
+
+            // 4. Retry Loop: ALWAYS wait for URL if making an API request and URL is empty
+            // This handles the race condition during first login where ViewModels start before DataStore propagates
+            if (baseUrl.isEmpty() && isApiRequest) {
+                println("HttpClient: URL missing for API request (Auth present: $hasAuthData). Starting recovery efforts...")
+                
+                var retries = 0
+                // Always wait up to 3 seconds for API requests (first login scenario)
+                val maxRetries = 30
+                
+                while (baseUrl.isEmpty() && retries < maxRetries) {
+                    kotlinx.coroutines.delay(100)
+                    
+                    // A. Try primary preference again
+                    baseUrl = try { preferencesManager.getServerUrl().first()?.trim() ?: "" } catch (e: Exception) { "" }
+                    
+                    // B. Try configured servers list as fallback
+                    if (baseUrl.isEmpty()) {
+                        val servers = try { preferencesManager.getConfiguredServers().first() } catch (e: Exception) { emptyList() }
+                        baseUrl = servers.firstOrNull { it.isActive }?.url?.trim() ?: servers.firstOrNull()?.url?.trim() ?: ""
+                    }
+                    
+                    // C. Also check if auth data appeared (might help with timing)
+                    if (baseUrl.isEmpty() && retries % 5 == 0) {
+                        val newApiKey = securityManager.retrieveSecureData("underseerr_api_key")
+                        val newCookie = securityManager.retrieveSecureData("cookie_auth_token")
+                        if ((!newApiKey.isNullOrEmpty() && newApiKey != "no_api_key") || !newCookie.isNullOrEmpty()) {
+                            println("HttpClient: Auth data appeared at retry $retries, continuing to wait for URL...")
+                        }
+                    }
+                    
+                    if (baseUrl.isNotEmpty()) {
+                        println("HttpClient: Recovered Base URL after ${retries * 100}ms: $baseUrl")
+                        break
+                    }
+                    retries++
                 }
                 
-                val firstServer = configuredServers.firstOrNull()
-                if (firstServer != null) {
-                    baseUrl = firstServer.url
-                    // Also attempt to self-heal the preference? No, just use it for now.
-                    println("HttpClient: Recovered Base URL from Configured Servers: $baseUrl")
+                if (baseUrl.isEmpty()) {
+                    println("HttpClient: Failed to recover Base URL after 3s. Request will fail.")
                 }
             }
             
-            println("HttpClient: Intercepting request to ${context.url.buildString()}, resolved baseUrl: '$baseUrl'")
-            
+            // 4. Apply Base URL if found
             if (baseUrl.isNotEmpty()) {
-                try {
-                    val url = Url(baseUrl)
-                    context.url.protocol = url.protocol
-                    context.url.host = url.host
-                    context.url.port = url.port
-                    // println("HttpClient: Applied Base URL: ${url.protocol}://${url.host}:${url.port}")
-                } catch (e: Exception) {
-                    println("HttpClient: Failed to parse/apply base URL '$baseUrl': ${e.message}")
+                val currentHost = context.url.host
+                val isRelative = currentHost == "localhost" || 
+                                currentHost == "127.0.0.1" || 
+                                currentHost == "10.0.2.2" || 
+                                currentHost.isEmpty()
+                
+                if (isRelative) {
+                    try {
+                        val newBase = io.ktor.http.Url(baseUrl)
+                        
+                        // Apply protocol, host, and port
+                        context.url.protocol = newBase.protocol
+                        context.url.host = newBase.host
+                        context.url.port = newBase.port
+                    
+                        // Handle sub-paths in the base URL (e.g. https://domain.com/overseerr)
+                        val baseSegments = newBase.pathSegments.filter { it.isNotEmpty() }
+                        if (baseSegments.isNotEmpty()) {
+                            val originalSegments = context.url.pathSegments.filter { it.isNotEmpty() }
+                            context.url.pathSegments = baseSegments + originalSegments
+                        }
+                        
+                        // Let Ktor handle Host header automatically unless we have a reason to force it
+                        context.headers.remove("Host") 
+                        
+                        println("HttpClient: [SUCCESS] Request targeting: ${context.url.buildString()}")
+                    } catch (e: Exception) {
+                        println("HttpClient: [ERROR] Failed to apply Base URL '$baseUrl': ${e.message}")
+                    }
+                } else {
+                     println("HttpClient: [PASS] Already targeting external host: ${context.url.host}")
                 }
             } else {
-                println("HttpClient: WARNING - Base URL is empty! Request may fail to localhost.")
+                println("HttpClient: [CRITICAL] No Base URL found for ${context.url.buildString()}. This request will likely fail to localhost.")
             }
             
-            // Apply Credentials - Read fresh from Secure Storage
-            val apiKey = securityManager.retrieveSecureData("underseerr_api_key")
+            // 5. Apply Credentials - Read fresh from Secure Storage
+            // ONLY apply Overseerr credentials to requests targeting our server
+            val isOverseerrRequest = !context.url.host.contains("plex.tv") && baseUrl.isNotEmpty() && context.url.host == io.ktor.http.Url(baseUrl).host
             
-            if (!apiKey.isNullOrEmpty() && 
-                apiKey != "SESSION_COOKIE" && 
-                apiKey != "no_api_key" && 
-                !apiKey.contains("@")
-            ) {
-                context.headers["X-Api-Key"] = apiKey
-            } else {
-                // If no API key, check for session cookie from SecurityManager
-                val cookie = securityManager.retrieveSecureData("cookie_auth_token")
-                if (!cookie.isNullOrEmpty()) {
-                     context.headers["Cookie"] = cookie
+            if (isOverseerrRequest) {
+                val apiKey = securityManager.retrieveSecureData("underseerr_api_key")
+                
+                if (!apiKey.isNullOrEmpty() && 
+                    apiKey != "SESSION_COOKIE" && 
+                    apiKey != "no_api_key" && 
+                    !apiKey.contains("@")
+                ) {
+                    context.headers["X-Api-Key"] = apiKey
+                } else {
+                    // If no API key, check for session cookie from SecurityManager
+                    val cookie = securityManager.retrieveSecureData("cookie_auth_token")
+                    if (!cookie.isNullOrEmpty()) {
+                         context.headers["Cookie"] = cookie
+                    }
                 }
+            } else {
+                // For non-Overseerr requests (like Plex), do NOT send our credentials
+                // This prevents bleeding API keys or Overseerr cookies to external sites
             }
         }
         

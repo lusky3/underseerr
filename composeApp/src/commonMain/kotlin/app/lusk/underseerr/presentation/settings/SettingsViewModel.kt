@@ -159,8 +159,20 @@ class SettingsViewModel(
         }
         
         viewModelScope.launch {
-            settingsRepository.getNotificationSettings().collect {
-                _notificationSettings.value = it
+            settingsRepository.getNotificationSettings().collect { settings ->
+                // Sync enabled state with actual permission status
+                val permission = app.lusk.underseerr.domain.permission.Permission.NOTIFICATIONS
+                val isGranted = permissionManager.isPermissionGranted(permission)
+                
+                // If permission is not granted but settings show enabled, disable it
+                if (settings.enabled && !isGranted) {
+                    val correctedSettings = settings.copy(enabled = false)
+                    _notificationSettings.value = correctedSettings
+                    // Also persist the corrected state
+                    settingsRepository.updateNotificationSettings(correctedSettings)
+                } else {
+                    _notificationSettings.value = settings
+                }
             }
         }
         

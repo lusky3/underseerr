@@ -60,8 +60,9 @@ interface RequestRepository {
     /**
      * Refresh requests from server.
      * Property 18: Pull-to-Refresh Data Freshness
+     * @return Result containing Pair(itemsFetchedInThisPage, totalItemsOnServer)
      */
-    suspend fun refreshRequests(page: Int, pageSize: Int): Result<Int>
+    suspend fun refreshRequests(page: Int, pageSize: Int): Result<Pair<Int, Int>>
     
     /**
      * Check if media is already requested.

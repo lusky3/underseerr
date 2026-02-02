@@ -32,6 +32,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToServerManagement: () -> Unit,
     onNavigateToVibrantCustomization: () -> Unit,
+    showPremiumPaywallOnStart: Boolean = false,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val themePreference by viewModel.themePreference.collectAsState()
@@ -60,7 +61,14 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showMovieProfileDialog by remember { mutableStateOf(false) }
     var showTvProfileDialog by remember { mutableStateOf(false) }
-    var showPaywallDialog by remember { mutableStateOf<String?>(null) } // Context message
+    var showPaywallDialog by remember { mutableStateOf<String?>(null) }
+    
+    // Auto-open premium paywall if navigated from Profile for Vibrant theme
+    LaunchedEffect(showPremiumPaywallOnStart) {
+        if (showPremiumPaywallOnStart) {
+            showPaywallDialog = "The Vibrant theme is a premium feature."
+        }
+    } // Context message
     
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -723,31 +731,28 @@ private fun ThemeSelectionDialog(
                             .fillMaxWidth()
                             .clickable { onThemeSelected(theme) }
                             .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = when (theme) {
-                                    ThemePreference.LIGHT -> "Light"
-                                    ThemePreference.DARK -> "Dark"
-                                    ThemePreference.SYSTEM -> "System default"
-                                    ThemePreference.VIBRANT -> "Vibrant"
-                                }
-                            )
-                            if (theme == ThemePreference.VIBRANT && !subscriptionStatus.isPremium) {
-                                Icon(
-                                    imageVector = Icons.Default.Lock,
-                                    contentDescription = "Premium",
-                                    modifier = Modifier.size(16.dp).padding(start = 8.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                        RadioButton(
+                            selected = theme == currentTheme,
+                            onClick = null
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = when (theme) {
+                                ThemePreference.LIGHT -> "Light"
+                                ThemePreference.DARK -> "Dark"
+                                ThemePreference.SYSTEM -> "System default"
+                                ThemePreference.VIBRANT -> "Vibrant"
                             }
-                        }
-                        if (theme == currentTheme) {
+                        )
+                        // Show lock icon for Vibrant if not premium
+                        if (theme == ThemePreference.VIBRANT && !subscriptionStatus.isPremium) {
+                            Spacer(modifier = Modifier.width(8.dp))
                             Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Selected",
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Premium",
+                                modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }

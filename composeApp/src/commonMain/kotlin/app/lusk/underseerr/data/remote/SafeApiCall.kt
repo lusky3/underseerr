@@ -73,6 +73,7 @@ fun Throwable.toAppError(): AppError {
             message = "Request timed out. Please try again.",
             cause = this
         )
+
         is kotlinx.serialization.SerializationException -> AppError.ParseError(
             message = "Failed to parse server response.",
             cause = this
@@ -81,10 +82,22 @@ fun Throwable.toAppError(): AppError {
             message = "Server returned an unexpected format. Please check the URL and ensure it points to an Overseerr instance.",
             cause = this
         )
-        else -> AppError.UnknownError(
-            message = message ?: "An unexpected error occurred",
-            cause = this
-        )
+        else -> {
+            val msg = message ?: ""
+            if (msg.contains("Host", ignoreCase = true) || 
+                msg.contains("Connect", ignoreCase = true) || 
+                msg.contains("Connection", ignoreCase = true)) {
+                AppError.NetworkError(
+                    message = "Connection failed: Please check your internet and server URL.",
+                    cause = this
+                )
+            } else {
+                AppError.UnknownError(
+                    message = msg.ifEmpty { "An unexpected error occurred" },
+                    cause = this
+                )
+            }
+        }
     }
 }
 

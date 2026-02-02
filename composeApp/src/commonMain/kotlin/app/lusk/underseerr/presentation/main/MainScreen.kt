@@ -8,19 +8,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavDestination
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import app.lusk.underseerr.navigation.UnderseerrNavHost
 import app.lusk.underseerr.navigation.Screen
-import app.lusk.underseerr.presentation.discovery.DiscoveryViewModel
-import app.lusk.underseerr.presentation.issue.IssueViewModel
-import app.lusk.underseerr.presentation.profile.ProfileViewModel
-import app.lusk.underseerr.presentation.request.RequestViewModel
-import org.koin.compose.viewmodel.koinViewModel
 import app.lusk.underseerr.ui.adaptive.*
+
 
 /**
  * Main screen with bottom navigation and content.
@@ -34,12 +29,6 @@ fun MainScreen(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    
-    // Shared ViewModels for main tabs to prevent recreation/refreshing
-    val discoveryViewModel: DiscoveryViewModel = koinViewModel()
-    val requestViewModel: RequestViewModel = koinViewModel()
-    val issueViewModel: IssueViewModel = koinViewModel()
-    val profileViewModel: ProfileViewModel = koinViewModel()
     
     // Simplified navigation visibility - just check if it's a main tab
     val showNavigation = currentDestination?.let { dest ->
@@ -108,13 +97,10 @@ fun MainScreen(
                     )
                 }
                 
-                // Main content
+                // Main content - ViewModels are created inside UnderseerrNavHost when needed
                 UnderseerrNavHost(
                     navController = navController,
-                    discoveryViewModel = discoveryViewModel,
-                    requestViewModel = requestViewModel,
-                    issueViewModel = issueViewModel,
-                    profileViewModel = profileViewModel,
+                    startDestination = startDestination,
                     modifier = Modifier.fillMaxSize()
                 )
             }

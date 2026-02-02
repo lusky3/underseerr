@@ -37,9 +37,10 @@ class AuthRepositoryImpl(
     }
     
     override suspend fun validateServerUrl(url: String, allowHttp: Boolean): Result<ServerInfo> {
+        val cleanUrl = url.trim()
         return try {
             // Validate URL format
-            if (!isValidUrl(url)) {
+            if (!isValidUrl(cleanUrl)) {
                 return Result.error(
                     app.lusk.underseerr.domain.model.AppError.ValidationError(
                         "Invalid server URL format. Must be a valid HTTP/HTTPS URL."
@@ -48,8 +49,8 @@ class AuthRepositoryImpl(
             }
             
             // Enforce HTTPS for security (except for localhost in debug or if explicitly allowed)
-            val isLocalhost = url.contains("localhost", ignoreCase = true) || url.contains("127.0.0.1")
-            if (!url.startsWith("https://", ignoreCase = true) && !isLocalhost && !allowHttp) {
+            val isLocalhost = cleanUrl.contains("localhost", ignoreCase = true) || cleanUrl.contains("127.0.0.1")
+            if (!cleanUrl.startsWith("https://", ignoreCase = true) && !isLocalhost && !allowHttp) {
                 return Result.error(
                     app.lusk.underseerr.domain.model.AppError.ValidationError(
                         "Server URL must use HTTPS for security."
@@ -58,7 +59,7 @@ class AuthRepositoryImpl(
             }
             
             // Store server URL
-            preferencesManager.setServerUrl(url)
+            preferencesManager.setServerUrl(cleanUrl)
             
             // Try to fetch server info to validate connectivity
             val result = safeApiCall {
@@ -72,8 +73,8 @@ class AuthRepositoryImpl(
                     // Add to configured servers list
                     preferencesManager.addServer(
                         app.lusk.underseerr.domain.repository.ServerConfig(
-                            url = url,
-                            name = "Server ${url.replace("https://", "").replace("http://", "").substringBefore("/")}",
+                            url = cleanUrl,
+                            name = "Server ${cleanUrl.replace("https://", "").replace("http://", "").substringBefore("/")}",
                             isActive = true
                         )
                     )

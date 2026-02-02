@@ -81,7 +81,7 @@ private fun maskEmail(email: String?): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onNavigateToSettings: () -> Unit,
+    onNavigateToSettings: (showPremiumPaywall: Boolean) -> Unit,
     onNavigateToAbout: () -> Unit = {},
     onNavigateToRequests: (String?) -> Unit = {},
     onLogout: () -> Unit,
@@ -99,11 +99,23 @@ fun ProfileScreen(
     val authState by authViewModel.authState.collectAsState()
     val notificationSettings by settingsViewModel.notificationSettings.collectAsState()
     val themePreference by settingsViewModel.themePreference.collectAsState()
+    val subscriptionStatus by settingsViewModel.subscriptionStatus.collectAsState()
+    
+    var showPremiumDialog by remember { mutableStateOf(false) }
 
-    // Handle logout navigation
-    androidx.compose.runtime.LaunchedEffect(authState) {
-        if (authState is AuthState.Unauthenticated) {
+    // Track previous auth state to detect actual logouts vs initial state
+    var wasAuthenticated by remember { mutableStateOf(false) }
+    
+    // Handle logout navigation - only navigate if user was previously authenticated
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Authenticated) {
+            wasAuthenticated = true
+        } else if (authState is AuthState.Unauthenticated && wasAuthenticated) {
+            // Only logout if we were previously authenticated (explicit logout)
             onLogout()
+        } else if (authState is AuthState.LoggingOut) {
+            // LoggingOut state means explicit logout requested
+            wasAuthenticated = true // Ensure the subsequent Unauthenticated triggers logout
         }
     }
     
@@ -197,7 +209,7 @@ fun ProfileScreen(
                                             onRetry = { viewModel.refresh() },
                                             modifier = Modifier.padding(vertical = 16.dp)
                                         )
-                                        Button(onClick = onNavigateToSettings) {
+                                        Button(onClick = { onNavigateToSettings(false) }) {
                                             Text("Open Settings")
                                         }
                                     }
@@ -212,7 +224,14 @@ fun ProfileScreen(
                                     isRefreshingStats = isRefreshingStats,
                                     notificationSettings = notificationSettings,
                                     themePreference = themePreference,
-                                    onUpdateTheme = { settingsViewModel.updateTheme(it) },
+                                    isPremium = subscriptionStatus.isPremium,
+                                    onUpdateTheme = { theme ->
+                                        if (theme == ThemePreference.VIBRANT && !subscriptionStatus.isPremium) {
+                                            showPremiumDialog = true
+                                        } else {
+                                            settingsViewModel.updateTheme(theme)
+                                        }
+                                    },
                                     onUpdateNotificationSettings = { settingsViewModel.updateNotificationSettings(it) },
                                     onNotificationsClick = { showNotificationsDialog = true },
                                     onLanguageClick = {
@@ -220,7 +239,7 @@ fun ProfileScreen(
                                             snackbarHostState.showSnackbar("Help wanted!")
                                         }
                                     },
-                                    onNavigateToSettings = onNavigateToSettings,
+                                    onNavigateToSettings = { onNavigateToSettings(false) },
                                     onNavigateToAbout = onNavigateToAbout,
                                     onNavigateToRequests = onNavigateToRequests,
                                     onLogout = { authViewModel.logout() }
@@ -264,6 +283,14 @@ fun ProfileScreen(
             onDismiss = { showNotificationsDialog = false }
         )
     }
+    
+    // When Vibrant theme is selected without premium, navigate to Settings with premium paywall
+    LaunchedEffect(showPremiumDialog) {
+        if (showPremiumDialog) {
+            showPremiumDialog = false
+            onNavigateToSettings(true) // Show premium paywall on Settings screen
+        }
+    }
 }
 
 @Composable
@@ -274,6 +301,7 @@ private fun ProfileContent(
     isRefreshingStats: Boolean,
     notificationSettings: NotificationSettings,
     themePreference: ThemePreference,
+    isPremium: Boolean,
     onUpdateTheme: (ThemePreference) -> Unit,
     onUpdateNotificationSettings: (NotificationSettings) -> Unit,
     onNotificationsClick: () -> Unit,
@@ -545,14 +573,27 @@ private fun ProfileContent(
                                                 showThemeDialog = false
                                             }
                                             .padding(vertical = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        RadioButton(
-                                            selected = theme == themePreference,
-                                            onClick = null
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(text = title)
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            RadioButton(
+                                                selected = theme == themePreference,
+                                                onClick = null
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(text = title)
+                                            // Show lock icon for Vibrant if not premium
+                                            if (theme == ThemePreference.VIBRANT && !isPremium) {
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Icon(
+                                                    imageVector = androidx.compose.material.icons.Icons.Default.Lock,
+                                                    contentDescription = "Premium",
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -585,7 +626,7 @@ private fun ProfileContent(
                     icon = Icons.Default.Settings,
                     title = "More Settings",
                     subtitle = "Default profiles, server management",
-                    onClick = onNavigateToSettings
+                    onClick = { onNavigateToSettings() }
                 )
                 
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))

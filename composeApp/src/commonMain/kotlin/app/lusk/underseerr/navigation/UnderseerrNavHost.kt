@@ -32,10 +32,6 @@ import app.lusk.underseerr.presentation.settings.*
 fun UnderseerrNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    discoveryViewModel: DiscoveryViewModel = koinViewModel(),
-    requestViewModel: RequestViewModel = koinViewModel(),
-    issueViewModel: IssueViewModel = koinViewModel(),
-    profileViewModel: ProfileViewModel = koinViewModel(),
     startDestination: Screen = Screen.Splash
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -131,8 +127,9 @@ fun UnderseerrNavHost(
         }
         
         composable<Screen.Home> {
+            val viewModel: DiscoveryViewModel = koinViewModel()
             HomeScreen(
-                viewModel = discoveryViewModel,
+                viewModel = viewModel,
                 onMovieClick = { movieId ->
                     navController.navigate(Screen.MediaDetails("movie", movieId))
                 },
@@ -200,8 +197,9 @@ fun UnderseerrNavHost(
 
         composable<Screen.Requests> { backStackEntry ->
             val args = backStackEntry.toRoute<Screen.Requests>()
+            val viewModel: RequestViewModel = koinViewModel()
             RequestsListScreen(
-                viewModel = requestViewModel,
+                viewModel = viewModel,
                 initialFilter = args.filter,
                 onRequestClick = { requestId ->
                     navController.navigate(Screen.RequestDetails(requestId))
@@ -229,8 +227,9 @@ fun UnderseerrNavHost(
         }
         
         composable<Screen.Issues> {
+            val viewModel: IssueViewModel = koinViewModel()
             IssuesListScreen(
-                viewModel = issueViewModel,
+                viewModel = viewModel,
                 onIssueClick = { issueId ->
                     navController.navigate(Screen.IssueDetails(issueId))
                 }
@@ -252,9 +251,10 @@ fun UnderseerrNavHost(
         }
         
         composable<Screen.Profile> {
+            val viewModel: ProfileViewModel = koinViewModel()
             ProfileScreen(
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings)
+                onNavigateToSettings = { showPremiumPaywall ->
+                    navController.navigate(Screen.Settings(showPremiumPaywall = showPremiumPaywall))
                 },
                 onNavigateToAbout = {
                     navController.navigate(Screen.About)
@@ -268,7 +268,7 @@ fun UnderseerrNavHost(
                         popUpTo<Screen.Home> { inclusive = true }
                     }
                 },
-                viewModel = profileViewModel
+                viewModel = viewModel
             )
         }
         
@@ -277,8 +277,10 @@ fun UnderseerrNavHost(
             exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
             popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
             popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
-        ) {
+        ) { backStackEntry ->
+            val settings = backStackEntry.toRoute<Screen.Settings>()
             SettingsScreen(
+                showPremiumPaywallOnStart = settings.showPremiumPaywall,
                 onNavigateToServerManagement = {
                     navController.navigate(Screen.ServerManagement)
                 },

@@ -15,6 +15,7 @@ import app.lusk.underseerr.domain.repository.RootFolder
 import app.lusk.underseerr.domain.sync.SyncScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.*
 import kotlinx.datetime.Clock as KClock
 
 /**
@@ -215,65 +216,73 @@ class RequestRepositoryImpl(
      * Refresh requests from server.
      * Property 18: Pull-to-Refresh Data Freshness
      */
-    override suspend fun refreshRequests(page: Int, pageSize: Int): Result<Int> = safeApiCall {
+    override suspend fun refreshRequests(page: Int, pageSize: Int): Result<Pair<Int, Int>> = safeApiCall {
         // Calculate offset
         val skip = (page - 1) * pageSize
+        println("RequestRepositoryImpl: Calling getRequests(take=$pageSize, skip=$skip)")
         
         // Get requests page
         val response = requestKtorService.getRequests(take = pageSize, skip = skip)
         val requests = response.results.map { it.toMediaRequest() }
         
-        // Parallel fetch details for requests missing data
-        val hydratedRequests = requests.map { request ->
-            if (request.title == "Title Unavailable" || request.posterPath == null) {
-                // Fetch details
-                val hydrated = try {
-                    if (request.mediaType == app.lusk.underseerr.domain.model.MediaType.MOVIE) {
-                        val movieResult = discoveryRepository.getMovieDetails(request.mediaId)
-                        if (movieResult is Result.Success) {
-                            request.copy(
-                                title = movieResult.data.title,
-                                posterPath = movieResult.data.posterPath
-                            )
-                        } else request
+        // PARALLEL fetch details for requests missing data
+        // Using coroutineScope and async to fetch all details concurrently
+        println("RequestRepositoryImpl: Hydrating ${requests.count { it.title == "Title Unavailable" || it.posterPath == null }} items")
+        val hydratedRequests = coroutineScope {
+            requests.map { request ->
+                async {
+                    if (request.title == "Title Unavailable" || request.posterPath == null) {
+                        try {
+                            // Fetch details with a timeout to avoid hanging the entire list
+                            withTimeoutOrNull(3000) {
+                                if (request.mediaType == app.lusk.underseerr.domain.model.MediaType.MOVIE) {
+                                    val movieResult = discoveryRepository.getMovieDetails(request.mediaId)
+                                    if (movieResult is Result.Success) {
+                                        request.copy(
+                                            title = movieResult.data.title,
+                                            posterPath = movieResult.data.posterPath
+                                        )
+                                    } else {
+                                        // println("Hydration: Movie details failed for ${request.mediaId}")
+                                        request
+                                    }
+                                } else {
+                                    val tvResult = discoveryRepository.getTvShowDetails(request.mediaId)
+                                    if (tvResult is Result.Success) {
+                                        request.copy(
+                                            title = tvResult.data.name,
+                                            posterPath = tvResult.data.posterPath
+                                        )
+                                    } else {
+                                        // println("Hydration: TV details failed for ${request.mediaId}")
+                                        request
+                                    }
+                                }
+                            } ?: request // Fallback to original if timeout
+                        } catch (e: Exception) {
+                            println("Hydration: Exception for request ${request.id} (MediaId: ${request.mediaId}): ${e.message}")
+                            request
+                        }
                     } else {
-                        val tvResult = discoveryRepository.getTvShowDetails(request.mediaId)
-                        if (tvResult is Result.Success) {
-                            request.copy(
-                                title = tvResult.data.name,
-                                posterPath = tvResult.data.posterPath
-                            )
-                        } else request
+                        request
                     }
-                } catch (e: Exception) {
-                    request
                 }
-                hydrated
-            } else {
-                request
-            }
+            }.awaitAll()
         }
         
         // Update cache
         try {
-            if (page == 1) {
-                // If refreshing the first page, we might want to keep existing data until new data arrives
-                // but to ensure consistency with a "Pull to Refresh" from top, we often clear or overwrite.
-                
-                // However, for "requests disappear" issue:
-                // Be careful not to delete EVERYTHING if we are only fetching page 1 
-                // if we intend to support partial updates.
-                // But typically page 1 refresh implies "reset list".
-                mediaRequestDao.deleteAll()
-            }
-            
+            val totalHydrated = hydratedRequests.count { it.title != "Title Unavailable" }
+            println("RequestRepositoryImpl: Saving ${hydratedRequests.size} items to DB (Hydrated: $totalHydrated/${hydratedRequests.size}, Total on Server: ${response.pageInfo.results})")
             mediaRequestDao.insertAll(hydratedRequests.map { it.toEntity() })
+            val totalInDb = mediaRequestDao.getCount()
+            println("RequestRepositoryImpl: Total items in DB after insert: $totalInDb")
         } catch (e: Exception) {
             println("DB Error in refreshRequests: ${e.message}")
             e.printStackTrace()
         }
         
-        hydratedRequests.size
+        hydratedRequests.size to response.pageInfo.results
     }
     
     /**

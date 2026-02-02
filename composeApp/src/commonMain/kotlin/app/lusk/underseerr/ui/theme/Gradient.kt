@@ -100,6 +100,20 @@ val DefaultLightGradients = UnderseerrGradients(
     navBar = solidBrush(md_theme_light_surface),
     settings = solidBrush(md_theme_light_background),
     profiles = solidBrush(md_theme_light_background),
+    // Light theme needs dark text on light backgrounds
+    onPrimary = Color.Black,
+    onSecondary = Color.Black,
+    onTertiary = Color.Black,
+    onBackground = Color.Black,
+    onSurface = Color.Black,
+    onAccent = Color.Black,
+    onHighlight = Color.Black,
+    onAppBar = Color.Black,
+    onNavBar = Color.Black,
+    onSettings = Color.Black,
+    onProfiles = Color.Black,
+    onRequestDetails = Color.Black,
+    onIssueDetails = Color.Black,
     statusBadgeShape = RoundedCornerShape(8.dp),
     isVibrant = false
 )

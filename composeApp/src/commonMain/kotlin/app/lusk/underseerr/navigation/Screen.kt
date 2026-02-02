@@ -46,7 +46,7 @@ sealed class Screen {
     data class IssueDetails(val issueId: Int) : Screen()
     
     @Serializable
-    data object Settings : Screen()
+    data class Settings(val showPremiumPaywall: Boolean = false) : Screen()
     
     @Serializable
     data object ServerManagement : Screen()

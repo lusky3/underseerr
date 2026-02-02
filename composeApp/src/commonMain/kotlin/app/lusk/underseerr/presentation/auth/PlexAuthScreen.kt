@@ -304,7 +304,10 @@ private fun LocalLoginForm(
             onValueChange = { email = it },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Next
+            )
         )
         OutlinedTextField(
             value = password,
@@ -312,7 +315,17 @@ private fun LocalLoginForm(
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onDone = {
+                    if (email.isNotBlank() && password.isNotBlank()) {
+                        onLogin(email, password)
+                    }
+                }
+            )
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -348,7 +361,17 @@ private fun ApiKeyForm(
             onValueChange = { apiKey = it },
             label = { Text("Overseerr API Key") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Go
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onGo = {
+                    if (apiKey.isNotBlank()) {
+                        onLogin(apiKey)
+                    }
+                }
+            )
         )
         Text(
             text = "You can find your API key in Settings > General",

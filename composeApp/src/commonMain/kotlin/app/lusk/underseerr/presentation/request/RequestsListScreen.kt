@@ -26,6 +26,8 @@ import app.lusk.underseerr.domain.model.MediaRequest
 import app.lusk.underseerr.domain.model.RequestStatus
 import app.lusk.underseerr.ui.components.AsyncImage
 import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
+import org.koin.compose.viewmodel.koinViewModel
+import app.lusk.underseerr.presentation.auth.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,7 +60,6 @@ fun RequestsListScreen(
             TopAppBar(
                 title = { Text("Requests", color = gradients.onAppBar) },
                 actions = {
-                    // Filter button
                     Box {
                         IconButton(onClick = { showFilterMenu = true }) {
                             Icon(
@@ -73,31 +74,19 @@ fun RequestsListScreen(
                         ) {
                             filters.forEach { filter ->
                                 DropdownMenuItem(
-                                    text = { 
-                                        Text(
-                                            filter,
-                                            fontWeight = if (filter == selectedFilter) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
+                                    text = { Text(filter) },
                                     onClick = {
                                         selectedFilter = filter
                                         showFilterMenu = false
-                                    },
-                                    trailingIcon = if (filter == selectedFilter) {
-                                        { 
-                                            Icon(
-                                                Icons.Default.Check,
-                                                null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    } else null
+                                    }
                                 )
                             }
                         }
                     }
-                    IconButton(onClick = { viewModel.refreshRequests() }) {
+                    IconButton(onClick = { 
+                        pullRefreshing = true
+                        viewModel.refreshRequests() 
+                    }) {
                         Icon(Icons.Default.Refresh, "Refresh", tint = gradients.onAppBar)
                     }
                 },
@@ -126,56 +115,58 @@ fun RequestsListScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 val filteredRequests = when (selectedFilter) {
-                    "All" -> userRequests
-                    "Pending" -> userRequests.filter { it.status == RequestStatus.PENDING }
-                    "Approved" -> userRequests.filter { it.status == RequestStatus.APPROVED }
-                    "Available" -> userRequests.filter { it.status == RequestStatus.AVAILABLE }
-                    "Declined" -> userRequests.filter { it.status == RequestStatus.DECLINED }
-                    else -> userRequests
+                    "All" -> userRequests.distinctBy { it.id }
+                    "Pending" -> userRequests.distinctBy { it.id }.filter { it.status == RequestStatus.PENDING }
+                    "Approved" -> userRequests.distinctBy { it.id }.filter { it.status == RequestStatus.APPROVED }
+                    "Available" -> userRequests.distinctBy { it.id }.filter { it.status == RequestStatus.AVAILABLE }
+                    "Declined" -> userRequests.distinctBy { it.id }.filter { it.status == RequestStatus.DECLINED }
+                    else -> userRequests.distinctBy { it.id }
                 }
                 
                 val hasCachedData = filteredRequests.isNotEmpty()
                 val isOffline = error != null
 
-                // 1. Content Layer
-                when {
-                    hasCachedData -> {
-                        RequestsList(
-                            requests = filteredRequests,
-                            onRequestClick = onRequestClick,
-                            contentPadding = PaddingValues(top = if (isOffline) 48.dp else 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
-                            onLoadMore = { viewModel.loadMoreRequests() },
-                            isLoadingMore = isLoading && !pullRefreshing
-                        )
-                    }
-                    isOffline -> {
-                        ErrorDisplay(
-                            message = error!!,
-                            onRetry = { viewModel.refreshRequests() }
-                        )
-                    }
-                    !isLoading -> {
-                        EmptyRequestsDisplay(status = selectedFilter)
-                    }
+                val authViewModel = koinViewModel<AuthViewModel>()
+                val serverUrl by authViewModel.getServerUrl().collectAsState("")
+
+                if (hasCachedData) {
+                    RequestsList(
+                        requests = filteredRequests,
+                        onRequestClick = onRequestClick,
+                        contentPadding = PaddingValues(top = if (isOffline) 48.dp else 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
+                        onLoadMore = { viewModel.loadMoreRequests() },
+                        isLoadingMore = isLoading && !pullRefreshing,
+                        serverUrl = serverUrl ?: ""
+                    )
+                } 
+                
+                if (isOffline && !hasCachedData) {
+                    ErrorDisplay(
+                        message = error!!,
+                        onRetry = { viewModel.refreshRequests() }
+                    )
+                } else if (!isLoading && !hasCachedData) {
+                    EmptyRequestsDisplay(status = selectedFilter)
                 }
                 
+                // 2. Overlays
+                // Only show center spinner if we are loading and don't have cached data,
+                // and it's NOT a pull-to-refresh (because PullToRefreshBox has its own indicator)
                 // 2. Overlays
                 if (isLoading && !pullRefreshing && !hasCachedData) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-
                 
-                // Offline Banner
                 app.lusk.underseerr.ui.components.OfflineBanner(
                     visible = isOffline && hasCachedData,
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
             }
-            }
         }
     }
+}
 
 @Composable
 private fun RequestsList(
@@ -184,15 +175,15 @@ private fun RequestsList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
     onLoadMore: () -> Unit = {},
-    isLoadingMore: Boolean = false
+    isLoadingMore: Boolean = false,
+    serverUrl: String
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     
-    // Pagination trigger
-    LaunchedEffect(listState) {
+    LaunchedEffect(listState, requests.size, isLoadingMore) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
             .collect { lastIndex ->
-                if (lastIndex != null && lastIndex >= requests.size - 2 && !isLoadingMore) {
+                if (lastIndex != null && lastIndex >= requests.size - 5 && !isLoadingMore && requests.isNotEmpty()) {
                     onLoadMore()
                 }
             }
@@ -204,9 +195,13 @@ private fun RequestsList(
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(requests) { request ->
+        items(
+            items = requests,
+            key = { request -> request.id }
+        ) { request ->
             RequestItem(
                 request = request,
+                serverUrl = serverUrl,
                 onClick = { onRequestClick(request.id) }
             )
         }
@@ -224,6 +219,7 @@ private fun RequestsList(
 @Composable
 private fun RequestItem(
     request: MediaRequest,
+    serverUrl: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -244,15 +240,27 @@ private fun RequestItem(
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
-                // Poster with rounded corners
                 Card(
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .width(70.dp)
                         .height(100.dp)
                 ) {
+                    val fullImageUrl = remember(request.posterPath, serverUrl) {
+                        val path = request.posterPath
+                        when {
+                            path == null -> null
+                            path.startsWith("http") -> path
+                            path.startsWith("/api/v1/proxy") -> {
+                                if (serverUrl.isNotEmpty()) "${serverUrl.trimEnd('/')}$path" else null
+                            }
+                            path.startsWith("/") -> "https://image.tmdb.org/t/p/w200$path"
+                            else -> path
+                        }
+                    }
+
                     AsyncImage(
-                        imageUrl = request.posterPath?.let { "https://image.tmdb.org/t/p/w200$it" },
+                        imageUrl = fullImageUrl,
                         contentDescription = request.title,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -287,18 +295,13 @@ private fun RequestItem(
                         val seasons = request.seasons
                         if (!seasons.isNullOrEmpty()) {
                             Text(
-                                text = if (seasons.contains(0)) {
-                                    "All seasons"
-                                } else {
-                                    "Seasons: ${seasons.joinToString(", ")}"
-                                },
+                                text = if (seasons.contains(0)) "All seasons" else "Seasons: ${seasons.joinToString(", ")}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                     
-                    // Large colorful status badge
                     StatusBadge(status = request.status)
                 }
             }
@@ -312,26 +315,10 @@ private fun StatusBadge(
     modifier: Modifier = Modifier
 ) {
     val (backgroundColor, textColor, text) = when (status) {
-        RequestStatus.PENDING -> Triple(
-            Color(0xFFFFC107), // Amber
-            Color.Black,
-            "Pending"
-        )
-        RequestStatus.APPROVED -> Triple(
-            Color(0xFF2196F3), // Blue
-            Color.White,
-            "Processing"
-        )
-        RequestStatus.AVAILABLE -> Triple(
-            Color(0xFF4CAF50), // Green
-            Color.White,
-            "Available"
-        )
-        RequestStatus.DECLINED -> Triple(
-            Color(0xFFF44336), // Red
-            Color.White,
-            "Declined"
-        )
+        RequestStatus.PENDING -> Triple(Color(0xFFFFC107), Color.Black, "Pending")
+        RequestStatus.APPROVED -> Triple(Color(0xFF2196F3), Color.White, "Processing")
+        RequestStatus.AVAILABLE -> Triple(Color(0xFF4CAF50), Color.White, "Available")
+        RequestStatus.DECLINED -> Triple(Color(0xFFF44336), Color.White, "Declined")
     }
     
     val gradients = LocalUnderseerrGradients.current
