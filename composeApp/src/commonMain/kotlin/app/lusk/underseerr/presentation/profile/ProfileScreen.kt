@@ -193,7 +193,7 @@ fun ProfileScreen(
                                         verticalArrangement = Arrangement.Center
                                     ) {
                                         ErrorState(
-                                            message = error!!,
+                                            message = error ?: "Unknown error",
                                             onRetry = { viewModel.refresh() },
                                             modifier = Modifier.padding(vertical = 16.dp)
                                         )
