@@ -77,6 +77,10 @@ fun Throwable.toAppError(): AppError {
             message = "Failed to parse server response.",
             cause = this
         )
+        is io.ktor.client.call.NoTransformationFoundException -> AppError.ParseError(
+            message = "Server returned an unexpected format. Please check the URL and ensure it points to an Overseerr instance.",
+            cause = this
+        )
         else -> AppError.UnknownError(
             message = message ?: "An unexpected error occurred",
             cause = this
