@@ -17,5 +17,45 @@
     ],
     "vars": {
         "MODE": "PRO"
+    },
+    "env": {
+        "staging": {
+            "name": "underseerr-pro-api-staging",
+            "vars": {
+                "MODE": "STAGING"
+            },
+            "kv_namespaces": [
+                {
+                    "binding": "TOKENS",
+                    "id": "PRO_TOKENS_KV_ID_STAGING"
+                }
+            ],
+            "d1_databases": [
+                {
+                    "binding": "DB",
+                    "database_name": "underseerr-billing-staging",
+                    "database_id": "PRO_BILLING_D1_ID_STAGING"
+                }
+            ]
+        },
+        "production": {
+            "name": "underseerr-pro-api",
+            "vars": {
+                "MODE": "PRO"
+            },
+            "kv_namespaces": [
+                {
+                    "binding": "TOKENS",
+                    "id": "PRO_TOKENS_KV_ID"
+                }
+            ],
+            "d1_databases": [
+                {
+                    "binding": "DB",
+                    "database_name": "underseerr-billing",
+                    "database_id": "PRO_BILLING_D1_ID"
+                }
+            ]
+        }
     }
 }
