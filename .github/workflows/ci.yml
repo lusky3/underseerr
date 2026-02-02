@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop", "release/*" ]
     paths-ignore:
       - '**.md'
       - 'website/**'
@@ -10,7 +10,7 @@ on:
       - 'LICENSE'
       - 'SECURITY.md'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop", "release/*" ]
     paths-ignore:
       - '**.md'
       - 'website/**'

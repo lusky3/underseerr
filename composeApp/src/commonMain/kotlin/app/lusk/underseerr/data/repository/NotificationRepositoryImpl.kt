@@ -82,10 +82,13 @@ class NotificationRepositoryImpl(
             // Register the subscription on Overseerr
             val subscription = ApiRegisterPushSubscription(
                 endpoint = endpoint,
-                auth = auth,
-                p256dh = p256dh,
+                keys = ApiPushKeys(
+                    auth = auth,
+                    p256dh = p256dh
+                ),
                 userAgent = "Mozilla/5.0 (Linux; Android 13; Underseerr) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36"
             )
+            println("NotificationRepository: Registering subscription: $subscription")
             userKtorService.registerPushSubscription(subscription)
         }
     }

@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - 'release/*'
     paths:
       - 'pro-backend/**'
   workflow_dispatch:
@@ -39,7 +40,7 @@ jobs:
 
   deploy-staging:
     needs: check
-    if: github.ref == 'refs/heads/develop' || inputs.environment == 'staging'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || inputs.environment == 'staging'
     runs-on: ubuntu-latest
     environment: staging
     defaults:
@@ -74,7 +75,7 @@ jobs:
 
   deploy-production:
     needs: check
-    if: inputs.environment == 'production' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    if: inputs.environment == 'production' || (startsWith(github.ref, 'refs/heads/release/') && github.event_name == 'push')
     runs-on: ubuntu-latest
     environment: production
     defaults:

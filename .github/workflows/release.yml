@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - main
+      - 'release/*'
 
 jobs:
   release:
@@ -46,9 +49,18 @@ jobs:
           echo '{"project_info":{"project_number":"0","project_id":"dummy","storage_bucket":""},"client":[{"client_info":{"mobilesdk_app_id":"1:0:android:0","android_client_info":{"package_name":"app.lusk.underseerr"}},"api_key":[{"current_key":"dummy"}]}],"configuration_version":"1"}' > androidApp/src/release/google-services.json
         fi
 
-    - name: Get version from tag
+    - name: Get version
       id: version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        elif [[ $GITHUB_REF == refs/heads/main ]]; then
+          echo "VERSION=nightly-$(date +'%Y.%m.%d')-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        else
+          # For release branches: release/v1.0 -> v1.0-rc
+          VERSION_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')
+          echo "VERSION=${VERSION_NAME}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        fi
 
     - name: Build Release APK
       run: ./gradlew :androidApp:assembleRelease
@@ -66,4 +78,4 @@ jobs:
         files: androidApp/build/outputs/apk/release/*.apk
         generate_release_notes: true
         draft: false
-        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        prerelease: ${{ github.ref == 'refs/heads/main' || contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
