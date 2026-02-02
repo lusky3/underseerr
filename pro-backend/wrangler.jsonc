@@ -1,18 +1,16 @@
 {
-    "name": "underseerr-pro-api",
+    "name": "underseerr-notifications",
     "main": "src/index.ts",
     "compatibility_date": "2024-04-03",
     "kv_namespaces": [
         {
-            "binding": "TOKENS",
-            "id": "PRO_TOKENS_KV_ID"
+            "binding": "TOKENS"
         }
     ],
     "d1_databases": [
         {
             "binding": "DB",
-            "database_name": "underseerr-billing",
-            "database_id": "PRO_BILLING_D1_ID"
+            "database_name": "underseerr-billing"
         }
     ],
     "vars": {
@@ -20,40 +18,36 @@
     },
     "env": {
         "staging": {
-            "name": "underseerr-pro-api-staging",
+            "name": "underseerr-notifications-staging",
             "vars": {
                 "MODE": "STAGING"
             },
             "kv_namespaces": [
                 {
-                    "binding": "TOKENS",
-                    "id": "PRO_TOKENS_KV_ID_STAGING"
+                    "binding": "TOKENS"
                 }
             ],
             "d1_databases": [
                 {
                     "binding": "DB",
-                    "database_name": "underseerr-billing-staging",
-                    "database_id": "PRO_BILLING_D1_ID_STAGING"
+                    "database_name": "underseerr-billing-staging"
                 }
             ]
         },
         "production": {
-            "name": "underseerr-pro-api",
+            "name": "underseerr-notifications-prod",
             "vars": {
                 "MODE": "PRO"
             },
             "kv_namespaces": [
                 {
-                    "binding": "TOKENS",
-                    "id": "PRO_TOKENS_KV_ID"
+                    "binding": "TOKENS"
                 }
             ],
             "d1_databases": [
                 {
                     "binding": "DB",
-                    "database_name": "underseerr-billing",
-                    "database_id": "PRO_BILLING_D1_ID"
+                    "database_name": "underseerr-billing-prod"
                 }
             ]
         }
