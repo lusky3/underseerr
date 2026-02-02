@@ -10,6 +10,7 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.Url
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -107,7 +108,12 @@ class HttpClientFactory(
             // Apply Base URL
             val baseUrl = currentBaseUrl
             if (baseUrl.isNotEmpty()) {
-                context.url(baseUrl)
+                val url = Url(baseUrl)
+                context.url.protocol = url.protocol
+                context.url.host = url.host
+                context.url.port = url.port
+                // Note: deeply nested paths in baseUrl might need careful handling, 
+                // but for standard scheme://host:port usage, this preserves the request path.
             }
             
             // Apply API Key if available
