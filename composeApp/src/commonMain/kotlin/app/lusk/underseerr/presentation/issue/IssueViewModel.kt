@@ -41,7 +41,9 @@ class IssueViewModel(
     fun loadIssues(filter: String = _selectedFilter.value, isRefresh: Boolean = false) {
         viewModelScope.launch {
             _selectedFilter.value = filter
-            if (!isRefresh && _uiState.value !is IssueListState.Success) {
+            
+            // Only show loading if we don't have any data yet
+            if (_uiState.value !is IssueListState.Success && _uiState.value !is IssueListState.Empty) {
                 _uiState.value = IssueListState.Loading
             }
             

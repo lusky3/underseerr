@@ -56,6 +56,11 @@ fun RequestsListScreen(
         }
     }
 
+    // Update requests data when entering the screen (background refresh if already loaded)
+    LaunchedEffect(Unit) {
+        viewModel.refreshRequests()
+    }
+
     val gradients = LocalUnderseerrGradients.current
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),

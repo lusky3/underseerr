@@ -48,6 +48,12 @@ fun IssuesListScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val error by viewModel.error.collectAsState()
     
+    // Update issues data when entering the screen (background refresh if already loaded)
+    LaunchedEffect(Unit) {
+        viewModel.loadIssues()
+        viewModel.loadIssueCounts()
+    }
+    
     val filterMap = mapOf("Open" to "open", "All" to "all", "Resolved" to "resolved")
     val inverseFilterMap = filterMap.entries.associate { it.value to it.key }
     val tabTitles = listOf("Open", "All", "Resolved")

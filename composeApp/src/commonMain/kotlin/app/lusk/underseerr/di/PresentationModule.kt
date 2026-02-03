@@ -13,9 +13,9 @@ import org.koin.dsl.module
 val presentationModule = module {
     viewModel { MainViewModel(get(), get(), get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
-    viewModel { DiscoveryViewModel(get(), get(), get()) }
-    viewModel { ProfileViewModel(get(), get()) }
-    viewModel { RequestViewModel(get(), get()) }
-    viewModel { IssueViewModel(get()) }
+    viewModel { DiscoveryViewModel(get(), get(), get(), get(), get(), get()) }
+    single { ProfileViewModel(get(), get()) }
+    single { RequestViewModel(get(), get()) }
+    single { IssueViewModel(get()) }
     viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }

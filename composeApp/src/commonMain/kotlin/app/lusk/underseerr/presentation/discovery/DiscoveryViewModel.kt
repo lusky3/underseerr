@@ -28,7 +28,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 class DiscoveryViewModel(
     private val discoveryRepository: DiscoveryRepository,
     private val requestRepository: RequestRepository,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val profileViewModel: app.lusk.underseerr.presentation.profile.ProfileViewModel,
+    private val issueViewModel: app.lusk.underseerr.presentation.issue.IssueViewModel,
+    private val requestViewModel: app.lusk.underseerr.presentation.request.RequestViewModel
 ) : ViewModel() {
     
     init {
@@ -103,14 +106,7 @@ class DiscoveryViewModel(
     val isPlexUser: StateFlow<Boolean> = _isPlexUser.asStateFlow()
 
     // Watchlist
-    val watchlist: StateFlow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = _isPlexUser
-        .flatMapLatest { isPlex ->
-            if (isPlex) {
-                discoveryRepository.getWatchlist()
-            } else {
-                flowOf(PagingData.empty<app.lusk.underseerr.domain.model.SearchResult>())
-            }
-        }
+    val watchlist: StateFlow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = discoveryRepository.getWatchlist()
         .cachedIn(viewModelScope)
         .stateIn(
             scope = viewModelScope,
@@ -229,6 +225,15 @@ class DiscoveryViewModel(
                 .collect { query ->
                     performSearch(query)
                 }
+        }
+
+        // Background load other pages after a short delay to prioritize Home content
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(1000)
+            println("DiscoveryViewModel: Triggering background load for Profile, Issues, and Requests")
+            profileViewModel.loadProfile()
+            issueViewModel.loadIssues()
+            requestViewModel.refreshRequests()
         }
     }
     

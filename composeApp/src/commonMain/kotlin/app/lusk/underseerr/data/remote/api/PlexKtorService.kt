@@ -33,7 +33,51 @@ class PlexKtorService(private val client: HttpClient) {
             header("Accept", "application/json")
         }.body()
     }
+
+    suspend fun getWatchlist(plexToken: String, page: Int = 1): PlexWatchlistResponse {
+        return client.get("https://discover.provider.plex.tv/library/sections/watchlist/all") {
+            header("X-Plex-Token", plexToken)
+            header("Accept", "application/json")
+            parameter("X-Plex-Container-Start", (page - 1) * 20)
+            parameter("X-Plex-Container-Size", 20)
+            parameter("includeGuids", 1)
+        }.body()
+    }
 }
+
+@Serializable
+data class PlexWatchlistResponse(
+    @SerialName("MediaContainer") val mediaContainer: PlexMediaContainer
+)
+
+@Serializable
+data class PlexMediaContainer(
+    val size: Int,
+    val totalSize: Int? = null,
+    val offset: Int? = null,
+    @SerialName("Metadata") val metadata: List<PlexMetadata> = emptyList()
+)
+
+@Serializable
+data class PlexMetadata(
+    val ratingKey: String,
+    val guid: String,
+    val type: String, // movie or show
+    val title: String,
+    val summary: String? = null,
+    val thumb: String? = null,
+    val year: Int? = null,
+    val rating: Double? = null,
+    val leafCount: Int? = null,
+    val tmdbId: String? = null,
+    val imdbId: String? = null,
+    @SerialName("Guid") val externalGuids: List<PlexGuid> = emptyList()
+)
+
+@Serializable
+data class PlexGuid(
+    val id: String
+)
 
 @Serializable
 data class PlexPinResponse(

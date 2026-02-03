@@ -13,7 +13,9 @@ import app.lusk.underseerr.data.paging.SearchPagingSource
 import app.lusk.underseerr.data.paging.TrendingMoviesPagingSource
 import app.lusk.underseerr.data.paging.TrendingTvShowsPagingSource
 import app.lusk.underseerr.data.paging.DiscoveryPagingSource
+import app.lusk.underseerr.data.paging.WatchlistPagingSource
 import app.lusk.underseerr.data.remote.api.DiscoveryKtorService
+import app.lusk.underseerr.data.remote.api.PlexKtorService
 import app.lusk.underseerr.data.remote.model.toGenre
 import app.lusk.underseerr.data.remote.safeApiCall
 import app.lusk.underseerr.domain.model.Movie
@@ -31,6 +33,8 @@ import kotlinx.coroutines.flow.Flow
  */
 class DiscoveryRepositoryImpl(
     private val discoveryKtorService: DiscoveryKtorService,
+    private val plexKtorService: PlexKtorService,
+    private val securityManager: app.lusk.underseerr.domain.security.SecurityManager,
     private val movieDao: app.lusk.underseerr.data.local.dao.MovieDao,
     private val tvShowDao: app.lusk.underseerr.data.local.dao.TvShowDao,
     private val mediaRequestDao: app.lusk.underseerr.data.local.dao.MediaRequestDao,
@@ -192,7 +196,13 @@ class DiscoveryRepositoryImpl(
     override fun getWatchlist(): Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> {
         return Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
-            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getWatchlist(it) }, { it.toSearchResult() }) }
+            pagingSourceFactory = { 
+                WatchlistPagingSource(
+                    plexKtorService = plexKtorService,
+                    discoveryKtorService = discoveryKtorService,
+                    securityManager = securityManager
+                )
+            }
         ).flow
     }
 

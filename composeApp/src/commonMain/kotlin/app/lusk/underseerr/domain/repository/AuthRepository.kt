@@ -14,6 +14,12 @@ import kotlinx.coroutines.flow.Flow
 interface AuthRepository {
     
     /**
+     * Get the stored Plex token if available.
+     */
+    suspend fun getPlexToken(): String?
+
+    
+    /**
      * Validate server URL and check connectivity.
      * Property 1: URL Validation Correctness
      */

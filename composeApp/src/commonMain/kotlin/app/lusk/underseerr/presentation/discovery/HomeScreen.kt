@@ -158,10 +158,10 @@ fun HomeScreen(
                     )
                 }
 
-                if (isPlexUser && watchlist.itemCount > 0) {
+                if (watchlist.itemCount > 0) {
                     item {
                         MediaSection(
-                            title = "Your Watchlist",
+                            title = "Plex Watchlist",
                             items = watchlist,
                             onItemClickWithType = { id, type -> 
                                 if (type == MediaType.TV) onTvShowClick(id) else onMovieClick(id)

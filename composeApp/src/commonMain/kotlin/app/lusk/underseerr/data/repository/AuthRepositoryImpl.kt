@@ -137,6 +137,9 @@ class AuthRepositoryImpl(
                     val response = result.data
                     val apiUserProfile: app.lusk.underseerr.data.remote.model.ApiUserProfile = response.body()
                     
+                    // Store Plex token for direct Plex API access
+                    securityManager.storeSecureData("plex_token", plexToken)
+                    
                     // Manually extract session cookie if present
                     val setCookieHeader = response.headers["Set-Cookie"]
                     println("AuthRepositoryImpl: Set-Cookie Header: $setCookieHeader")
@@ -365,8 +368,13 @@ class AuthRepositoryImpl(
         return preferencesManager.getServerUrl()
     }
     
+    override suspend fun getPlexToken(): String? {
+        return securityManager.retrieveSecureData("plex_token")
+    }
+
     /**
      * Validate URL format.
+
      */
     private fun isValidUrl(url: String): Boolean {
         // Simple regex for URL validation in KMP

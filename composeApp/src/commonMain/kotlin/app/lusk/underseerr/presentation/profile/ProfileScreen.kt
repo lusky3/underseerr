@@ -103,6 +103,11 @@ fun ProfileScreen(
     
     var showPremiumDialog by remember { mutableStateOf(false) }
 
+    // Update profile data when entering the screen (background refresh if already loaded)
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
     // Track previous auth state to detect actual logouts vs initial state
     var wasAuthenticated by remember { mutableStateOf(false) }
     
