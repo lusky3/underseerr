@@ -14,8 +14,8 @@ val presentationModule = module {
     single { MainViewModel(get(), get(), get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
     viewModel { DiscoveryViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    single { ProfileViewModel(get(), get()) }
-    single { RequestViewModel(get(), get()) }
-    single { IssueViewModel(get()) }
+    viewModel { ProfileViewModel(get(), get()) }
+    viewModel { RequestViewModel(get(), get()) }
+    viewModel { IssueViewModel(get()) }
     viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }

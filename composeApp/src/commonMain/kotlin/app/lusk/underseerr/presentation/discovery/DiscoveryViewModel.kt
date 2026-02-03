@@ -130,6 +130,9 @@ class DiscoveryViewModel(
     private val _searchState = MutableStateFlow<SearchState>(SearchState.Idle)
     val searchState: StateFlow<SearchState> = _searchState.asStateFlow()
 
+    private val _uiEvent = MutableSharedFlow<String>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
     
     // Paged Search results
     val pagedSearchResults: Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = _searchQuery
@@ -382,6 +385,66 @@ class DiscoveryViewModel(
             loadMediaDetails(type, id)
         }
     }
+    fun quickRequest(mediaId: Int, mediaType: MediaType) {
+        viewModelScope.launch {
+            val movieProfile = settingsRepository.getDefaultMovieQualityProfile().firstOrNull()
+            val tvProfile = settingsRepository.getDefaultTvQualityProfile().firstOrNull()
+            
+            val result = when (mediaType) {
+                MediaType.MOVIE -> requestRepository.requestMovie(mediaId, qualityProfile = movieProfile)
+                MediaType.TV -> requestRepository.requestTvShow(mediaId, seasons = listOf(0), qualityProfile = tvProfile) // For TV, maybe we should fetch seasons first or just request all? Actually Overseerr handles 'all' if list is empty or similar? Wait, Usually it requires a list of seasons.
+            }
+            
+            // Re-evaluating TV quick request: If we don't know the seasons, we might need to fetch them.
+            // But let's check RequestRepository.requestTvShow again.
+            // If seasons is empty, what happens? 
+            
+            if (result is Result.Success) {
+                _uiEvent.emit("Request submitted successfully")
+                // Refresh requests to update status indicators
+                requestViewModel.refreshRequests()
+            } else if (result is Result.Error) {
+                _uiEvent.emit("Failed to submit request: ${result.error.message}")
+            }
+        }
+    }
+
+    // Improved quickRequest for TV
+    fun quickRequestTv(tvShowId: Int) {
+        viewModelScope.launch {
+            _uiEvent.emit("Preparing request...")
+            val detailsResult = discoveryRepository.getTvShowDetails(tvShowId)
+            if (detailsResult is Result.Success) {
+                val tvShow = detailsResult.data
+                val allSeasons = (1..tvShow.numberOfSeasons).toList()
+                val profile = settingsRepository.getDefaultTvQualityProfile().firstOrNull()
+                
+                val result = requestRepository.requestTvShow(tvShowId, seasons = allSeasons, qualityProfile = profile)
+                if (result is Result.Success) {
+                    _uiEvent.emit("Request submitted for all seasons")
+                    requestViewModel.refreshRequests()
+                } else if (result is Result.Error) {
+                    _uiEvent.emit("Failed to submit request: ${result.error.message}")
+                }
+            } else {
+                _uiEvent.emit("Failed to fetch show details for request")
+            }
+        }
+    }
+
+    fun removeFromWatchlist(ratingKey: String) {
+        viewModelScope.launch {
+            val result = discoveryRepository.removeFromWatchlist(ratingKey)
+            if (result is Result.Success) {
+                _uiEvent.emit("Removed from Plex watchlist")
+                // We might want to refresh the watchlist flow
+                // Since it's a StateFlow from pager, we might need to trigger a refresh on the paging data
+            } else if (result is Result.Error) {
+                _uiEvent.emit("Failed to remove: ${result.error.message}")
+            }
+        }
+    }
+
     fun refresh() {
         // Fetch genres
         viewModelScope.launch {

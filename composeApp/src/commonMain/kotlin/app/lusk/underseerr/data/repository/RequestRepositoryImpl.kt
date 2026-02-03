@@ -377,4 +377,35 @@ class RequestRepositoryImpl(
             Result.error(e.toAppError())
         }
     }
+
+    override suspend fun repairRequest(request: MediaRequest): Result<MediaRequest> {
+        return try {
+            val updatedRequest = if (request.mediaType == app.lusk.underseerr.domain.model.MediaType.MOVIE) {
+                val result = discoveryRepository.getMovieDetails(request.mediaId)
+                if (result is Result.Success) {
+                    request.copy(
+                        title = result.data.title,
+                        posterPath = result.data.posterPath
+                    )
+                } else null
+            } else {
+                val result = discoveryRepository.getTvShowDetails(request.mediaId)
+                if (result is Result.Success) {
+                    request.copy(
+                        title = result.data.name,
+                        posterPath = result.data.posterPath
+                    )
+                } else null
+            }
+
+            if (updatedRequest != null) {
+                mediaRequestDao.insert(updatedRequest.toEntity())
+                Result.success(updatedRequest)
+            } else {
+                Result.error(app.lusk.underseerr.domain.model.AppError.NotFoundError("Media details not found"))
+            }
+        } catch (e: Exception) {
+            Result.error(e.toAppError())
+        }
+    }
 }

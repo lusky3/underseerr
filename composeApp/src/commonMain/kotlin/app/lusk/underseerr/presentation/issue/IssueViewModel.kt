@@ -57,25 +57,22 @@ class IssueViewModel(
             take = 50,
             skip = 0,
             filter = filter
-        ).fold(
-            onSuccess = { issues ->
-                _uiState.value = if (issues.isEmpty()) {
-                    IssueListState.Empty
-                } else {
-                    IssueListState.Success(issues)
-                }
-            },
-            onFailure = { error ->
-                // If we have data, keep it and just set the error
-                if (_uiState.value is IssueListState.Success) {
-                    _error.value = error.message ?: "Failed to load issues"
-                } else {
-                    _uiState.value = IssueListState.Error(
-                        error.message ?: "Failed to load issues"
-                    )
-                }
+        ).onSuccess { issues ->
+            _uiState.value = if (issues.isEmpty()) {
+                IssueListState.Empty
+            } else {
+                IssueListState.Success(issues)
             }
-        )
+        }.onError { error ->
+            // If we have data, keep it and just set the error
+            if (_uiState.value is IssueListState.Success) {
+                _error.value = error.message
+            } else {
+                _uiState.value = IssueListState.Error(
+                    error.message
+                )
+            }
+        }
     }
     
     fun loadIssueCounts() {
@@ -85,12 +82,11 @@ class IssueViewModel(
     }
     
     private suspend fun fetchIssueCounts() {
-        issueRepository.getIssueCounts().fold(
-            onSuccess = { counts ->
+        issueRepository.getIssueCounts()
+            .onSuccess { counts ->
                 _issueCounts.value = counts
-            },
-            onFailure = { /* Silently fail for counts */ }
-        )
+            }
+            .onError { /* Silently fail for counts */ }
     }
     
     fun refresh() {
@@ -105,40 +101,37 @@ class IssueViewModel(
     
     fun resolveIssue(issueId: Int) {
         viewModelScope.launch {
-            issueRepository.resolveIssue(issueId).fold(
-                onSuccess = { 
+            issueRepository.resolveIssue(issueId)
+                .onSuccess { 
                     refresh()
-                },
-                onFailure = { 
-                    _error.value = it.message ?: "Failed to resolve issue"
                 }
-            )
+                .onError { 
+                    _error.value = it.message
+                }
         }
     }
     
     fun reopenIssue(issueId: Int) {
         viewModelScope.launch {
-            issueRepository.reopenIssue(issueId).fold(
-                onSuccess = { 
+            issueRepository.reopenIssue(issueId)
+                .onSuccess { 
                     refresh()
-                },
-                onFailure = { 
-                    _error.value = it.message ?: "Failed to reopen issue"
                 }
-            )
+                .onError { 
+                    _error.value = it.message
+                }
         }
     }
     
     fun deleteIssue(issueId: Int) {
         viewModelScope.launch {
-            issueRepository.deleteIssue(issueId).fold(
-                onSuccess = { 
+            issueRepository.deleteIssue(issueId)
+                .onSuccess { 
                     refresh()
-                },
-                onFailure = { 
-                   _error.value = it.message ?: "Failed to delete issue"
                 }
-            )
+                .onError { 
+                   _error.value = it.message
+                }
         }
     }
 }

@@ -188,18 +188,15 @@ fun RequestDetailsScreen(
                         mediaId = request.mediaId,
                         problemSeason = season,
                         problemEpisode = episode
-                    ).fold(
-                        onSuccess = {
-                            showReportIssueDialog = false
-                            snackbarHostState.showSnackbar("Issue reported successfully")
-                        },
-                        onFailure = { error ->
-                            showReportIssueDialog = false
-                            snackbarHostState.showSnackbar(
-                                "Failed to report issue: ${error.message}"
-                            )
-                        }
-                    )
+                    ).onSuccess {
+                        showReportIssueDialog = false
+                        snackbarHostState.showSnackbar("Issue reported successfully")
+                    }.onError { error ->
+                        showReportIssueDialog = false
+                        snackbarHostState.showSnackbar(
+                            "Failed to report issue: ${error.message}"
+                        )
+                    }
                 }
             }
         )

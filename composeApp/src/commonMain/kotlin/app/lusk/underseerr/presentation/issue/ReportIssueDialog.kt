@@ -9,7 +9,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import app.lusk.underseerr.domain.model.IssueType
+
+import app.lusk.underseerr.ui.components.GradientButton
+import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
 
 /**
  * Dialog for reporting a new issue on media.
@@ -162,7 +167,7 @@ fun ReportIssueDialog(
             }
         },
         confirmButton = {
-            Button(
+            GradientButton(
                 onClick = {
                     if (message.isNotBlank()) {
                         isSubmitting = true
@@ -170,15 +175,17 @@ fun ReportIssueDialog(
                         onSubmit(selectedIssueType.value, message, selectedSeason, episodeNum)
                     }
                 },
-                enabled = message.isNotBlank() && !isSubmitting
+                enabled = message.isNotBlank() && !isSubmitting,
+                brush = LocalUnderseerrGradients.current.primary
             ) {
                 if (isSubmitting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
+                        color = Color.White
                     )
                 } else {
-                    Text("Submit")
+                    Text("Submit", fontWeight = FontWeight.Bold)
                 }
             }
         },

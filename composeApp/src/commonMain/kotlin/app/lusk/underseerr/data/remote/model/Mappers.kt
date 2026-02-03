@@ -68,7 +68,9 @@ fun ApiSearchResult.toSearchResult(): SearchResult {
         overview = overview ?: "",
         posterPath = posterPath,
         releaseDate = releaseDate ?: firstAirDate,
-        voteAverage = voteAverage ?: 0.0
+        voteAverage = voteAverage ?: 0.0,
+        mediaInfo = mediaInfo?.toMediaInfo(),
+        ratingKey = ratingKey
     )
 }
 

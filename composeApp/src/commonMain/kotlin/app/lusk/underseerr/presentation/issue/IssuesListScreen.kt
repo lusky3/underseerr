@@ -12,6 +12,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -318,6 +321,7 @@ private fun IssuesList(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun IssueItem(
     issue: Issue,
@@ -333,7 +337,10 @@ private fun IssueItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { showMenu = true }
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
@@ -418,52 +425,101 @@ private fun IssueItem(
                                 }
                             }
                             
-                            // Actions menu
-                            Box {
-                                IconButton(
-                                    onClick = { showMenu = true },
-                                    modifier = Modifier.size(24.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.MoreVert,
-                                        contentDescription = "More options",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                
-                                DropdownMenu(
-                                    expanded = showMenu,
-                                    onDismissRequest = { showMenu = false }
-                                ) {
-                                    if (issue.status == IssueStatus.OPEN) {
-                                        DropdownMenuItem(
-                                            text = { Text("Resolve") },
+                    // Actions menu
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        if (showMenu) {
+                            val gradients = app.lusk.underseerr.ui.theme.LocalUnderseerrGradients.current
+                            ModalBottomSheet(
+                                onDismissRequest = { showMenu = false },
+                                containerColor = Color.Transparent,
+                                dragHandle = { BottomSheetDefaults.DragHandle(color = gradients.onSurface.copy(alpha = 0.4f)) }
+                            ) {
+                                Box(modifier = Modifier.background(gradients.surface).padding(bottom = 32.dp)) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(
+                                            text = issue.mediaTitle,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = gradients.onSurface,
+                                            modifier = Modifier.padding(bottom = 4.dp)
+                                        )
+                                        
+                                        if (issue.status == IssueStatus.OPEN) {
+                                            // Resolve
+                                            Surface(
+                                                onClick = {
+                                                    showMenu = false
+                                                    onResolve()
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.15f),
+                                                shape = RoundedCornerShape(12.dp),
+                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f))
+                                            ) {
+                                                ListItem(
+                                                    headlineContent = { Text("Resolve", fontWeight = FontWeight.SemiBold) },
+                                                    leadingContent = { Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary) },
+                                                    colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
+                                                )
+                                            }
+                                        } else {
+                                            // Reopen
+                                            Surface(
+                                                onClick = {
+                                                    showMenu = false
+                                                    onReopen()
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.15f),
+                                                shape = RoundedCornerShape(12.dp),
+                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f))
+                                            ) {
+                                                ListItem(
+                                                    headlineContent = { Text("Reopen", fontWeight = FontWeight.SemiBold) },
+                                                    leadingContent = { Icon(Icons.Default.Refresh, null, tint = MaterialTheme.colorScheme.secondary) },
+                                                    colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
+                                                )
+                                            }
+                                        }
+                                        
+                                        // Delete
+                                        Surface(
                                             onClick = {
                                                 showMenu = false
-                                                onResolve()
+                                                onDelete()
                                             },
-                                            leadingIcon = { Icon(Icons.Default.CheckCircle, null) }
-                                        )
-                                    } else {
-                                        DropdownMenuItem(
-                                            text = { Text("Reopen") },
-                                            onClick = {
-                                                showMenu = false
-                                                onReopen()
-                                            },
-                                            leadingIcon = { Icon(Icons.Default.Refresh, null) }
-                                        )
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                                        ) {
+                                            ListItem(
+                                                headlineContent = { Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) },
+                                                leadingContent = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                                                colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
+                                            )
+                                        }
                                     }
-                                    DropdownMenuItem(
-                                        text = { Text("Delete") },
-                                        onClick = {
-                                            showMenu = false
-                                            onDelete()
-                                        },
-                                        leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
-                                    )
                                 }
                             }
+                        }
+                    }
                         }
                     }
                     

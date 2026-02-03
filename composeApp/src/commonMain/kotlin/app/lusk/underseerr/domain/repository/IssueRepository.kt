@@ -2,6 +2,7 @@ package app.lusk.underseerr.domain.repository
 
 import app.lusk.underseerr.domain.model.Issue
 import app.lusk.underseerr.domain.model.IssueCount
+import app.lusk.underseerr.domain.model.Result
 
 /**
  * Repository interface for Issue operations.

@@ -19,8 +19,8 @@ fun ApiMediaRequest.toDomain(): MediaRequest {
         id = id,
         mediaType = finalMediaType.toMediaType(),
         mediaId = finalMediaId,
-        title = "Title Unavailable",
-        posterPath = null,
+        title = media?.title ?: media?.name ?: "Title Unavailable",
+        posterPath = media?.posterPath,
         status = status.toRequestStatus(),
         requestedDate = createdAt?.toTimestamp() ?: app.lusk.underseerr.util.nowMillis(),
         seasons = seasons?.map { it.seasonNumber }

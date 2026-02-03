@@ -33,6 +33,7 @@ import app.lusk.underseerr.presentation.main.*
 @Composable
 fun UnderseerrNavHost(
     navController: NavHostController,
+    mainViewModel: MainViewModel,
     modifier: Modifier = Modifier,
     startDestination: Screen = Screen.Splash
 ) {
@@ -153,7 +154,6 @@ fun UnderseerrNavHost(
         }
         
         composable<Screen.MainTabs> {
-            val mainViewModel: MainViewModel = koinViewModel()
             MainTabsScreen(
                 onNavigateToMediaDetails = { type, id -> navController.navigate(Screen.MediaDetails(type, id)) },
                 onNavigateToSearch = { navController.navigate(Screen.Search) },
@@ -177,7 +177,6 @@ fun UnderseerrNavHost(
 
         // Redirect individual tab routes to MainTabs for deep links/compatibility
         composable<Screen.Home> {
-            val mainViewModel: MainViewModel = koinViewModel()
             LaunchedEffect(Unit) {
                 navController.navigate(Screen.MainTabs) {
                     popUpTo<Screen.Home> { inclusive = true }
@@ -187,7 +186,6 @@ fun UnderseerrNavHost(
         }
         
         composable<Screen.Requests> {
-            val mainViewModel: MainViewModel = koinViewModel()
             LaunchedEffect(Unit) {
                 navController.navigate(Screen.MainTabs) {
                     popUpTo<Screen.Requests> { inclusive = true }
@@ -197,7 +195,6 @@ fun UnderseerrNavHost(
         }
         
         composable<Screen.Issues> {
-            val mainViewModel: MainViewModel = koinViewModel()
             LaunchedEffect(Unit) {
                 navController.navigate(Screen.MainTabs) {
                     popUpTo<Screen.Issues> { inclusive = true }
@@ -207,7 +204,6 @@ fun UnderseerrNavHost(
         }
         
         composable<Screen.Profile> {
-            val mainViewModel: MainViewModel = koinViewModel()
             LaunchedEffect(Unit) {
                 navController.navigate(Screen.MainTabs) {
                     popUpTo<Screen.Profile> { inclusive = true }

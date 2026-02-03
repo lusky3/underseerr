@@ -24,5 +24,7 @@ data class ApiSearchResult(
     val posterPath: String? = null,
     val releaseDate: String? = null,
     val firstAirDate: String? = null,
-    val voteAverage: Double? = null
+    val voteAverage: Double? = null,
+    val mediaInfo: ApiMediaInfo? = null,
+    val ratingKey: String? = null
 )

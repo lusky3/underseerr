@@ -10,11 +10,15 @@ import app.lusk.underseerr.data.remote.model.ApiSearchResult
 import app.lusk.underseerr.data.remote.model.toSearchResult
 import app.lusk.underseerr.domain.model.SearchResult
 import app.lusk.underseerr.domain.security.SecurityManager
+import app.lusk.underseerr.data.local.dao.MediaRequestDao
+import app.lusk.underseerr.domain.model.MediaInfo
+import app.lusk.underseerr.domain.model.MediaStatus
 
 class WatchlistPagingSource(
     private val plexKtorService: PlexKtorService,
     private val discoveryKtorService: DiscoveryKtorService,
-    private val securityManager: SecurityManager
+    private val securityManager: SecurityManager,
+    private val mediaRequestDao: MediaRequestDao
 ) : PagingSource<Int, SearchResult>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, SearchResult> {
@@ -30,8 +34,35 @@ class WatchlistPagingSource(
                 discoveryKtorService.getWatchlist(page)
             }
 
-            val data = response.results.map { it.toSearchResult() }
-
+            val data = response.results.map { apiResult ->
+                val searchResult = apiResult.toSearchResult()
+                
+                // Hydrate with local request status if available and mediaInfo is null (e.g. from Plex)
+                if (searchResult.mediaInfo == null) {
+                    val localRequest = mediaRequestDao.getRequestByMediaId(searchResult.id)
+                    if (localRequest != null) {
+                        val status = when (localRequest.status) {
+                            1 -> MediaStatus.PENDING
+                            2 -> MediaStatus.PROCESSING
+                            4, 5 -> MediaStatus.AVAILABLE
+                            else -> MediaStatus.UNKNOWN
+                        }
+                        searchResult.copy(
+                            mediaInfo = MediaInfo(
+                                id = null,
+                                status = status,
+                                requestId = localRequest.id,
+                                available = status == MediaStatus.AVAILABLE
+                            )
+                        )
+                    } else {
+                        searchResult
+                    }
+                } else {
+                    searchResult
+                }
+            }
+            
             LoadResult.Page(
                 data = data,
                 prevKey = if (page == 1) null else page - 1,
@@ -69,7 +100,8 @@ class WatchlistPagingSource(
                 overview = metadata.summary,
                 posterPath = metadata.thumb,
                 releaseDate = metadata.year?.toString(),
-                voteAverage = metadata.rating ?: 0.0
+                voteAverage = metadata.rating ?: 0.0,
+                ratingKey = metadata.ratingKey
             )
         }
 

@@ -99,4 +99,8 @@ interface DiscoveryRepository {
      * Get TV shows by network.
      */
     fun getTvByNetwork(networkId: Int): Flow<PagingData<TvShow>>
+    /**
+     * Remove from watchlist.
+     */
+    suspend fun removeFromWatchlist(ratingKey: String): Result<Unit>
 }

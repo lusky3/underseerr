@@ -14,6 +14,8 @@ import app.lusk.underseerr.presentation.profile.ProfileScreen
 import app.lusk.underseerr.presentation.profile.ProfileViewModel
 import app.lusk.underseerr.presentation.request.RequestViewModel
 import app.lusk.underseerr.presentation.request.RequestsListScreen
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.CancellationException
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -27,23 +29,35 @@ fun MainTabsScreen(
     onNavigateToAbout: () -> Unit,
     onNavigateToRequestsFilter: (String?) -> Unit,
     onLogout: () -> Unit,
-    mainViewModel: MainViewModel = koinViewModel()
+    mainViewModel: MainViewModel
 ) {
     val selectedTab by mainViewModel.selectedTab.collectAsState()
     val pagerState = rememberPagerState(initialPage = selectedTab) { 4 }
 
     // Sync Pager -> ViewModel only when settled to avoid jumpy animations
-    LaunchedEffect(pagerState.settledPage) {
-        if (pagerState.settledPage != selectedTab) {
-            mainViewModel.setSelectedTab(pagerState.settledPage)
+    // Only update if the user interacted (isScrollInProgress was true) or if we are settled at a different page
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+             // We check isScrollInProgress to try and distinguish user swipes, but settledPage updates AFTER scroll finishes.
+             // A safer check is: if settledPage differs from selectedTab, update selectedTab.
+             // However, to avoid fighting with programmatic updates, we rely on the fact that programmatic updates
+             // set selectedTab FIRST, then animate.
+             // If we are settled at 'page', and selectedTab is different, it implies the user swiped to 'page'.
+             if (page != selectedTab) {
+                 mainViewModel.setSelectedTab(page)
+             }
         }
     }
 
     // Sync ViewModel -> Pager via explicit commands
     LaunchedEffect(Unit) {
-        mainViewModel.navCommand.collect { index ->
-            if (pagerState.currentPage != index || pagerState.isScrollInProgress) {
-                pagerState.animateScrollToPage(index)
+        mainViewModel.navCommand.collectLatest { index ->
+            try {
+                if (pagerState.currentPage != index) {
+                    pagerState.animateScrollToPage(index)
+                }
+            } catch (e: CancellationException) {
+                // Scroll cancelled by new navigation event, safe to ignore
             }
         }
     }

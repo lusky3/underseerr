@@ -24,6 +24,7 @@ import app.lusk.underseerr.domain.model.SearchResults
 import app.lusk.underseerr.domain.model.TvShow
 import app.lusk.underseerr.domain.model.Genre
 import app.lusk.underseerr.domain.repository.DiscoveryRepository
+import app.lusk.underseerr.domain.security.SecurityManager
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -200,7 +201,8 @@ class DiscoveryRepositoryImpl(
                 WatchlistPagingSource(
                     plexKtorService = plexKtorService,
                     discoveryKtorService = discoveryKtorService,
-                    securityManager = securityManager
+                    securityManager = securityManager,
+                    mediaRequestDao = mediaRequestDao
                 )
             }
         ).flow
@@ -240,5 +242,10 @@ class DiscoveryRepositoryImpl(
             config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
             pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getNetworkDetails(networkId, it) }, { it.toTvShow() }) }
         ).flow
+    }
+
+    override suspend fun removeFromWatchlist(ratingKey: String): Result<Unit> = safeApiCall {
+        val plexToken = securityManager.retrieveSecureData("plex_token") ?: throw Exception("Plex token not found")
+        plexKtorService.removeFromWatchlist(plexToken, ratingKey)
     }
 }

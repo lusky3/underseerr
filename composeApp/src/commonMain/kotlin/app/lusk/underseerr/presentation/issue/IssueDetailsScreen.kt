@@ -54,16 +54,15 @@ fun IssueDetailsScreen(
     LaunchedEffect(issueId) {
         isLoading = true
         error = null
-        issueRepository.getIssue(issueId).fold(
-            onSuccess = { 
+        issueRepository.getIssue(issueId)
+            .onSuccess { 
                 issue = it
                 isLoading = false
-            },
-            onFailure = { 
-                error = it.message ?: "Failed to load issue"
+            }
+            .onError { 
+                error = it.message
                 isLoading = false
             }
-        )
     }
     
     Scaffold(
@@ -94,15 +93,14 @@ fun IssueDetailsScreen(
                                     onClick = {
                                         showMenu = false
                                         scope.launch {
-                                            issueRepository.resolveIssue(issueId).fold(
-                                                onSuccess = { updated ->
+                                            issueRepository.resolveIssue(issueId)
+                                                .onSuccess { updated ->
                                                     issue = updated
                                                     snackbarHostState.showSnackbar("Issue resolved")
-                                                },
-                                                onFailure = {
-                                                    snackbarHostState.showSnackbar("Failed to resolve issue")
                                                 }
-                                            )
+                                                .onError {
+                                                    snackbarHostState.showSnackbar("Failed to resolve issue: ${it.message}")
+                                                }
                                         }
                                     },
                                     leadingIcon = {
@@ -115,15 +113,14 @@ fun IssueDetailsScreen(
                                     onClick = {
                                         showMenu = false
                                         scope.launch {
-                                            issueRepository.reopenIssue(issueId).fold(
-                                                onSuccess = { updated ->
+                                            issueRepository.reopenIssue(issueId)
+                                                .onSuccess { updated ->
                                                     issue = updated
                                                     snackbarHostState.showSnackbar("Issue reopened")
-                                                },
-                                                onFailure = {
-                                                    snackbarHostState.showSnackbar("Failed to reopen issue")
                                                 }
-                                            )
+                                                .onError {
+                                                    snackbarHostState.showSnackbar("Failed to reopen issue: ${it.message}")
+                                                }
                                         }
                                     },
                                     leadingIcon = {
@@ -175,16 +172,15 @@ fun IssueDetailsScreen(
                                 if (newComment.isNotBlank()) {
                                     scope.launch {
                                         isSendingComment = true
-                                        issueRepository.addComment(issueId, newComment).fold(
-                                            onSuccess = { updated ->
+                                        issueRepository.addComment(issueId, newComment)
+                                            .onSuccess { updated ->
                                                 issue = updated
                                                 newComment = ""
                                                 snackbarHostState.showSnackbar("Comment added")
-                                            },
-                                            onFailure = {
-                                                snackbarHostState.showSnackbar("Failed to add comment")
                                             }
-                                        )
+                                            .onError {
+                                                snackbarHostState.showSnackbar("Failed to add comment: ${it.message}")
+                                            }
                                         isSendingComment = false
                                     }
                                 }
@@ -222,12 +218,11 @@ fun IssueDetailsScreen(
             onRefresh = {
                 pullRefreshing = true
                 scope.launch {
-                    issueRepository.getIssue(issueId).fold(
-                        onSuccess = { 
+                    issueRepository.getIssue(issueId)
+                        .onSuccess { 
                             issue = it
-                        },
-                        onFailure = { /* Error already handled */ }
-                    )
+                        }
+                        .onError { /* Error already handled */ }
                     pullRefreshing = false
                 }
             },
@@ -264,16 +259,15 @@ fun IssueDetailsScreen(
                             scope.launch {
                                 isLoading = true
                                 error = null
-                                issueRepository.getIssue(issueId).fold(
-                                    onSuccess = { 
+                                issueRepository.getIssue(issueId)
+                                    .onSuccess { 
                                         issue = it
                                         isLoading = false
-                                    },
-                                    onFailure = { 
-                                        error = it.message ?: "Failed to load issue"
+                                    }
+                                    .onError { 
+                                        error = it.message
                                         isLoading = false
                                     }
-                                )
                             }
                         }) {
                             Text("Retry")
@@ -294,17 +288,18 @@ fun IssueDetailsScreen(
                     onDismiss = { editingComment = null },
                     onSubmit = { newMessage ->
                         scope.launch {
-                            issueRepository.updateComment(editingComment!!.id, newMessage).fold(
-                                onSuccess = {
-                                    editingComment = null
-                                    snackbarHostState.showSnackbar("Comment updated")
-                                    // Reload issue to reflect changes
+                        issueRepository.updateComment(editingComment!!.id, newMessage)
+                            .onSuccess {
+                                editingComment = null
+                                snackbarHostState.showSnackbar("Comment updated")
+                                // Reload issue to reflect changes
+                                scope.launch {
                                     issueRepository.getIssue(issueId).onSuccess { issue = it }
-                                },
-                                onFailure = {
-                                    snackbarHostState.showSnackbar("Failed to update comment")
                                 }
-                            )
+                            }
+                            .onError {
+                                snackbarHostState.showSnackbar("Failed to update comment: ${it.message}")
+                            }
                         }
                     }
                 )

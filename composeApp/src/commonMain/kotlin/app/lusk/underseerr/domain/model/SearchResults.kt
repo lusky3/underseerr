@@ -20,5 +20,7 @@ data class SearchResult(
     val overview: String,
     val posterPath: String?,
     val releaseDate: String?,
-    val voteAverage: Double
+    val voteAverage: Double,
+    val mediaInfo: MediaInfo? = null,
+    val ratingKey: String? = null
 )

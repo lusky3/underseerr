@@ -7,13 +7,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.AddTask
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,6 +40,13 @@ import app.lusk.underseerr.ui.components.ImageError
 import app.lusk.underseerr.ui.components.SimpleImagePlaceholder
 import app.lusk.underseerr.ui.components.OfflineBanner
 import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Delete
+import app.lusk.underseerr.domain.model.MediaStatus
+import app.lusk.underseerr.domain.model.MediaInfo
+import app.lusk.underseerr.ui.components.ConfirmDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +78,16 @@ fun HomeScreen(
             isRefreshing = false
         }
     }
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(viewModel) {
+        viewModel.uiEvent.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+    
+    var longPressedItem by remember { mutableStateOf<Any?>(null) }
+    var itemToRemoveFromWatchlist by remember { mutableStateOf<app.lusk.underseerr.domain.model.SearchResult?>(null) }
 
     val studios = listOf(
         3 to "Pixar",
@@ -108,7 +133,8 @@ fun HomeScreen(
             )
         },
         modifier = modifier.background(gradients.background),
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
@@ -156,7 +182,8 @@ fun HomeScreen(
                             items = trending,
                             onItemClickWithType = { id, type -> 
                                 if (type == MediaType.TV) onTvShowClick(id) else onMovieClick(id)
-                            }
+                            },
+                            onItemLongClick = { longPressedItem = it }
                         )
                     }
                 }
@@ -168,7 +195,8 @@ fun HomeScreen(
                             items = watchlist,
                             onItemClickWithType = { id, type -> 
                                 if (type == MediaType.TV) onTvShowClick(id) else onMovieClick(id)
-                            }
+                            },
+                            onItemLongClick = { longPressedItem = it }
                         )
                     }
                 }
@@ -178,7 +206,8 @@ fun HomeScreen(
                         MediaSection(
                             title = "Popular Movies",
                             items = popularMovies,
-                            onItemClick = { onMovieClick(it) }
+                            onItemClick = { onMovieClick(it) },
+                            onItemLongClick = { longPressedItem = it }
                         )
                     }
                 }
@@ -188,7 +217,8 @@ fun HomeScreen(
                         MediaSection(
                             title = "Popular TV Shows",
                             items = popularTvShows,
-                            onItemClick = { onTvShowClick(it) }
+                            onItemClick = { onTvShowClick(it) },
+                            onItemLongClick = { longPressedItem = it }
                         )
                     }
                 }
@@ -198,7 +228,8 @@ fun HomeScreen(
                         MediaSection(
                             title = "Upcoming Movies",
                             items = upcomingMovies,
-                            onItemClick = { onMovieClick(it) }
+                            onItemClick = { onMovieClick(it) },
+                            onItemLongClick = { longPressedItem = it }
                         )
                     }
                 }
@@ -208,7 +239,8 @@ fun HomeScreen(
                         MediaSection(
                             title = "Upcoming TV Shows",
                             items = upcomingTvShows,
-                            onItemClick = { onTvShowClick(it) }
+                            onItemClick = { onTvShowClick(it) },
+                            onItemLongClick = { longPressedItem = it }
                         )
                     }
                 }
@@ -293,7 +325,149 @@ fun HomeScreen(
             }
         }
     }
+
+    // Watchlist removal confirmation
+    itemToRemoveFromWatchlist?.let { item ->
+        ConfirmDialog(
+            title = "Remove from Watchlist?",
+            message = "This will remove '${item.title}' from your Plex watchlist across all your devices.",
+            confirmText = "Remove",
+            onConfirm = {
+                item.ratingKey?.let { viewModel.removeFromWatchlist(it) }
+                itemToRemoveFromWatchlist = null
+            },
+            onDismiss = { itemToRemoveFromWatchlist = null }
+        )
+    }
+
+    // Context Menu for Long Pressed Item
+    longPressedItem?.let { item ->
+        val itemData = when (item) {
+            is Movie -> ContextMenuItemData(item.id, MediaType.MOVIE, item.title, item.mediaInfo, null)
+            is TvShow -> ContextMenuItemData(item.id, MediaType.TV, item.name, item.mediaInfo, null)
+            is SearchResult -> ContextMenuItemData(item.id, item.mediaType, item.title, item.mediaInfo, item.ratingKey)
+            else -> ContextMenuItemData(0, MediaType.MOVIE, "", null, null)
+        }
+
+        if (itemData.id != 0) {
+            val status = itemData.mediaInfo?.status
+            val gradients = LocalUnderseerrGradients.current
+            
+            ModalBottomSheet(
+                onDismissRequest = { longPressedItem = null },
+                containerColor = Color.Transparent, // We'll use a gradients.surface background
+                dragHandle = { BottomSheetDefaults.DragHandle(color = gradients.onSurface.copy(alpha = 0.4f)) }
+            ) {
+                Box(modifier = Modifier.background(gradients.surface).padding(bottom = 32.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = itemData.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = gradients.onSurface,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        
+                        // Status Indicator (if already processed)
+                        if (status == MediaStatus.AVAILABLE || status == MediaStatus.PENDING || status == MediaStatus.PROCESSING) {
+                            val statusTitle = if (status == MediaStatus.AVAILABLE) "Available" else "Pending"
+                            val statusSub = if (status == MediaStatus.AVAILABLE) "This media is already available" else "Waiting for media to become available"
+                            val statusIcon = if (status == MediaStatus.AVAILABLE) Icons.Default.CheckCircle else Icons.Default.Schedule
+                            val statusColor = if (status == MediaStatus.AVAILABLE) Color(0xFF4CAF50) else Color(0xFFFFA000)
+                            
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().alpha(0.8f),
+                                color = gradients.onSurface.copy(alpha = 0.05f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                ListItem(
+                                    headlineContent = { Text(statusTitle, fontWeight = FontWeight.SemiBold) },
+                                    supportingContent = { Text(statusSub) },
+                                    leadingContent = { Icon(statusIcon, contentDescription = null, tint = statusColor) },
+                                    colors = ListItemDefaults.colors(
+                                        containerColor = Color.Transparent,
+                                        headlineColor = gradients.onSurface,
+                                        supportingColor = gradients.onSurface.copy(alpha = 0.7f)
+                                    )
+                                )
+                            }
+                        } else {
+                            // Request Option
+                            Surface(
+                                onClick = {
+                                    if (itemData.type == MediaType.MOVIE) {
+                                        viewModel.quickRequest(itemData.id, MediaType.MOVIE)
+                                    } else {
+                                        viewModel.quickRequestTv(itemData.id)
+                                    }
+                                    longPressedItem = null
+                                    // Refresh feeds to show new status
+                                    trending.refresh()
+                                    watchlist.refresh()
+                                    popularMovies.refresh()
+                                    popularTvShows.refresh()
+                                    upcomingMovies.refresh()
+                                    upcomingTvShows.refresh()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                            ) {
+                                ListItem(
+                                    headlineContent = { Text("Request", fontWeight = FontWeight.Bold) },
+                                    supportingContent = { Text("Using server defaults") },
+                                    leadingContent = { Icon(Icons.Default.AddTask, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                    colors = ListItemDefaults.colors(
+                                        containerColor = Color.Transparent,
+                                        headlineColor = gradients.onSurface,
+                                        supportingColor = gradients.onSurface.copy(alpha = 0.8f)
+                                    )
+                                )
+                            }
+                        }
+
+                        // Watchlist removal option
+                        if (itemData.ratingKey != null) {
+                            Surface(
+                                onClick = {
+                                    itemToRemoveFromWatchlist = item as SearchResult
+                                    longPressedItem = null
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                            ) {
+                                ListItem(
+                                    headlineContent = { Text("Remove from Watchlist", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) },
+                                    leadingContent = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    colors = ListItemDefaults.colors(
+                                        containerColor = Color.Transparent,
+                                        headlineColor = gradients.onSurface
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
+
+private data class ContextMenuItemData(
+    val id: Int,
+    val type: MediaType,
+    val title: String,
+    val mediaInfo: MediaInfo?,
+    val ratingKey: String?
+)
 
 @Composable
 private fun GenericGenreSection(
@@ -358,6 +532,7 @@ private fun <T : Any> MediaSection(
     items: LazyPagingItems<T>,
     onItemClick: (Int) -> Unit = {},
     onItemClickWithType: (Int, MediaType) -> Unit = { _, _ -> },
+    onItemLongClick: (T) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -410,7 +585,8 @@ private fun <T : Any> MediaSection(
                                             if (item.mediaType == MediaType.MOVIE) onItemClick(item.id)
                                         }
                                     }
-                                }
+                                },
+                                onLongClick = { onItemLongClick(item) }
                             )
                         }
                     }
@@ -440,10 +616,12 @@ private fun <T : Any> MediaSection(
         }
     }
 }
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun <T : Any> MediaCard(
     item: T,
     onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val (posterPath, title) = when (item) {
@@ -457,7 +635,10 @@ private fun <T : Any> MediaCard(
         modifier = modifier
             .width(150.dp)
             .height(225.dp)
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

@@ -166,8 +166,9 @@ fun MainScreen(
                 }
                 
                 // Main content - ViewModels are created inside UnderseerrNavHost when needed
-                UnderseerrNavHost(
+                 UnderseerrNavHost(
                     navController = navController,
+                    mainViewModel = viewModel,
                     startDestination = startDestination,
                     modifier = Modifier.fillMaxSize()
                 )

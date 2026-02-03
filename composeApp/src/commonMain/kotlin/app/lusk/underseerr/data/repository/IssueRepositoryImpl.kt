@@ -9,6 +9,8 @@ import app.lusk.underseerr.domain.model.IssueComment
 import app.lusk.underseerr.domain.model.IssueCount
 import app.lusk.underseerr.domain.model.MediaType
 import app.lusk.underseerr.domain.repository.IssueRepository
+import app.lusk.underseerr.domain.model.Result
+import app.lusk.underseerr.data.remote.safeApiCall
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -25,7 +27,7 @@ class IssueRepositoryImpl(
         take: Int,
         skip: Int,
         filter: String
-    ): Result<List<Issue>> = runCatching {
+    ): Result<List<Issue>> = safeApiCall {
         val response = issueService.getIssues(
             take = take,
             skip = skip,
@@ -69,11 +71,11 @@ class IssueRepositoryImpl(
         }
     }
     
-    override suspend fun getIssueCounts(): Result<IssueCount> = runCatching {
+    override suspend fun getIssueCounts(): Result<IssueCount> = safeApiCall {
         issueService.getIssueCounts().toDomain()
     }
     
-    override suspend fun getIssue(issueId: Int): Result<Issue> = runCatching {
+    override suspend fun getIssue(issueId: Int): Result<Issue> = safeApiCall {
         val issue = issueService.getIssue(issueId).toDomain()
 
         if (issue.mediaTitle.startsWith("Movie (TMDB:") || issue.mediaTitle.startsWith("TV Show (TMDB:")) {
@@ -111,7 +113,7 @@ class IssueRepositoryImpl(
         mediaId: Int,
         problemSeason: Int,
         problemEpisode: Int
-    ): Result<Issue> = runCatching {
+    ): Result<Issue> = safeApiCall {
         val request = ApiCreateIssueRequest(
             issueType = issueType,
             message = message,
@@ -122,23 +124,23 @@ class IssueRepositoryImpl(
         issueService.createIssue(request).toDomain()
     }
     
-    override suspend fun addComment(issueId: Int, message: String): Result<Issue> = runCatching {
+    override suspend fun addComment(issueId: Int, message: String): Result<Issue> = safeApiCall {
         issueService.addComment(issueId, message).toDomain()
     }
     
-    override suspend fun deleteIssue(issueId: Int): Result<Unit> = runCatching {
+    override suspend fun deleteIssue(issueId: Int): Result<Unit> = safeApiCall {
         issueService.deleteIssue(issueId)
     }
     
-    override suspend fun resolveIssue(issueId: Int): Result<Issue> = runCatching {
+    override suspend fun resolveIssue(issueId: Int): Result<Issue> = safeApiCall {
         issueService.updateIssueStatus(issueId, "resolved").toDomain()
     }
     
-    override suspend fun reopenIssue(issueId: Int): Result<Issue> = runCatching {
+    override suspend fun reopenIssue(issueId: Int): Result<Issue> = safeApiCall {
         issueService.updateIssueStatus(issueId, "open").toDomain()
     }
 
-    override suspend fun updateComment(commentId: Int, message: String): Result<IssueComment> = runCatching {
+    override suspend fun updateComment(commentId: Int, message: String): Result<IssueComment> = safeApiCall {
         issueService.updateComment(commentId, message).toDomain()
     }
 }

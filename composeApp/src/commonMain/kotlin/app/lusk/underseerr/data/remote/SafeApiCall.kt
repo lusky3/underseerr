@@ -14,6 +14,8 @@ import kotlinx.coroutines.TimeoutCancellationException
  * Validates: Requirements 1.7, 3.7
  */
 
+import kotlinx.coroutines.CancellationException
+
 /**
  * Execute a suspend API call safely and wrap result in Result type.
  * 
@@ -24,6 +26,8 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T> {
     return try {
         val response = apiCall()
         Result.success(response)
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         Result.error(e.toAppError())
     }

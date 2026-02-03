@@ -155,14 +155,23 @@ class RequestViewModel(
         loadRequests(currentPage + 1)
     }
 
+    private var refreshJob: kotlinx.coroutines.Job? = null
+    private var loadMoreJob: kotlinx.coroutines.Job? = null
+
     private fun loadRequests(page: Int) {
         if (page > 1 && isLastPage) return
 
-        println("RequestViewModel: loadRequests(page=$page, pageSize=$pageSize)")
-        viewModelScope.launch {
+        if (page == 1) {
+            refreshJob?.cancel()
+        } else {
+            if (loadMoreJob?.isActive == true) return
+        }
+
+        val job = viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             
+            println("RequestViewModel: loadRequests(page=$page, pageSize=$pageSize)")
             when (val result = requestRepository.refreshRequests(page, pageSize)) {
                 is Result.Success -> {
                     _isLoading.value = false
@@ -188,6 +197,13 @@ class RequestViewModel(
                     _isLoading.value = true
                 }
             }
+            _isLoading.value = false
+        }
+        
+        if (page == 1) {
+            refreshJob = job
+        } else {
+            loadMoreJob = job
         }
     }
     
@@ -255,6 +271,12 @@ class RequestViewModel(
     
     fun clearError() {
         _error.value = null
+    }
+
+    fun repairRequest(request: MediaRequest) {
+        viewModelScope.launch {
+            requestRepository.repairRequest(request)
+        }
     }
 }
 

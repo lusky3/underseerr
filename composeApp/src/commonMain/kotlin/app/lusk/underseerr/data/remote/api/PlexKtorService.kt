@@ -43,6 +43,13 @@ class PlexKtorService(private val client: HttpClient) {
             parameter("includeGuids", 1)
         }.body()
     }
+
+    suspend fun removeFromWatchlist(plexToken: String, ratingKey: String) {
+        client.delete("https://discover.provider.plex.tv/library/sections/watchlist/all") {
+            header("X-Plex-Token", plexToken)
+            parameter("ratingKey", ratingKey)
+        }
+    }
 }
 
 @Serializable

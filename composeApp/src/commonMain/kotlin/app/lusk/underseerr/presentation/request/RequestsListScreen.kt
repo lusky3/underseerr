@@ -8,10 +8,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
@@ -31,6 +34,15 @@ import app.lusk.underseerr.ui.components.AsyncImage
 import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
 import org.koin.compose.viewmodel.koinViewModel
 import app.lusk.underseerr.presentation.auth.AuthViewModel
+import app.lusk.underseerr.domain.repository.IssueRepository
+import app.lusk.underseerr.presentation.issue.ReportIssueDialog
+import app.lusk.underseerr.domain.model.MediaType
+import org.koin.compose.koinInject
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.AddTask
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.CheckCircle
+import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +55,11 @@ fun RequestsListScreen(
     val userRequests by viewModel.userRequests.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val issueRepository: IssueRepository = koinInject()
+    
+    var showReportIssueDialog by remember { mutableStateOf<MediaRequest?>(null) }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     var selectedFilter by remember { mutableStateOf(initialFilter ?: "All") }
     val filters = listOf("All", "Pending", "Approved", "Available", "Declined")
@@ -106,6 +123,7 @@ fun RequestsListScreen(
                 modifier = Modifier.background(gradients.appBar)
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier.background(gradients.background),
         containerColor = Color.Transparent
     ) { paddingValues ->
@@ -165,7 +183,10 @@ fun RequestsListScreen(
                                 serverUrl = serverUrl ?: "",
                                 canManageRequests = canManageRequests,
                                 onApprove = { viewModel.approveRequest(it) },
-                                onDecline = { viewModel.declineRequest(it) }
+                                onDecline = { viewModel.declineRequest(it) },
+                                onReportIssue = { showReportIssueDialog = it },
+                                onRepair = { viewModel.repairRequest(it) },
+                                error = error
                             )
                         } 
                         
@@ -189,6 +210,36 @@ fun RequestsListScreen(
             }
         }
     }
+
+    // Report Issue Dialog
+    showReportIssueDialog?.let { request ->
+        ReportIssueDialog(
+            mediaTitle = request.title,
+            isTvShow = request.mediaType == MediaType.TV,
+            numberOfSeasons = 0,
+            onDismiss = { showReportIssueDialog = null },
+            onSubmit = { issueType, message, season, episode ->
+                scope.launch {
+                    val result = issueRepository.createIssue(
+                        issueType = issueType,
+                        message = message,
+                        mediaId = request.mediaId,
+                        problemSeason = season,
+                        problemEpisode = episode
+                    )
+                    
+                    showReportIssueDialog = null
+                    
+                    if (result.isSuccess) {
+                        snackbarHostState.showSnackbar("Issue reported successfully")
+                    } else {
+                        val errorMsg = result.errorOrNull()?.message ?: "Unknown error"
+                        snackbarHostState.showSnackbar("Failed to report issue: $errorMsg")
+                    }
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -202,14 +253,17 @@ private fun RequestsList(
     serverUrl: String,
     canManageRequests: Boolean = false,
     onApprove: (Int) -> Unit = {},
-    onDecline: (Int) -> Unit = {}
+    onDecline: (Int) -> Unit = {},
+    onReportIssue: (MediaRequest) -> Unit = {},
+    onRepair: (MediaRequest) -> Unit = {},
+    error: String? = null
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     
-    LaunchedEffect(listState, requests.size, isLoadingMore) {
+    LaunchedEffect(listState, requests.size, isLoadingMore, error) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
             .collect { lastIndex ->
-                if (lastIndex != null && lastIndex >= requests.size - 5 && !isLoadingMore && requests.isNotEmpty()) {
+                if (lastIndex != null && lastIndex >= requests.size - 5 && !isLoadingMore && requests.isNotEmpty() && error == null) {
                     onLoadMore()
                 }
             }
@@ -231,7 +285,9 @@ private fun RequestsList(
                 onClick = { onRequestClick(request.id) },
                 canManageRequests = canManageRequests,
                 onApprove = onApprove,
-                onDecline = onDecline
+                onDecline = onDecline,
+                onReportIssue = onReportIssue,
+                onRepair = onRepair
             )
         }
         
@@ -245,6 +301,7 @@ private fun RequestsList(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun RequestItem(
     request: MediaRequest,
@@ -253,15 +310,26 @@ private fun RequestItem(
     modifier: Modifier = Modifier,
     canManageRequests: Boolean = false,
     onApprove: (Int) -> Unit = {},
-    onDecline: (Int) -> Unit = {}
+    onDecline: (Int) -> Unit = {},
+    onReportIssue: (MediaRequest) -> Unit = {},
+    onRepair: (MediaRequest) -> Unit = {}
 ) {
+    LaunchedEffect(request.title, request.posterPath) {
+        if (request.title == "Title Unavailable" || request.posterPath == null) {
+            onRepair(request)
+        }
+    }
+
     val gradients = LocalUnderseerrGradients.current
     var showMenu by remember { mutableStateOf(false) }
     
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { showMenu = true }
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
@@ -342,7 +410,7 @@ private fun RequestItem(
             }
             
             // Quick Actions Menu
-            if (canManageRequests && request.status == RequestStatus.PENDING) {
+            if (canManageRequests || request.status == RequestStatus.APPROVED || request.status == RequestStatus.AVAILABLE) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -359,38 +427,88 @@ private fun RequestItem(
                         )
                     }
                     
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Approve") },
-                            onClick = {
-                                onApprove(request.id)
-                                showMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.ThumbUp,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                    if (showMenu) {
+                        val gradients = LocalUnderseerrGradients.current
+                        ModalBottomSheet(
+                            onDismissRequest = { showMenu = false },
+                            containerColor = Color.Transparent,
+                            dragHandle = { BottomSheetDefaults.DragHandle(color = gradients.onSurface.copy(alpha = 0.4f)) }
+                        ) {
+                            Box(modifier = Modifier.background(gradients.surface).padding(bottom = 32.dp)) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        text = request.title,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = gradients.onSurface,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                    
+                                    if (canManageRequests && request.status == RequestStatus.PENDING) {
+                                        // Approve
+                                        Surface(
+                                            onClick = {
+                                                onApprove(request.id)
+                                                showMenu = false
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                                        ) {
+                                            ListItem(
+                                                headlineContent = { Text("Approve", fontWeight = FontWeight.SemiBold) },
+                                                leadingContent = { Icon(Icons.Default.ThumbUp, null, tint = MaterialTheme.colorScheme.primary) },
+                                                colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
+                                            )
+                                        }
+                                        
+                                        // Decline
+                                        Surface(
+                                            onClick = {
+                                                onDecline(request.id)
+                                                showMenu = false
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                                        ) {
+                                            ListItem(
+                                                headlineContent = { Text("Decline", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) },
+                                                leadingContent = { Icon(Icons.Default.ThumbDown, null, tint = MaterialTheme.colorScheme.error) },
+                                                colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
+                                            )
+                                        }
+                                    }
+                                    
+                                    if (request.status == RequestStatus.APPROVED || request.status == RequestStatus.AVAILABLE) {
+                                        // Report Issue
+                                        Surface(
+                                            onClick = {
+                                                onReportIssue(request)
+                                                showMenu = false
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                                        ) {
+                                            ListItem(
+                                                headlineContent = { Text("Report Issue", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) },
+                                                leadingContent = { Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error) },
+                                                colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
+                                            )
+                                        }
+                                    }
+                                }
                             }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Decline") },
-                            onClick = {
-                                onDecline(request.id)
-                                showMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.ThumbDown,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        )
+                        }
                     }
                 }
             }

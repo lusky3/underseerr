@@ -87,6 +87,8 @@ interface RequestRepository {
     suspend fun approveRequest(requestId: Int): Result<MediaRequest>
     
     suspend fun declineRequest(requestId: Int): Result<Unit>
+    
+    suspend fun repairRequest(request: MediaRequest): Result<MediaRequest>
 }
 
 /**
