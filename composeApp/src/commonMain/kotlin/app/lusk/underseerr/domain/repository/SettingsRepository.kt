@@ -177,6 +177,16 @@ interface SettingsRepository {
      * Set webhook secret for notification relay.
      */
     suspend fun updateWebhookSecret(secret: String?)
+
+    /**
+     * Get home screen configuration.
+     */
+    fun getHomeScreenConfig(): Flow<HomeScreenConfig>
+
+    /**
+     * Update home screen configuration.
+     */
+    suspend fun updateHomeScreenConfig(config: HomeScreenConfig)
 }
 
 /**
@@ -216,6 +226,23 @@ data class ServerConfig(
     val url: String,
     val name: String,
     val isActive: Boolean = false
+)
+
+/**
+ * Configuration for home screen sections.
+ */
+@Serializable
+data class HomeScreenConfig(
+    val showTrending: Boolean = true,
+    val showWatchlist: Boolean = true,
+    val showPopularMovies: Boolean = true,
+    val showPopularTvShows: Boolean = true,
+    val showUpcomingMovies: Boolean = true,
+    val showUpcomingTvShows: Boolean = true,
+    val showMovieGenres: Boolean = true,
+    val showTvGenres: Boolean = true,
+    val showStudios: Boolean = true,
+    val showNetworks: Boolean = true
 )
 
 /**

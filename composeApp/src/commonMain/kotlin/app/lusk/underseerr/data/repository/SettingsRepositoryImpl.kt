@@ -177,4 +177,11 @@ class SettingsRepositoryImpl(
     override suspend fun updateWebhookSecret(secret: String?) {
         preferencesManager.setWebhookSecret(secret)
     }
+
+    override fun getHomeScreenConfig(): Flow<app.lusk.underseerr.domain.repository.HomeScreenConfig> =
+        preferencesManager.getHomeScreenConfig()
+
+    override suspend fun updateHomeScreenConfig(config: app.lusk.underseerr.domain.repository.HomeScreenConfig) {
+        preferencesManager.setHomeScreenConfig(config)
+    }
 }

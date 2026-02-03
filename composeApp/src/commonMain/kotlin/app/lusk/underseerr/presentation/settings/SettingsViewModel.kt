@@ -90,6 +90,9 @@ class SettingsViewModel(
 
     private val _webhookSecret = MutableStateFlow<String?>(null)
     val webhookSecret: StateFlow<String?> = _webhookSecret.asStateFlow()
+
+    private val _homeScreenConfig = MutableStateFlow(app.lusk.underseerr.domain.repository.HomeScreenConfig())
+    val homeScreenConfig: StateFlow<app.lusk.underseerr.domain.repository.HomeScreenConfig> = _homeScreenConfig.asStateFlow()
     
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent: SharedFlow<String> = _uiEvent
@@ -215,6 +218,12 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.getVibrantThemeColors().collect {
                 _vibrantThemeColors.value = it
+            }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.getHomeScreenConfig().collect {
+                _homeScreenConfig.value = it
             }
         }
 
@@ -468,5 +477,11 @@ class SettingsViewModel(
             .map { chars.random() }
             .joinToString("")
         updateWebhookSecret(secret)
+    }
+
+    fun updateHomeScreenConfig(config: app.lusk.underseerr.domain.repository.HomeScreenConfig) {
+        viewModelScope.launch {
+            settingsRepository.updateHomeScreenConfig(config)
+        }
     }
 }

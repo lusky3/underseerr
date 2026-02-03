@@ -58,6 +58,7 @@ class PreferencesManager(
         val NOTIFICATION_SERVER_TYPE = stringPreferencesKey("notification_server_type")
         val PREMIUM_EXPIRES_AT = longPreferencesKey("premium_expires_at")
         val WEBHOOK_SECRET = stringPreferencesKey("webhook_secret")
+        val HOME_SCREEN_CONFIG = stringPreferencesKey("home_screen_config")
     }
     
     /**
@@ -538,6 +539,27 @@ class PreferencesManager(
     fun getWebhookSecret(): Flow<String?> {
         return dataStore.data.map { preferences ->
             preferences[PreferenceKeys.WEBHOOK_SECRET]
+        }
+    }
+
+    fun getHomeScreenConfig(): Flow<app.lusk.underseerr.domain.repository.HomeScreenConfig> {
+        return dataStore.data.map { preferences ->
+            val json = preferences[PreferenceKeys.HOME_SCREEN_CONFIG]
+            if (json != null) {
+                try {
+                    Json.decodeFromString<app.lusk.underseerr.domain.repository.HomeScreenConfig>(json)
+                } catch (e: Exception) {
+                    app.lusk.underseerr.domain.repository.HomeScreenConfig()
+                }
+            } else {
+                app.lusk.underseerr.domain.repository.HomeScreenConfig()
+            }
+        }
+    }
+
+    suspend fun setHomeScreenConfig(config: app.lusk.underseerr.domain.repository.HomeScreenConfig) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.HOME_SCREEN_CONFIG] = Json.encodeToString(config)
         }
     }
 }

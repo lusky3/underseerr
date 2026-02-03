@@ -31,8 +31,17 @@ class DiscoveryViewModel(
     private val profileRepository: ProfileRepository,
     private val profileViewModel: app.lusk.underseerr.presentation.profile.ProfileViewModel,
     private val issueViewModel: app.lusk.underseerr.presentation.issue.IssueViewModel,
-    private val requestViewModel: app.lusk.underseerr.presentation.request.RequestViewModel
+    private val requestViewModel: app.lusk.underseerr.presentation.request.RequestViewModel,
+    private val settingsRepository: app.lusk.underseerr.domain.repository.SettingsRepository
 ) : ViewModel() {
+    
+    val homeScreenConfig: StateFlow<app.lusk.underseerr.domain.repository.HomeScreenConfig> = 
+        settingsRepository.getHomeScreenConfig()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = app.lusk.underseerr.domain.repository.HomeScreenConfig()
+            )
     
     init {
         println("DiscoveryViewModel: Created")

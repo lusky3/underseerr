@@ -61,6 +61,7 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showMovieProfileDialog by remember { mutableStateOf(false) }
     var showTvProfileDialog by remember { mutableStateOf(false) }
+    var showHomeScreenDialog by remember { mutableStateOf(false) }
     var showPaywallDialog by remember { mutableStateOf<String?>(null) }
     
     // Auto-open premium paywall if navigated from Profile for Vibrant theme
@@ -125,6 +126,16 @@ fun SettingsScreen(
                 )
             }
             
+            HorizontalDivider()
+
+            // Home Screen Section
+            SettingsSectionHeader(title = "Home Screen")
+            SettingsItem(
+                title = "Customize Home Sections",
+                subtitle = "Enable or disable sections on the home screen",
+                onClick = { showHomeScreenDialog = true }
+            )
+
             HorizontalDivider()
             
             // Notifications Section
@@ -638,6 +649,16 @@ fun SettingsScreen(
             onDismiss = { showTvProfileDialog = false }
         )
     }
+
+    // Home Screen Customization Dialog
+    if (showHomeScreenDialog) {
+        val homeScreenConfig by viewModel.homeScreenConfig.collectAsState()
+        HomeScreenCustomizationDialog(
+            config = homeScreenConfig,
+            onConfigChanged = { viewModel.updateHomeScreenConfig(it) },
+            onDismiss = { showHomeScreenDialog = false }
+        )
+    }
 }
 
 @Composable
@@ -836,10 +857,123 @@ private fun QualityProfileDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Close")
             }
         }
     )
+}
+
+@Composable
+private fun HomeScreenCustomizationDialog(
+    config: app.lusk.underseerr.domain.repository.HomeScreenConfig,
+    onConfigChanged: (app.lusk.underseerr.domain.repository.HomeScreenConfig) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Customize Home Screen") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = "Choose which sections to display on your home screen.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Trending",
+                    checked = config.showTrending,
+                    onCheckedChange = { onConfigChanged(config.copy(showTrending = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Plex Watchlist",
+                    checked = config.showWatchlist,
+                    onCheckedChange = { onConfigChanged(config.copy(showWatchlist = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Popular Movies",
+                    checked = config.showPopularMovies,
+                    onCheckedChange = { onConfigChanged(config.copy(showPopularMovies = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Popular TV Shows",
+                    checked = config.showPopularTvShows,
+                    onCheckedChange = { onConfigChanged(config.copy(showPopularTvShows = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Upcoming Movies",
+                    checked = config.showUpcomingMovies,
+                    onCheckedChange = { onConfigChanged(config.copy(showUpcomingMovies = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Upcoming TV Shows",
+                    checked = config.showUpcomingTvShows,
+                    onCheckedChange = { onConfigChanged(config.copy(showUpcomingTvShows = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Movie Genres",
+                    checked = config.showMovieGenres,
+                    onCheckedChange = { onConfigChanged(config.copy(showMovieGenres = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "TV Genres",
+                    checked = config.showTvGenres,
+                    onCheckedChange = { onConfigChanged(config.copy(showTvGenres = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Studios",
+                    checked = config.showStudios,
+                    onCheckedChange = { onConfigChanged(config.copy(showStudios = it)) }
+                )
+
+                HomeScreenSwitchItem(
+                    title = "Networks",
+                    checked = config.showNetworks,
+                    onCheckedChange = { onConfigChanged(config.copy(showNetworks = it)) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        }
+    )
+}
+
+@Composable
+private fun HomeScreenSwitchItem(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = title, style = MaterialTheme.typography.bodyLarge)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
 }
 
 @Composable

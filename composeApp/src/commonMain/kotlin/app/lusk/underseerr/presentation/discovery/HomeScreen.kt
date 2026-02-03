@@ -53,6 +53,7 @@ fun HomeScreen(
     val movieGenres by viewModel.movieGenres.collectAsState()
     val tvGenres by viewModel.tvGenres.collectAsState()
     val isPlexUser by viewModel.isPlexUser.collectAsState()
+    val homeScreenConfig by viewModel.homeScreenConfig.collectAsState()
     
     var isRefreshing by remember { mutableStateOf(false) }
     
@@ -148,17 +149,19 @@ fun HomeScreen(
 
 
 
-                item {
-                    MediaSection(
-                        title = "Trending",
-                        items = trending,
-                        onItemClickWithType = { id, type -> 
-                            if (type == MediaType.TV) onTvShowClick(id) else onMovieClick(id)
-                        }
-                    )
+                if (homeScreenConfig.showTrending) {
+                    item {
+                        MediaSection(
+                            title = "Trending",
+                            items = trending,
+                            onItemClickWithType = { id, type -> 
+                                if (type == MediaType.TV) onTvShowClick(id) else onMovieClick(id)
+                            }
+                        )
+                    }
                 }
 
-                if (watchlist.itemCount > 0) {
+                if (homeScreenConfig.showWatchlist && watchlist.itemCount > 0) {
                     item {
                         MediaSection(
                             title = "Plex Watchlist",
@@ -170,39 +173,47 @@ fun HomeScreen(
                     }
                 }
 
-                item {
-                    MediaSection(
-                        title = "Popular Movies",
-                        items = popularMovies,
-                        onItemClick = { onMovieClick(it) }
-                    )
+                if (homeScreenConfig.showPopularMovies) {
+                    item {
+                        MediaSection(
+                            title = "Popular Movies",
+                            items = popularMovies,
+                            onItemClick = { onMovieClick(it) }
+                        )
+                    }
                 }
 
-                item {
-                    MediaSection(
-                        title = "Popular TV Shows",
-                        items = popularTvShows,
-                        onItemClick = { onTvShowClick(it) }
-                    )
+                if (homeScreenConfig.showPopularTvShows) {
+                    item {
+                        MediaSection(
+                            title = "Popular TV Shows",
+                            items = popularTvShows,
+                            onItemClick = { onTvShowClick(it) }
+                        )
+                    }
                 }
 
-                item {
-                    MediaSection(
-                        title = "Upcoming Movies",
-                        items = upcomingMovies,
-                        onItemClick = { onMovieClick(it) }
-                    )
+                if (homeScreenConfig.showUpcomingMovies) {
+                    item {
+                        MediaSection(
+                            title = "Upcoming Movies",
+                            items = upcomingMovies,
+                            onItemClick = { onMovieClick(it) }
+                        )
+                    }
                 }
 
-                item {
-                    MediaSection(
-                        title = "Upcoming TV Shows",
-                        items = upcomingTvShows,
-                        onItemClick = { onTvShowClick(it) }
-                    )
+                if (homeScreenConfig.showUpcomingTvShows) {
+                    item {
+                        MediaSection(
+                            title = "Upcoming TV Shows",
+                            items = upcomingTvShows,
+                            onItemClick = { onTvShowClick(it) }
+                        )
+                    }
                 }
 
-                if (movieGenres.isNotEmpty()) {
+                if (homeScreenConfig.showMovieGenres && movieGenres.isNotEmpty()) {
                     item {
                         GenericGenreSection(
                             title = "Movie Genres",
@@ -212,7 +223,7 @@ fun HomeScreen(
                     }
                 }
 
-                if (tvGenres.isNotEmpty()) {
+                if (homeScreenConfig.showTvGenres && tvGenres.isNotEmpty()) {
                     item {
                         GenericGenreSection(
                             title = "TV Genres",
@@ -222,20 +233,24 @@ fun HomeScreen(
                     }
                 }
 
-                item {
-                    ChipSection(
-                        title = "Studios",
-                        items = studios,
-                        onItemClick = { id, name -> onCategoryClick(CategoryType.STUDIO, id, name) }
-                    )
+                if (homeScreenConfig.showStudios) {
+                    item {
+                        ChipSection(
+                            title = "Studios",
+                            items = studios,
+                            onItemClick = { id, name -> onCategoryClick(CategoryType.STUDIO, id, name) }
+                        )
+                    }
                 }
 
-                item {
-                    ChipSection(
-                        title = "Networks",
-                        items = networks,
-                        onItemClick = { id, name -> onCategoryClick(CategoryType.NETWORK, id, name) }
-                    )
+                if (homeScreenConfig.showNetworks) {
+                    item {
+                        ChipSection(
+                            title = "Networks",
+                            items = networks,
+                            onItemClick = { id, name -> onCategoryClick(CategoryType.NETWORK, id, name) }
+                        )
+                    }
                 }
             }
 
