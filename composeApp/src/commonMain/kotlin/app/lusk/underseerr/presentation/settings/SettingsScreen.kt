@@ -575,8 +575,8 @@ fun SettingsScreen(
     showPaywallDialog?.let { context ->
         SubscriptionPaywallDialog(
             message = context,
-            onPurchase = {
-                viewModel.purchasePremium()
+            onPurchase = { isYearly ->
+                viewModel.purchasePremium(isYearly)
                 showPaywallDialog = null
             },
             onUnlock = { key ->
@@ -845,7 +845,7 @@ private fun QualityProfileDialog(
 @Composable
 private fun SubscriptionPaywallDialog(
     message: String,
-    onPurchase: () -> Unit,
+    onPurchase: (isYearly: Boolean) -> Unit,
     onUnlock: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -896,11 +896,20 @@ private fun SubscriptionPaywallDialog(
         },
         confirmButton = {
             if (!showSerialInput) {
-                Button(
-                    onClick = onPurchase,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Get Premium (Mock)")
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { onPurchase(false) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Monthly Premium")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { onPurchase(true) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Annual Premium (Best Value)")
+                    }
                 }
             } else {
                 Button(

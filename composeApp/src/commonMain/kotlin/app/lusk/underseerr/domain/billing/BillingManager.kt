@@ -21,8 +21,9 @@ interface BillingManager {
     /**
      * Purchase a premium product.
      * @param productId The ID of the product to purchase.
+     * @param basePlanId Optional ID of the specific base plan (e.g., monthly vs yearly).
      */
-    suspend fun purchaseProduct(productId: String): Result<Unit>
+    suspend fun purchaseProduct(productId: String, basePlanId: String? = null): Result<Unit>
 
     /**
      * Check if the user has an active subscription.

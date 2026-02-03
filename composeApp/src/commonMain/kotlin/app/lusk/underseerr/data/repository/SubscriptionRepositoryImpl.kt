@@ -122,13 +122,9 @@ class SubscriptionRepositoryImpl(
         }
     }
 
-    override suspend fun purchasePremium(): Result<Unit> {
-        // Mock implementation for testing "Get Premium (Mock)"
-        // In a real app, you would handle the billing result properly.
-        // For this task, we assume the user wants the button to just work.
-        setPremiumSecure(true)
-        return Result.success(Unit)
-        // return billingManager.purchaseProduct("premium_subscription")
+    override suspend fun purchasePremium(isYearly: Boolean): Result<Unit> {
+        val basePlanId = if (isYearly) "premium-yearly" else "premium-monthly"
+        return billingManager.purchaseProduct("premium_subscription", basePlanId)
     }
 
     override suspend fun resetSubscription(): Result<Unit> {

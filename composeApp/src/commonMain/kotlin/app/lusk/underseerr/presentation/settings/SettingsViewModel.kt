@@ -400,10 +400,10 @@ class SettingsViewModel(
         }
     }
 
-    fun purchasePremium() {
+    fun purchasePremium(isYearly: Boolean = false) {
         viewModelScope.launch {
-            subscriptionRepository.purchasePremium()
-            _uiEvent.emit("Premium unlocked!")
+            subscriptionRepository.purchasePremium(isYearly)
+            // Note: Success message will be handled by the subscription status update
         }
     }
 

@@ -53,7 +53,7 @@ class AndroidBillingManager(
         })
     }
 
-    override suspend fun purchaseProduct(productId: String): Result<Unit> = withContext(Dispatchers.Main) {
+    override suspend fun purchaseProduct(productId: String, basePlanId: String?): Result<Unit> = withContext(Dispatchers.Main) {
         val activity = activityProvider() ?: return@withContext Result.failure(Exception("No active activity found"))
 
         if (!billingClient.isReady) {
@@ -81,8 +81,15 @@ class AndroidBillingManager(
 
         val productDetails = productDetailsResult.productDetailsList!![0]
         
-        // 2. Launch Billing Flow
-        val offerToken = productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken ?: ""
+        // 2. Launch Billing Flow - Find the specific base plan or take the first one
+        val offer = if (basePlanId != null) {
+            productDetails.subscriptionOfferDetails?.find { it.basePlanId == basePlanId }
+                ?: productDetails.subscriptionOfferDetails?.firstOrNull()
+        } else {
+            productDetails.subscriptionOfferDetails?.firstOrNull()
+        }
+
+        val offerToken = offer?.offerToken ?: ""
         
         val productDetailsParamsList = listOf(
             BillingFlowParams.ProductDetailsParams.newBuilder()

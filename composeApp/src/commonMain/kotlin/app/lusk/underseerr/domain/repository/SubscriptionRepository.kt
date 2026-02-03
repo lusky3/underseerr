@@ -18,9 +18,9 @@ interface SubscriptionRepository {
     suspend fun refreshSubscriptionStatus(): Result<SubscriptionStatus>
 
     /**
-     * Initiates a mock purchase for testing purposes.
+     * Initiates a purchase for premium subscription.
      */
-    suspend fun purchasePremium(): Result<Unit>
+    suspend fun purchasePremium(isYearly: Boolean = false): Result<Unit>
 
     /**
      * Resets subscription to free (for testing).
