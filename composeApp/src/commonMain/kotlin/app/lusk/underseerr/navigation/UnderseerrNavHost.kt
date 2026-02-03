@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -41,8 +42,32 @@ fun UnderseerrNavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier,
-        enterTransition = { fadeIn(animationSpec = tween(300)) },
-        exitTransition = { fadeOut(animationSpec = tween(300)) },
+        enterTransition = {
+            val initialOrder = getOrder(initialState.destination)
+            val targetOrder = getOrder(targetState.destination)
+            if (initialOrder != -1 && targetOrder != -1 && initialOrder != targetOrder) {
+                if (targetOrder > initialOrder) {
+                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn()
+                } else {
+                    slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) + fadeIn()
+                }
+            } else {
+                fadeIn(animationSpec = tween(300))
+            }
+        },
+        exitTransition = {
+            val initialOrder = getOrder(initialState.destination)
+            val targetOrder = getOrder(targetState.destination)
+            if (initialOrder != -1 && targetOrder != -1 && initialOrder != targetOrder) {
+                if (targetOrder > initialOrder) {
+                    slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)) + fadeOut()
+                } else {
+                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + fadeOut()
+                }
+            } else {
+                fadeOut(animationSpec = tween(300))
+            }
+        },
         popEnterTransition = { fadeIn(animationSpec = tween(300)) },
         popExitTransition = { fadeOut(animationSpec = tween(300)) }
     ) {
@@ -323,5 +348,15 @@ fun UnderseerrNavHost(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+    }
+}
+
+private fun getOrder(destination: androidx.navigation.NavDestination): Int {
+    return when {
+        destination.hasRoute(Screen.Home::class) -> 0
+        destination.hasRoute(Screen.Requests::class) -> 1
+        destination.hasRoute(Screen.Issues::class) -> 2
+        destination.hasRoute(Screen.Profile::class) -> 3
+        else -> -1
     }
 }
