@@ -198,6 +198,14 @@ class RequestRepositoryImpl(
      * Property 16: Permission-Based Cancellation
      */
     override suspend fun cancelRequest(requestId: Int): Result<Unit> {
+        // If requestId is negative, it's an offline request queue item
+        if (requestId < 0) {
+            val mediaId = -requestId
+            offlineRequestDao.deleteByMediaId(mediaId)
+            mediaRequestDao.deleteById(requestId)
+            return Result.success(Unit)
+        }
+
         return try {
             requestKtorService.deleteRequest(requestId)
             // Remove from local cache on success

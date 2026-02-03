@@ -183,14 +183,14 @@ class DiscoveryRepositoryImpl(
     override fun getUpcomingMovies(): Flow<PagingData<Movie>> {
         return Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
-            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getUpcomingMovies(it) }, { it.toMovie() }) }
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getUpcomingMovies(it) }, { it.toMovie() }, discoveryDao, "upcoming_movies") }
         ).flow
     }
 
     override fun getUpcomingTvShows(): Flow<PagingData<TvShow>> {
         return Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
-            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getUpcomingTvShows(it) }, { it.toTvShow() }) }
+            pagingSourceFactory = { DiscoveryPagingSource({ discoveryKtorService.getUpcomingTvShows(it) }, { it.toTvShow() }, discoveryDao, "upcoming_tv") }
         ).flow
     }
 

@@ -19,5 +19,6 @@ data class MediaRequestEntity(
     val status: Int,
     val requestedDate: Long,
     val seasons: List<Int>?,
-    val cachedAt: Long
+    val cachedAt: Long,
+    val isOfflineQueued: Boolean = false
 )

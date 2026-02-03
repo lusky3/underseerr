@@ -23,9 +23,10 @@ expect object UnderseerrDatabaseConstructor : RoomDatabaseConstructor<Underseerr
         NotificationEntity::class,
         OfflineRequestEntity::class,
         UserEntity::class,
-        DiscoveryCacheEntity::class
+        DiscoveryCacheEntity::class,
+        IssueEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 @TypeConverters(IntListConverter::class)
@@ -39,6 +40,7 @@ abstract class UnderseerrDatabase : RoomDatabase() {
     abstract fun offlineRequestDao(): OfflineRequestDao
     abstract fun userDao(): UserDao
     abstract fun discoveryDao(): DiscoveryDao
+    abstract fun issueDao(): IssueDao
     
     companion object {
         const val DATABASE_NAME = "underseerr_database"

@@ -41,6 +41,7 @@ fun sharedModule(context: PlatformContext) = module {
     // Database
     single { 
         app.lusk.underseerr.data.local.getDatabaseBuilder(context)
+            .fallbackToDestructiveMigration(true)
             .setQueryCoroutineContext(Dispatchers.IO)
             .build() 
     }
@@ -51,6 +52,7 @@ fun sharedModule(context: PlatformContext) = module {
     single { get<UnderseerrDatabase>().offlineRequestDao() }
     single { get<UnderseerrDatabase>().userDao() }
     single { get<UnderseerrDatabase>().discoveryDao() }
+    single { get<UnderseerrDatabase>().issueDao() }
     
     // Repositories
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get(), get()) }
@@ -60,7 +62,7 @@ fun sharedModule(context: PlatformContext) = module {
     single<SettingsRepository> { SettingsRepositoryImpl(get(), get(), get(), get()) }
     single<CacheRepository> { CacheRepositoryImpl(get(), get()) }
     single<NotificationRepository> { NotificationRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
-    single<IssueRepository> { IssueRepositoryImpl(get(), get()) }
+    single<IssueRepository> { IssueRepositoryImpl(get(), get(), get()) }
     single<SubscriptionRepository> { SubscriptionRepositoryImpl(get(), get(), get(), get(), get()) }
 }
 

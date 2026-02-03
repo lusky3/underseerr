@@ -82,3 +82,41 @@ fun ApiIssueCount.toDomain(): IssueCount {
         closed = closed
     )
 }
+
+fun app.lusk.underseerr.domain.model.Issue.toEntity(): app.lusk.underseerr.data.local.entity.IssueEntity {
+    return app.lusk.underseerr.data.local.entity.IssueEntity(
+        id = id,
+        issueType = issueType.value,
+        status = status.value,
+        problemSeason = problemSeason,
+        problemEpisode = problemEpisode,
+        mediaTitle = mediaTitle,
+        mediaPosterPath = mediaPosterPath,
+        mediaType = mediaType,
+        mediaTmdbId = mediaTmdbId,
+        createdByName = createdByName,
+        createdByAvatar = createdByAvatar,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        cachedAt = app.lusk.underseerr.util.nowMillis()
+    )
+}
+
+fun app.lusk.underseerr.data.local.entity.IssueEntity.toDomain(): app.lusk.underseerr.domain.model.Issue {
+    return app.lusk.underseerr.domain.model.Issue(
+        id = id,
+        issueType = app.lusk.underseerr.domain.model.IssueType.fromValue(issueType),
+        status = app.lusk.underseerr.domain.model.IssueStatus.fromValue(status),
+        problemSeason = problemSeason,
+        problemEpisode = problemEpisode,
+        mediaTitle = mediaTitle,
+        mediaPosterPath = mediaPosterPath,
+        mediaType = mediaType,
+        mediaTmdbId = mediaTmdbId,
+        createdByName = createdByName,
+        createdByAvatar = createdByAvatar,
+        comments = emptyList(), // Comments are not currently normalized in DB for lists
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )
+}

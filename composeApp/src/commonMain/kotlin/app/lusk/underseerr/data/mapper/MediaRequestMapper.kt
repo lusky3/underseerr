@@ -39,7 +39,8 @@ fun MediaRequestEntity.toDomain(): MediaRequest {
         posterPath = posterPath,
         status = status.toRequestStatus(),
         requestedDate = requestedDate,
-        seasons = seasons
+        seasons = seasons,
+        isOfflineQueued = isOfflineQueued
     )
 }
 
@@ -61,7 +62,8 @@ fun MediaRequest.toEntity(cachedAt: Long = app.lusk.underseerr.util.nowMillis())
         },
         requestedDate = requestedDate,
         seasons = seasons,
-        cachedAt = cachedAt
+        cachedAt = cachedAt,
+        isOfflineQueued = isOfflineQueued
     )
 }
 

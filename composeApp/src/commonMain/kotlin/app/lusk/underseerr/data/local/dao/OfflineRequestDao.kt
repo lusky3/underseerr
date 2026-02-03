@@ -20,4 +20,7 @@ interface OfflineRequestDao {
     
     @Query("DELETE FROM offline_requests WHERE id = :id")
     suspend fun deleteById(id: Int)
+
+    @Query("DELETE FROM offline_requests WHERE mediaId = :mediaId")
+    suspend fun deleteByMediaId(mediaId: Int)
 }
