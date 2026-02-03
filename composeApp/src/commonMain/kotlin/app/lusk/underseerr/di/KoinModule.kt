@@ -53,7 +53,7 @@ fun sharedModule(context: PlatformContext) = module {
     single { get<UnderseerrDatabase>().discoveryDao() }
     
     // Repositories
-    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get()) }
+    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get(), get()) }
     single<DiscoveryRepository> { DiscoveryRepositoryImpl(get(), get(), get(), get(), get()) }
     single<RequestRepository> { RequestRepositoryImpl(get(), get(), get(), get(), get()) }
     single<ProfileRepository> { ProfileRepositoryImpl(get(), get(), get()) }

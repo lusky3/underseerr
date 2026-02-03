@@ -78,7 +78,7 @@ fun CategoryResultsScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (pagingItems.loadState.refresh is LoadState.Error) {
                 val e = pagingItems.loadState.refresh as LoadState.Error
-                ErrorDisplay(
+                app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
                     message = e.error.message ?: "Failed to load results",
                     onRetry = { pagingItems.retry() },
                     modifier = Modifier.align(Alignment.Center)
@@ -116,7 +116,7 @@ fun CategoryResultsScreen(
                     if (pagingItems.loadState.append is LoadState.Error) {
                         item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                             val e = pagingItems.loadState.append as LoadState.Error
-                            ErrorDisplay(
+                            app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
                                 message = e.error.message ?: "Failed to load more",
                                 onRetry = { pagingItems.retry() }
                             )
@@ -172,24 +172,6 @@ private fun CategoryMediaCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-    }
-}
-
-@Composable
-private fun ErrorDisplay(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = message, color = MaterialTheme.colorScheme.error)
-        Button(onClick = onRetry) {
-            Text("Retry")
         }
     }
 }

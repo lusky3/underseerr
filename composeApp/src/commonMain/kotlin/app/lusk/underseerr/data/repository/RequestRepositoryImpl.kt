@@ -6,6 +6,7 @@ import app.lusk.underseerr.data.mapper.toEntity
 import app.lusk.underseerr.data.remote.model.toMediaRequest
 import app.lusk.underseerr.data.remote.api.RequestKtorService
 import app.lusk.underseerr.data.remote.safeApiCall
+import app.lusk.underseerr.data.remote.toAppError
 import app.lusk.underseerr.domain.model.MediaRequest
 import app.lusk.underseerr.domain.model.RequestStatus
 import app.lusk.underseerr.domain.model.Result
@@ -196,11 +197,22 @@ class RequestRepositoryImpl(
      * Cancel a pending request.
      * Property 16: Permission-Based Cancellation
      */
-    override suspend fun cancelRequest(requestId: Int): Result<Unit> = safeApiCall {
-        requestKtorService.deleteRequest(requestId)
-        
-        // Remove from local cache
-        mediaRequestDao.deleteById(requestId)
+    override suspend fun cancelRequest(requestId: Int): Result<Unit> {
+        return try {
+            requestKtorService.deleteRequest(requestId)
+            // Remove from local cache on success
+            mediaRequestDao.deleteById(requestId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            val appError = e.toAppError()
+            // If 404, valid delete (it's already gone)
+            if (appError is app.lusk.underseerr.domain.model.AppError.NotFoundError) {
+                mediaRequestDao.deleteById(requestId)
+                Result.success(Unit)
+            } else {
+                Result.error(appError)
+            }
+        }
     }
     
     /**
@@ -332,5 +344,37 @@ class RequestRepositoryImpl(
 
     override suspend fun getPartialRequestsEnabled(): Result<Boolean> = safeApiCall {
         requestKtorService.getSystemSettings().partialRequestsEnabled
+    }
+
+    override suspend fun approveRequest(requestId: Int): Result<MediaRequest> {
+        val result = safeApiCall {
+            requestKtorService.approveRequest(requestId)
+        }
+        
+        return when (result) {
+            is Result.Success -> {
+                val mediaRequest = result.data.toMediaRequest()
+                mediaRequestDao.insert(mediaRequest.toEntity())
+                Result.success(mediaRequest)
+            }
+            is Result.Error -> result
+            else -> result.map { it.toMediaRequest() }
+        }
+    }
+
+    override suspend fun declineRequest(requestId: Int): Result<Unit> {
+        return try {
+            requestKtorService.declineRequest(requestId)
+            // Fetch updated request to update local cache
+            try {
+                val updatedRequest = requestKtorService.getRequest(requestId)
+                mediaRequestDao.insert(updatedRequest.toMediaRequest().toEntity())
+            } catch (e: Exception) {
+                // Ignore fetch error, but decline was successful
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.error(e.toAppError())
+        }
     }
 }

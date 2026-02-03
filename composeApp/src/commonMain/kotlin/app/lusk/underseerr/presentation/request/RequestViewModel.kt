@@ -110,6 +110,36 @@ class RequestViewModel(
         }
     }
     
+    fun approveRequest(requestId: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            when (val result = requestRepository.approveRequest(requestId)) {
+                is Result.Success -> _isLoading.value = false
+                is Result.Error -> {
+                    _error.value = result.error.message
+                    _isLoading.value = false
+                }
+                is Result.Loading -> _isLoading.value = true
+            }
+        }
+    }
+    
+    fun declineRequest(requestId: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            when (val result = requestRepository.declineRequest(requestId)) {
+                is Result.Success -> _isLoading.value = false
+                is Result.Error -> {
+                    _error.value = result.error.message
+                    _isLoading.value = false
+                }
+                is Result.Loading -> _isLoading.value = true
+            }
+        }
+    }
+    
     private var currentPage = 1
     private val pageSize = 10
     private var isLastPage = false

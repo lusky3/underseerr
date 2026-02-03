@@ -33,6 +33,9 @@ class AuthViewModel(
     private val _isCheckingStatus = MutableStateFlow(false)
     val isCheckingStatus: StateFlow<Boolean> = _isCheckingStatus.asStateFlow()
     
+    private val _currentUser = MutableStateFlow<UserProfile?>(null)
+    val currentUser: StateFlow<UserProfile?> = _currentUser.asStateFlow()
+    
     init {
         checkAuthStatus()
     }
@@ -48,10 +51,19 @@ class AuthViewModel(
                     if (currentState != AuthState.Authenticated) {
                         _authState.value = AuthState.Authenticated
                     }
+                    
+                    // Fetch user profile if not loaded
+                    if (_currentUser.value == null) {
+                        val result = authRepository.getCurrentUser()
+                        if (result is Result.Success) {
+                            _currentUser.value = result.data
+                        }
+                    }
                 } else {
                     // Only set to Unauthenticated if we aren't currently in a transitional state
                     if (currentState == AuthState.Initial || currentState == AuthState.Authenticated || currentState == AuthState.LoggingOut) {
                         _authState.value = AuthState.Unauthenticated
+                        _currentUser.value = null
                     }
                 }
             }

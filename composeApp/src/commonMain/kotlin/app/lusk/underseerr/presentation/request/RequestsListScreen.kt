@@ -9,6 +9,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
@@ -128,41 +131,56 @@ fun RequestsListScreen(
 
                 val authViewModel = koinViewModel<AuthViewModel>()
                 val serverUrl by authViewModel.getServerUrl().collectAsState("")
+                val currentUser by authViewModel.currentUser.collectAsState()
+                
+                // Determine permissions
+                val canManageRequests = remember(currentUser) {
+                    val user = currentUser
+                    if (user != null) {
+                        user.permissions.isAdmin || user.permissions.canManageRequests
+                    } else {
+                        false
+                    }
+                }
 
-                if (hasCachedData) {
-                    RequestsList(
-                        requests = filteredRequests,
-                        onRequestClick = onRequestClick,
-                        contentPadding = PaddingValues(top = if (isOffline) 48.dp else 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
-                        onLoadMore = { viewModel.loadMoreRequests() },
-                        isLoadingMore = isLoading && !pullRefreshing,
-                        serverUrl = serverUrl ?: ""
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Offline Banner pushes content down
+                    app.lusk.underseerr.ui.components.OfflineBanner(
+                        visible = isOffline && hasCachedData
                     )
-                } 
-                
-                if (isOffline && !hasCachedData) {
-                    ErrorDisplay(
-                        message = error!!,
-                        onRetry = { viewModel.refreshRequests() }
-                    )
-                } else if (!isLoading && !hasCachedData) {
-                    EmptyRequestsDisplay(status = selectedFilter)
+                    
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (hasCachedData) {
+                            RequestsList(
+                                requests = filteredRequests,
+                                onRequestClick = onRequestClick,
+                                contentPadding = PaddingValues(16.dp),
+                                onLoadMore = { viewModel.loadMoreRequests() },
+                                isLoadingMore = isLoading && !pullRefreshing,
+                                serverUrl = serverUrl ?: "",
+                                canManageRequests = canManageRequests,
+                                onApprove = { viewModel.approveRequest(it) },
+                                onDecline = { viewModel.declineRequest(it) }
+                            )
+                        } 
+                        
+                        if (isOffline && !hasCachedData) {
+                            app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
+                                message = error!!,
+                                onRetry = { viewModel.refreshRequests() }
+                            )
+                        } else if (!isLoading && !hasCachedData) {
+                            EmptyRequestsDisplay(status = selectedFilter)
+                        }
+
+                        // 2. Overlays
+                        if (isLoading && !pullRefreshing && !hasCachedData) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
                 }
-                
-                // 2. Overlays
-                // Only show center spinner if we are loading and don't have cached data,
-                // and it's NOT a pull-to-refresh (because PullToRefreshBox has its own indicator)
-                // 2. Overlays
-                if (isLoading && !pullRefreshing && !hasCachedData) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                
-                app.lusk.underseerr.ui.components.OfflineBanner(
-                    visible = isOffline && hasCachedData,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                )
             }
         }
     }
@@ -176,7 +194,10 @@ private fun RequestsList(
     contentPadding: PaddingValues = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp),
     onLoadMore: () -> Unit = {},
     isLoadingMore: Boolean = false,
-    serverUrl: String
+    serverUrl: String,
+    canManageRequests: Boolean = false,
+    onApprove: (Int) -> Unit = {},
+    onDecline: (Int) -> Unit = {}
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     
@@ -202,7 +223,10 @@ private fun RequestsList(
             RequestItem(
                 request = request,
                 serverUrl = serverUrl,
-                onClick = { onRequestClick(request.id) }
+                onClick = { onRequestClick(request.id) },
+                canManageRequests = canManageRequests,
+                onApprove = onApprove,
+                onDecline = onDecline
             )
         }
         
@@ -221,9 +245,14 @@ private fun RequestItem(
     request: MediaRequest,
     serverUrl: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    canManageRequests: Boolean = false,
+    onApprove: (Int) -> Unit = {},
+    onDecline: (Int) -> Unit = {}
 ) {
     val gradients = LocalUnderseerrGradients.current
+    var showMenu by remember { mutableStateOf(false) }
+    
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -281,7 +310,8 @@ private fun RequestItem(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(end = 24.dp) // Space for menu
                         )
                         
                         Spacer(modifier = Modifier.height(4.dp))
@@ -303,6 +333,60 @@ private fun RequestItem(
                     }
                     
                     StatusBadge(status = request.status)
+                }
+            }
+            
+            // Quick Actions Menu
+            if (canManageRequests && request.status == RequestStatus.PENDING) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                ) {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Quick Actions",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Approve") },
+                            onClick = {
+                                onApprove(request.id)
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ThumbUp,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Decline") },
+                            onClick = {
+                                onDecline(request.id)
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ThumbDown,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -363,28 +447,4 @@ private fun EmptyRequestsDisplay(
     }
 }
 
-@Composable
-private fun ErrorDisplay(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error
-            )
-            Button(onClick = onRetry) {
-                Text("Retry")
-            }
-        }
-    }
-}
+

@@ -30,6 +30,9 @@ class IssueViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
     
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+    
     init {
         loadIssues()
         loadIssueCounts()
@@ -38,7 +41,7 @@ class IssueViewModel(
     fun loadIssues(filter: String = _selectedFilter.value, isRefresh: Boolean = false) {
         viewModelScope.launch {
             _selectedFilter.value = filter
-            if (!isRefresh) {
+            if (!isRefresh && _uiState.value !is IssueListState.Success) {
                 _uiState.value = IssueListState.Loading
             }
             
@@ -47,6 +50,7 @@ class IssueViewModel(
     }
     
     private suspend fun fetchIssues(filter: String) {
+        _error.value = null
         issueRepository.getIssues(
             take = 50,
             skip = 0,
@@ -60,9 +64,14 @@ class IssueViewModel(
                 }
             },
             onFailure = { error ->
-                _uiState.value = IssueListState.Error(
-                    error.message ?: "Failed to load issues"
-                )
+                // If we have data, keep it and just set the error
+                if (_uiState.value is IssueListState.Success) {
+                    _error.value = error.message ?: "Failed to load issues"
+                } else {
+                    _uiState.value = IssueListState.Error(
+                        error.message ?: "Failed to load issues"
+                    )
+                }
             }
         )
     }
@@ -85,6 +94,7 @@ class IssueViewModel(
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
+            _error.value = null // Clear previous error on refresh
             fetchIssues(_selectedFilter.value)
             fetchIssueCounts()
             _isRefreshing.value = false
@@ -97,7 +107,9 @@ class IssueViewModel(
                 onSuccess = { 
                     refresh()
                 },
-                onFailure = { /* Handle error */ }
+                onFailure = { 
+                    _error.value = it.message ?: "Failed to resolve issue"
+                }
             )
         }
     }
@@ -108,7 +120,9 @@ class IssueViewModel(
                 onSuccess = { 
                     refresh()
                 },
-                onFailure = { /* Handle error */ }
+                onFailure = { 
+                    _error.value = it.message ?: "Failed to reopen issue"
+                }
             )
         }
     }
@@ -119,7 +133,9 @@ class IssueViewModel(
                 onSuccess = { 
                     refresh()
                 },
-                onFailure = { /* Handle error */ }
+                onFailure = { 
+                   _error.value = it.message ?: "Failed to delete issue"
+                }
             )
         }
     }

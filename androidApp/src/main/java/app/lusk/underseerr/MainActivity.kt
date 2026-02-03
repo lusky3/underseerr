@@ -82,9 +82,8 @@ class MainActivity : FragmentActivity() {
                         }
                     )
                 } else {
-                    val startRouteByIntent = intent?.data?.let { Screen.parseDeepLink(it.toString()) }
                     MainScreen(
-                        startDestination = startRouteByIntent ?: Screen.Splash
+                        startDestination = Screen.Splash
                     )
                 }
             }
@@ -109,10 +108,9 @@ class MainActivity : FragmentActivity() {
     }
     
     private fun handleIntent(intent: android.content.Intent) {
-        val action = intent.action
         val data = intent.data
-        if (android.content.Intent.ACTION_VIEW == action && data != null) {
-            // Logic to handle deep link
+        if (data != null) {
+            viewModel.handleDeepLink(data.toString())
         }
     }
 

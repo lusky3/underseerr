@@ -120,17 +120,7 @@ class PushNotificationService : FirebaseMessagingService() {
         processIncomingNotification(title, body, imageUrl, deepLink, notificationTypeString, message.data)
     }
 
-        if (!shouldShow) {
-            logger.d(TAG, "NOT SHOWING: Notification for '$type' is disabled in your app settings.")
-            return
-        }
-        
-        // 3. Construct Deep Link if missing or generic
-        val finalDeepLink = deepLink ?: constructDeepLinkFromData(notificationTypeString, title, body, imageUrl)
-        
-        logger.d(TAG, "SHOWING notification: $title with deepLink: $finalDeepLink")
-        showNotification(title, body, imageUrl, finalDeepLink)
-    }
+
 
     private fun constructDeepLinkFromData(type: String?, title: String, body: String, extraData: String?): String? {
         // Since we don't have the raw data map here easily without refactoring, 
@@ -190,7 +180,7 @@ class PushNotificationService : FirebaseMessagingService() {
         // Priority: Provided Action URL -> Constructed ID-based Link -> Default Request Link
         var finalDeepLink = deepLink
         
-        if (finalDeepLink.isNullOrEmpty() || finalDeepLink == "underseerr://request") {
+        if (finalDeepLink.isNullOrEmpty() || finalDeepLink == "underseerr://request" || finalDeepLink.startsWith("/")) {
              // Try to find IDs
              val tmdbId = dataMap["tmdbId"]?.takeIf { it.isNotEmpty() }
              val mediaId = dataMap["mediaId"]?.takeIf { it.isNotEmpty() }

@@ -180,16 +180,17 @@ private fun SearchResultsList(
                 results.loadState.refresh is LoadState.Error -> {
                     val e = results.loadState.refresh as LoadState.Error
                     item {
-                        ErrorDisplay(
+                        app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
                             message = e.error.message ?: "Unknown Error",
-                            onRetry = { results.retry() }
+                            onRetry = { results.retry() },
+                            modifier = Modifier.fillParentMaxSize()
                         )
                     }
                 }
                 results.loadState.append is LoadState.Error -> {
                     val e = results.loadState.append as LoadState.Error
                     item {
-                        ErrorDisplay(
+                        app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
                             message = e.error.message ?: "Failed to load more results",
                             onRetry = { results.retry() }
                         )
@@ -266,32 +267,6 @@ private fun SearchResultItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ErrorDisplay(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error
-            )
-            Button(onClick = onRetry) {
-                Text("Retry")
             }
         }
     }

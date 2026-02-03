@@ -46,6 +46,7 @@ fun IssuesListScreen(
     val issueCounts by viewModel.issueCounts.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val error by viewModel.error.collectAsState()
     
     val filterMap = mapOf("Open" to "open", "All" to "all", "Resolved" to "resolved")
     val inverseFilterMap = filterMap.entries.associate { it.value to it.key }
@@ -123,53 +124,67 @@ fun IssuesListScreen(
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding())
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Issue counts summary
-                val counts = issueCounts
-                if (counts != null) {
-                    IssueCountsCard(
-                        counts = counts,
-                        onCountClick = { filter ->
-                            viewModel.loadIssues(filter)
-                        }
-                    )
-                }
+            Box(modifier = Modifier.fillMaxSize()) {
+                val hasCachedData = uiState is IssueListState.Success
+                val isOffline = error != null
                 
-                // Content
-                Box(modifier = Modifier.weight(1f)) {
-                    when (val state = uiState) {
-                        is IssueListState.Loading -> {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator()
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Offline Banner pushes content down
+                    app.lusk.underseerr.ui.components.OfflineBanner(
+                        visible = isOffline && hasCachedData
+                    )
+
+                    // Issue counts summary (only if we have data or it's just a background refresh failure)
+                    val counts = issueCounts
+                    if (counts != null) {
+                        IssueCountsCard(
+                            counts = counts,
+                            onCountClick = { filter ->
+                                viewModel.loadIssues(filter)
                             }
-                        }
-                        is IssueListState.Empty -> {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                EmptyIssuesDisplay(
-                                    filter = tabTitles[selectedTabIndex]
+                        )
+                    }
+                    
+                    // Content
+                    Box(modifier = Modifier.weight(1f)) {
+                        when (val state = uiState) {
+                            is IssueListState.Loading -> {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                            is IssueListState.Empty -> {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    EmptyIssuesDisplay(
+                                        filter = tabTitles[selectedTabIndex]
+                                    )
+                                }
+                            }
+                            is IssueListState.Success -> {
+                                IssuesList(
+                                    issues = state.issues,
+                                    onIssueClick = onIssueClick,
+                                    onResolve = { viewModel.resolveIssue(it) },
+                                    onReopen = { viewModel.reopenIssue(it) },
+                                    onDelete = { viewModel.deleteIssue(it) },
+                                    // Add top padding if banner is visible is tricky here because banner is overlay
+                                    // But list has its own padding.
+                                    modifier = Modifier.fillMaxSize()
                                 )
                             }
-                        }
-                        is IssueListState.Success -> {
-                            IssuesList(
-                                issues = state.issues,
-                                onIssueClick = onIssueClick,
-                                onResolve = { viewModel.resolveIssue(it) },
-                                onReopen = { viewModel.reopenIssue(it) },
-                                onDelete = { viewModel.deleteIssue(it) }
-                            )
-                        }
-                        is IssueListState.Error -> {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                app.lusk.underseerr.ui.components.ErrorState(
-                                    message = state.message,
-                                    onRetry = { viewModel.refresh() }
-                                )
+                            is IssueListState.Error -> {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
+                                        message = state.message,
+                                        onRetry = { viewModel.refresh() }
+                                    )
+                                }
                             }
                         }
                     }
-                    
                 }
+                
+
             }
         }
     }

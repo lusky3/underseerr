@@ -28,7 +28,8 @@ class AuthRepositoryImpl(
     private val authKtorService: AuthKtorService,
     private val plexKtorService: PlexKtorService,
     private val securityManager: SecurityManager,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val database: app.lusk.underseerr.data.local.UnderseerrDatabase
 ) : AuthRepository {
     
     companion object {
@@ -341,6 +342,13 @@ class AuthRepositoryImpl(
         // Clear stored credentials
         securityManager.clearSecureData()
         preferencesManager.clearAuthData()
+        
+        // Clear local database (cache, requests, users, etc.)
+        try {
+            database.clearAllTables()
+        } catch (e: Exception) {
+            println("AuthRepositoryImpl: Failed to clear database: ${e.message}")
+        }
     }
     
     override fun isAuthenticated(): Flow<Boolean> {

@@ -40,6 +40,10 @@ interface RequestKtorService {
     suspend fun getRadarrService(id: Int): ApiServiceSettings
     
     suspend fun getSonarrService(id: Int): ApiServiceSettings
+    
+    suspend fun approveRequest(requestId: Int): ApiMediaRequest
+    
+    suspend fun declineRequest(requestId: Int)
 }
 
 /**
@@ -110,5 +114,13 @@ open class RequestServiceImpl(private val client: HttpClient) : RequestKtorServi
 
     override suspend fun getSonarrService(id: Int): ApiServiceSettings {
         return client.get("/api/v1/service/sonarr/$id").body()
+    }
+    
+    override suspend fun approveRequest(requestId: Int): ApiMediaRequest {
+        return client.post("/api/v1/request/$requestId/approve").body()
+    }
+    
+    override suspend fun declineRequest(requestId: Int) {
+        client.post("/api/v1/request/$requestId/decline")
     }
 }

@@ -64,7 +64,7 @@ fun RequestDetailsScreen(
                     }
                 },
                 actions = {
-                    if (request?.status == RequestStatus.PENDING) {
+                    if (request?.status == RequestStatus.PENDING || request?.status == RequestStatus.DECLINED) {
                         IconButton(onClick = { showCancelDialog = true }) {
                             Icon(Icons.Default.Delete, "Cancel Request", tint = gradients.onAppBar)
                         }

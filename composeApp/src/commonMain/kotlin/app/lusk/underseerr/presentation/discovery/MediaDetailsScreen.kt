@@ -176,7 +176,7 @@ fun MediaDetailsScreen(
                     }
                 }
                 is MediaDetailsState.Error -> {
-                    ErrorDisplay(
+                    app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
                         message = detailsState.message,
                         onRetry = { viewModel.loadMediaDetails(mediaType, mediaId) }
                     )
@@ -188,6 +188,7 @@ fun MediaDetailsScreen(
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -545,28 +546,4 @@ private fun InfoItem(
     }
 }
 
-@Composable
-private fun ErrorDisplay(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error
-            )
-            Button(onClick = onRetry) {
-                Text("Retry")
-            }
-        }
-    }
-}
+

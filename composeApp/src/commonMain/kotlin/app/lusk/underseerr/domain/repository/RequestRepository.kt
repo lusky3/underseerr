@@ -83,6 +83,10 @@ interface RequestRepository {
     suspend fun getRootFolders(isMovie: Boolean = true): Result<List<RootFolder>>
     
     suspend fun getPartialRequestsEnabled(): Result<Boolean>
+    
+    suspend fun approveRequest(requestId: Int): Result<MediaRequest>
+    
+    suspend fun declineRequest(requestId: Int): Result<Unit>
 }
 
 /**

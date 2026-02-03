@@ -60,23 +60,26 @@ sealed class Screen {
     companion object {
         fun parseDeepLink(uri: String): Screen? {
              return when {
-                uri.startsWith("lusk://setup") -> {
+                uri.startsWith("lusk://setup") || uri.startsWith("underseerr://setup") -> {
                     val serverUrl = uri.substringAfter("server=", "")
                         .takeIf { it.isNotEmpty() }
                         ?.let { it.decodeURLQueryComponent() }
                     ServerConfig(serverUrl)
                 }
-                uri.startsWith("lusk://media/") -> {
-                    val parts = uri.removePrefix("lusk://media/").split("/")
-                    if (parts.size == 2) {
+                uri.startsWith("lusk://media/") || uri.startsWith("underseerr://media/") -> {
+                    val parts = uri.replace("lusk://media/", "").replace("underseerr://media/", "").split("/")
+                    if (parts.size >= 2) {
                         MediaDetails(parts[0], parts[1].toIntOrNull() ?: 0)
                     } else null
                 }
-                uri.startsWith("lusk://request/") -> {
-                    val requestId = uri.removePrefix("lusk://request/").toIntOrNull()
+                uri.startsWith("lusk://request/") || uri.startsWith("underseerr://request/") -> {
+                    val requestId = uri.replace("lusk://request/", "").replace("underseerr://request/", "").toIntOrNull()
                     requestId?.let { RequestDetails(it) }
                 }
-                uri.startsWith("lusk://auth") -> {
+                uri == "lusk://request" || uri == "underseerr://request" -> {
+                    Requests()
+                }
+                uri.startsWith("lusk://auth") || uri.startsWith("underseerr://auth") -> {
                     val token = uri.substringAfter("token=", "")
                     if (token.isNotEmpty()) {
                         PlexAuthCallback(token)

@@ -27,6 +27,18 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
+    val viewModel = org.koin.compose.viewmodel.koinViewModel<MainViewModel>()
+    
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { screen: Screen ->
+            // Reset back stack to Home to ensure consistent back navigation
+            navController.navigate(Screen.Home) {
+                popUpTo(0) { inclusive = true }
+            }
+            navController.navigate(screen)
+        }
+    }
+    
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     

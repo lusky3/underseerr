@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -90,6 +91,18 @@ class MainViewModel(
                 // System denied but app enabled -> Toggle off app setting
                 settingsRepository.updateNotificationSettings(settings.copy(enabled = false))
             }
+        }
+    }
+    private val _navigationEvent = kotlinx.coroutines.flow.MutableSharedFlow<app.lusk.underseerr.navigation.Screen>(
+        replay = 1,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
+    val navigationEvent = _navigationEvent.asSharedFlow()
+
+    fun handleDeepLink(uri: String) {
+        val screen = app.lusk.underseerr.navigation.Screen.parseDeepLink(uri)
+        if (screen != null) {
+            _navigationEvent.tryEmit(screen)
         }
     }
 }

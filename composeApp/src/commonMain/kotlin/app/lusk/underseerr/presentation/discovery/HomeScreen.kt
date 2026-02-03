@@ -129,9 +129,15 @@ fun HomeScreen(
             ) {
                 val hasOfflineError = trending.loadState.refresh is LoadState.Error ||
                         popularMovies.loadState.refresh is LoadState.Error ||
-                        popularTvShows.loadState.refresh is LoadState.Error
+                        popularTvShows.loadState.refresh is LoadState.Error ||
+                        upcomingMovies.loadState.refresh is LoadState.Error ||
+                        upcomingTvShows.loadState.refresh is LoadState.Error
                 
-                val hasCachedData = trending.itemCount > 0 || popularMovies.itemCount > 0
+                val hasCachedData = trending.itemCount > 0 || 
+                        popularMovies.itemCount > 0 || 
+                        popularTvShows.itemCount > 0 ||
+                        upcomingMovies.itemCount > 0 ||
+                        upcomingTvShows.itemCount > 0
                 val showOfflineBanner = hasOfflineError && hasCachedData
 
                 LazyColumn(
@@ -364,9 +370,10 @@ private fun <T : Any> MediaSection(
             }
             loadState is LoadState.Error && isListEmpty -> {
                 val error = loadState.error
-                ErrorMessage(
+                app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
                     message = error.message ?: "Failed to load content",
-                    onRetry = { items.retry() }
+                    onRetry = { items.retry() },
+                    modifier = Modifier.height(300.dp) // Constrain height inside the list
                 )
             }
             else -> {
@@ -418,7 +425,6 @@ private fun <T : Any> MediaSection(
         }
     }
 }
-
 @Composable
 private fun <T : Any> MediaCard(
     item: T,
@@ -481,26 +487,4 @@ private fun <T : Any> MediaCard(
     }
 }
 
-@Composable
-private fun ErrorMessage(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.error
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onRetry) {
-            Text("Retry")
-        }
-    }
-}
+
