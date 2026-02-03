@@ -84,7 +84,17 @@ jobs:
 
     - name: Build Release APK
       if: steps.check_changes.outputs.skip != 'true'
-      run: ./gradlew :androidApp:assembleRelease
+      env:
+        KEYSTORE_PATH: "underseerr-upload.jks"
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        ENCODED_KEYSTORE: ${{ secrets.ENCODED_KEYSTORE }}
+      run: |
+        if [ -n "$ENCODED_KEYSTORE" ]; then
+          echo "$ENCODED_KEYSTORE" | base64 --decode > underseerr-upload.jks
+        fi
+        ./gradlew :androidApp:assembleRelease
 
     - name: Create Sentry release
       uses: getsentry/action-release@v3
