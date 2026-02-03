@@ -90,6 +90,9 @@ jobs:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         ENCODED_KEYSTORE: ${{ secrets.ENCODED_KEYSTORE }}
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+        SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
       run: |
         if [ -n "$ENCODED_KEYSTORE" ]; then
           echo "$ENCODED_KEYSTORE" | base64 --decode > underseerr-upload.jks
