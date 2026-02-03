@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -98,8 +100,20 @@ fun AdaptiveNavigation(
         Column(modifier = modifier) {
 
             // Solid navigation bar
+            val mainViewModel = org.koin.compose.viewmodel.koinViewModel<app.lusk.underseerr.presentation.main.MainViewModel>()
             NavigationBar(
-                modifier = Modifier.background(gradients.navBar),
+                modifier = Modifier
+                    .background(gradients.navBar)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = { mainViewModel.emitTabDragEnd() },
+                            onDragCancel = { mainViewModel.emitTabDragEnd() },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                mainViewModel.emitTabDrag(dragAmount)
+                            }
+                        )
+                    },
                 containerColor = Color.Transparent,
                 contentColor = gradients.onNavBar,
                 tonalElevation = 0.dp

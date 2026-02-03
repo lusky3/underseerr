@@ -885,64 +885,76 @@ private fun HomeScreenCustomizationDialog(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
+                val enabledCount = config.enabledCount()
+
                 HomeScreenSwitchItem(
                     title = "Trending",
                     checked = config.showTrending,
-                    onCheckedChange = { onConfigChanged(config.copy(showTrending = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showTrending = it)) },
+                    enabled = !config.showTrending || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "Plex Watchlist",
                     checked = config.showWatchlist,
-                    onCheckedChange = { onConfigChanged(config.copy(showWatchlist = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showWatchlist = it)) },
+                    enabled = !config.showWatchlist || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "Popular Movies",
                     checked = config.showPopularMovies,
-                    onCheckedChange = { onConfigChanged(config.copy(showPopularMovies = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showPopularMovies = it)) },
+                    enabled = !config.showPopularMovies || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "Popular TV Shows",
                     checked = config.showPopularTvShows,
-                    onCheckedChange = { onConfigChanged(config.copy(showPopularTvShows = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showPopularTvShows = it)) },
+                    enabled = !config.showPopularTvShows || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "Upcoming Movies",
                     checked = config.showUpcomingMovies,
-                    onCheckedChange = { onConfigChanged(config.copy(showUpcomingMovies = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showUpcomingMovies = it)) },
+                    enabled = !config.showUpcomingMovies || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "Upcoming TV Shows",
                     checked = config.showUpcomingTvShows,
-                    onCheckedChange = { onConfigChanged(config.copy(showUpcomingTvShows = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showUpcomingTvShows = it)) },
+                    enabled = !config.showUpcomingTvShows || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "Movie Genres",
                     checked = config.showMovieGenres,
-                    onCheckedChange = { onConfigChanged(config.copy(showMovieGenres = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showMovieGenres = it)) },
+                    enabled = !config.showMovieGenres || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "TV Genres",
                     checked = config.showTvGenres,
-                    onCheckedChange = { onConfigChanged(config.copy(showTvGenres = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showTvGenres = it)) },
+                    enabled = !config.showTvGenres || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "Studios",
                     checked = config.showStudios,
-                    onCheckedChange = { onConfigChanged(config.copy(showStudios = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showStudios = it)) },
+                    enabled = !config.showStudios || enabledCount > 1
                 )
 
                 HomeScreenSwitchItem(
                     title = "Networks",
                     checked = config.showNetworks,
-                    onCheckedChange = { onConfigChanged(config.copy(showNetworks = it)) }
+                    onCheckedChange = { onConfigChanged(config.copy(showNetworks = it)) },
+                    enabled = !config.showNetworks || enabledCount > 1
                 )
             }
         },
@@ -958,20 +970,26 @@ private fun HomeScreenCustomizationDialog(
 private fun HomeScreenSwitchItem(
     title: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = title, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = title, 
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        )
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            enabled = enabled
         )
     }
 }

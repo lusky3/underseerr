@@ -243,7 +243,25 @@ data class HomeScreenConfig(
     val showTvGenres: Boolean = true,
     val showStudios: Boolean = true,
     val showNetworks: Boolean = true
-)
+) {
+    /**
+     * Returns the number of enabled sections.
+     */
+    fun enabledCount(): Int {
+        var count = 0
+        if (showTrending) count++
+        if (showWatchlist) count++
+        if (showPopularMovies) count++
+        if (showPopularTvShows) count++
+        if (showUpcomingMovies) count++
+        if (showUpcomingTvShows) count++
+        if (showMovieGenres) count++
+        if (showTvGenres) count++
+        if (showStudios) count++
+        if (showNetworks) count++
+        return count
+    }
+}
 
 /**
  * Custom colors for the Vibrant theme.

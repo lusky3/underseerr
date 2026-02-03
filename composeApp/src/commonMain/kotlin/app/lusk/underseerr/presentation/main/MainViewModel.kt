@@ -105,4 +105,40 @@ class MainViewModel(
             _navigationEvent.tryEmit(screen)
         }
     }
+
+    private val _selectedTab = kotlinx.coroutines.flow.MutableStateFlow(0)
+    val selectedTab: StateFlow<Int> = _selectedTab.asStateFlow()
+
+    fun setSelectedTab(index: Int) {
+        _selectedTab.value = index
+    }
+
+    private val _navCommand = kotlinx.coroutines.flow.MutableSharedFlow<Int>(
+        replay = 1,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
+    val navCommand = _navCommand.asSharedFlow()
+
+    fun navigateToTab(index: Int) {
+        _selectedTab.value = index
+        _navCommand.tryEmit(index)
+    }
+
+    private val _tabDragEvent = kotlinx.coroutines.flow.MutableSharedFlow<Float>()
+    val tabDragEvent = _tabDragEvent.asSharedFlow()
+
+    fun emitTabDrag(delta: Float) {
+        viewModelScope.launch {
+            _tabDragEvent.emit(delta)
+        }
+    }
+
+    private val _tabDragEnd = kotlinx.coroutines.flow.MutableSharedFlow<Unit>()
+    val tabDragEnd = _tabDragEnd.asSharedFlow()
+
+    fun emitTabDragEnd() {
+        viewModelScope.launch {
+            _tabDragEnd.emit(Unit)
+        }
+    }
 }

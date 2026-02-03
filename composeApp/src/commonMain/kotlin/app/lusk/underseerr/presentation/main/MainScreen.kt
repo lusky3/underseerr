@@ -12,6 +12,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.compose.runtime.collectAsState
 import app.lusk.underseerr.navigation.UnderseerrNavHost
 import app.lusk.underseerr.navigation.Screen
 import app.lusk.underseerr.ui.adaptive.*
@@ -28,6 +29,7 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     val viewModel = org.koin.compose.viewmodel.koinViewModel<MainViewModel>()
+    val selectedTab by viewModel.selectedTab.collectAsState()
     
     androidx.compose.runtime.LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { screen: Screen ->
@@ -44,6 +46,7 @@ fun MainScreen(
     
     // Simplified navigation visibility - just check if it's a main tab
     val showNavigation = currentDestination?.let { dest ->
+        dest.hasRoute(Screen.MainTabs::class) ||
         dest.hasRoute(Screen.Home::class) ||
         dest.hasRoute(Screen.Requests::class) ||
         dest.hasRoute(Screen.Issues::class) ||
@@ -51,12 +54,23 @@ fun MainScreen(
     } ?: false
     
     // Get current screen for highlighting nav item
-    val currentScreen = when {
-        currentDestination?.hasRoute(Screen.Home::class) == true -> Screen.Home
-        currentDestination?.hasRoute(Screen.Requests::class) == true -> Screen.Requests()
-        currentDestination?.hasRoute(Screen.Issues::class) == true -> Screen.Issues
-        currentDestination?.hasRoute(Screen.Profile::class) == true -> Screen.Profile
-        else -> Screen.Home
+    val isMainTabs = currentDestination?.hasRoute(Screen.MainTabs::class) == true
+    val currentScreen = if (isMainTabs) {
+        when (selectedTab) {
+            0 -> Screen.Home
+            1 -> Screen.Requests()
+            2 -> Screen.Issues
+            3 -> Screen.Profile
+            else -> Screen.Home
+        }
+    } else {
+        when {
+            currentDestination?.hasRoute(Screen.Home::class) == true -> Screen.Home
+            currentDestination?.hasRoute(Screen.Requests::class) == true -> Screen.Requests()
+            currentDestination?.hasRoute(Screen.Issues::class) == true -> Screen.Issues
+            currentDestination?.hasRoute(Screen.Profile::class) == true -> Screen.Profile
+            else -> Screen.Home
+        }
     }
     
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -71,12 +85,33 @@ fun MainScreen(
                         layoutConfig = layoutConfig,
                         destinations = defaultNavigationDestinations,
                         onNavigate = { screen ->
-                            navController.navigate(screen) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                            val targetIndex = when (screen) {
+                                is Screen.Home -> 0
+                                is Screen.Requests -> 1
+                                is Screen.Issues -> 2
+                                is Screen.Profile -> 3
+                                else -> -1
+                            }
+
+                            if (targetIndex != -1) {
+                                viewModel.navigateToTab(targetIndex)
+                                if (!isMainTabs) {
+                                    navController.navigate(Screen.MainTabs) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
-                                launchSingleTop = true
-                                restoreState = true
+                            } else {
+                                navController.navigate(screen) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         }
                     )
@@ -98,12 +133,33 @@ fun MainScreen(
                         layoutConfig = layoutConfig,
                         destinations = defaultNavigationDestinations,
                         onNavigate = { screen ->
-                            navController.navigate(screen) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                            val targetIndex = when (screen) {
+                                is Screen.Home -> 0
+                                is Screen.Requests -> 1
+                                is Screen.Issues -> 2
+                                is Screen.Profile -> 3
+                                else -> -1
+                            }
+
+                            if (targetIndex != -1) {
+                                viewModel.navigateToTab(targetIndex)
+                                if (!isMainTabs) {
+                                    navController.navigate(Screen.MainTabs) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
-                                launchSingleTop = true
-                                restoreState = true
+                            } else {
+                                navController.navigate(screen) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         }
                     )

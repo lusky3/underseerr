@@ -28,6 +28,7 @@ import app.lusk.underseerr.presentation.profile.*
 import app.lusk.underseerr.presentation.request.*
 import app.lusk.underseerr.presentation.auth.*
 import app.lusk.underseerr.presentation.settings.*
+import app.lusk.underseerr.presentation.main.*
 
 @Composable
 fun UnderseerrNavHost(
@@ -74,7 +75,7 @@ fun UnderseerrNavHost(
         composable<Screen.Splash> {
             SplashScreen(
                 onNavigateToHome = {
-                    navController.navigate(Screen.Home) {
+                    navController.navigate(Screen.MainTabs) {
                         popUpTo<Screen.Splash> { inclusive = true }
                     }
                 },
@@ -98,7 +99,7 @@ fun UnderseerrNavHost(
                 },
                 onAuthenticated = {
                    // Logic for already authenticated
-                   navController.navigate(Screen.Home) {
+                   navController.navigate(Screen.MainTabs) {
                         popUpTo<Screen.ServerConfig> { inclusive = true }
                    }
                 }
@@ -151,31 +152,74 @@ fun UnderseerrNavHost(
             )
         }
         
-        composable<Screen.Home> {
-            val viewModel: DiscoveryViewModel = koinViewModel()
-            HomeScreen(
-                viewModel = viewModel,
-                onMovieClick = { movieId ->
-                    navController.navigate(Screen.MediaDetails("movie", movieId))
+        composable<Screen.MainTabs> {
+            val mainViewModel: MainViewModel = koinViewModel()
+            MainTabsScreen(
+                onNavigateToMediaDetails = { type, id -> navController.navigate(Screen.MediaDetails(type, id)) },
+                onNavigateToSearch = { navController.navigate(Screen.Search) },
+                onNavigateToCategory = { type, id, name -> navController.navigate(Screen.CategoryResults(type.name, id, name)) },
+                onNavigateToRequestDetails = { id -> navController.navigate(Screen.RequestDetails(id)) },
+                onNavigateToIssueDetails = { id -> navController.navigate(Screen.IssueDetails(id)) },
+                onNavigateToSettings = { showPaywall -> navController.navigate(Screen.Settings(showPaywall)) },
+                onNavigateToAbout = { navController.navigate(Screen.About) },
+                onNavigateToRequestsFilter = { filter ->
+                    mainViewModel.setSelectedTab(1)
+                    // RequestViewModel is a singleton, it will handle the data loading
                 },
-                onTvShowClick = { tvShowId ->
-                    navController.navigate(Screen.MediaDetails("tv", tvShowId))
+                onLogout = {
+                    navController.navigate(Screen.ServerConfig()) {
+                        popUpTo<Screen.MainTabs> { inclusive = true }
+                    }
                 },
-                onSearchClick = {
-                    navController.navigate(Screen.Search)
-                },
-                onCategoryClick = { type, id, name ->
-                    navController.navigate(Screen.CategoryResults(type.name, id, name))
-                }
+                mainViewModel = mainViewModel
             )
         }
+
+        // Redirect individual tab routes to MainTabs for deep links/compatibility
+        composable<Screen.Home> {
+            val mainViewModel: MainViewModel = koinViewModel()
+            LaunchedEffect(Unit) {
+                navController.navigate(Screen.MainTabs) {
+                    popUpTo<Screen.Home> { inclusive = true }
+                }
+                mainViewModel.navigateToTab(0)
+            }
+        }
         
+        composable<Screen.Requests> {
+            val mainViewModel: MainViewModel = koinViewModel()
+            LaunchedEffect(Unit) {
+                navController.navigate(Screen.MainTabs) {
+                    popUpTo<Screen.Requests> { inclusive = true }
+                }
+                mainViewModel.navigateToTab(1)
+            }
+        }
+        
+        composable<Screen.Issues> {
+            val mainViewModel: MainViewModel = koinViewModel()
+            LaunchedEffect(Unit) {
+                navController.navigate(Screen.MainTabs) {
+                    popUpTo<Screen.Issues> { inclusive = true }
+                }
+                mainViewModel.navigateToTab(2)
+            }
+        }
+        
+        composable<Screen.Profile> {
+            val mainViewModel: MainViewModel = koinViewModel()
+            LaunchedEffect(Unit) {
+                navController.navigate(Screen.MainTabs) {
+                    popUpTo<Screen.Profile> { inclusive = true }
+                }
+                mainViewModel.navigateToTab(3)
+            }
+        }
+
         composable<Screen.CategoryResults> { backStackEntry ->
             val args = backStackEntry.toRoute<Screen.CategoryResults>()
             val viewModel: DiscoveryViewModel = koinViewModel()
 
-            // type is MediaType (enum), we convert it to safe lowercase string for display/logic if needed, 
-            // but Screen.MediaDetails expects string type ("movie" or "tv")
             CategoryResultsScreen(
                 categoryType = args.categoryType,
                 categoryId = args.categoryId,
@@ -183,7 +227,6 @@ fun UnderseerrNavHost(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onMediaClick = { type, id -> 
-                    // type is MediaType enum
                     navController.navigate(Screen.MediaDetails(type.name.lowercase(), id))
                 }
             )
@@ -195,7 +238,6 @@ fun UnderseerrNavHost(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onMediaClick = { type, id ->
-                    // type is MediaType enum
                     navController.navigate(Screen.MediaDetails(type.name.lowercase(), id))
                 }
             )
@@ -219,18 +261,6 @@ fun UnderseerrNavHost(
                 onBackClick = { navController.popBackStack() }
             )
         }
-
-        composable<Screen.Requests> { backStackEntry ->
-            val args = backStackEntry.toRoute<Screen.Requests>()
-            val viewModel: RequestViewModel = koinViewModel()
-            RequestsListScreen(
-                viewModel = viewModel,
-                initialFilter = args.filter,
-                onRequestClick = { requestId ->
-                    navController.navigate(Screen.RequestDetails(requestId))
-                }
-            )
-        }
         
         composable<Screen.RequestDetails>(
             enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
@@ -251,16 +281,6 @@ fun UnderseerrNavHost(
             )
         }
         
-        composable<Screen.Issues> {
-            val viewModel: IssueViewModel = koinViewModel()
-            IssuesListScreen(
-                viewModel = viewModel,
-                onIssueClick = { issueId ->
-                    navController.navigate(Screen.IssueDetails(issueId))
-                }
-            )
-        }
-        
         composable<Screen.IssueDetails>(
             enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
             exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
@@ -272,28 +292,6 @@ fun UnderseerrNavHost(
             IssueDetailsScreen(
                 issueId = args.issueId,
                 onBackClick = { navController.popBackStack() }
-            )
-        }
-        
-        composable<Screen.Profile> {
-            val viewModel: ProfileViewModel = koinViewModel()
-            ProfileScreen(
-                onNavigateToSettings = { showPremiumPaywall ->
-                    navController.navigate(Screen.Settings(showPremiumPaywall = showPremiumPaywall))
-                },
-                onNavigateToAbout = {
-                    navController.navigate(Screen.About)
-                },
-                onNavigateToRequests = { filter ->
-                    // Navigate to requests tab with specific filter
-                    navController.navigate(Screen.Requests(filter))
-                },
-                onLogout = {
-                     navController.navigate(Screen.ServerConfig()) {
-                        popUpTo<Screen.Home> { inclusive = true }
-                    }
-                },
-                viewModel = viewModel
             )
         }
         
@@ -353,6 +351,7 @@ fun UnderseerrNavHost(
 
 private fun getOrder(destination: androidx.navigation.NavDestination): Int {
     return when {
+        destination.hasRoute(Screen.MainTabs::class) -> 0
         destination.hasRoute(Screen.Home::class) -> 0
         destination.hasRoute(Screen.Requests::class) -> 1
         destination.hasRoute(Screen.Issues::class) -> 2

@@ -20,6 +20,9 @@ sealed class Screen {
     
     @Serializable
     data object Home : Screen()
+
+    @Serializable
+    data object MainTabs : Screen()
     
     @Serializable
     data object Search : Screen()
