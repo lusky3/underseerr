@@ -96,9 +96,10 @@ fun MainTabsScreen(
             }
             1 -> {
                 val viewModel: RequestViewModel = koinViewModel()
+                val filter by mainViewModel.requestsFilter.collectAsState()
                 RequestsListScreen(
                     viewModel = viewModel,
-                    initialFilter = null, // Filter handled via state if needed, or we can pass it in
+                    initialFilter = filter,
                     onRequestClick = onNavigateToRequestDetails
                 )
             }

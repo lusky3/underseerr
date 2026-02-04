@@ -141,4 +141,12 @@ class MainViewModel(
             _tabDragEnd.emit(Unit)
         }
     }
+    
+    // Global filter state for Requests tab
+    private val _requestsFilter = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    val requestsFilter: StateFlow<String?> = _requestsFilter.asStateFlow()
+    
+    fun setRequestsFilter(filter: String?) {
+        _requestsFilter.value = filter
+    }
 }

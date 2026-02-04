@@ -163,8 +163,8 @@ fun UnderseerrNavHost(
                 onNavigateToSettings = { showPaywall -> navController.navigate(Screen.Settings(showPaywall)) },
                 onNavigateToAbout = { navController.navigate(Screen.About) },
                 onNavigateToRequestsFilter = { filter ->
-                    mainViewModel.setSelectedTab(1)
-                    // RequestViewModel is a singleton, it will handle the data loading
+                    mainViewModel.setRequestsFilter(filter)
+                    mainViewModel.navigateToTab(1)
                 },
                 onLogout = {
                     navController.navigate(Screen.ServerConfig()) {

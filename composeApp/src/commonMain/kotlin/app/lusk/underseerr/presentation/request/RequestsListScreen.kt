@@ -63,7 +63,7 @@ fun RequestsListScreen(
     
     val filters = listOf("All", "Pending", "Approved", "Available", "Declined")
     // Case-insensitive matching for initial filter
-    var selectedFilter by remember { 
+    var selectedFilter by remember(initialFilter) { 
         mutableStateOf(filters.find { it.equals(initialFilter, ignoreCase = true) } ?: "All") 
     }
     var showFilterMenu by remember { mutableStateOf(false) }
