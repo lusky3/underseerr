@@ -54,7 +54,20 @@ class DiscoveryViewModelTest : DescribeSpec({
                     coEvery { repository.getMovieGenres() } returns Result.success(emptyList())
                     coEvery { repository.getTvGenres() } returns Result.success(emptyList())
                     
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val profileViewModel = mockk<app.lusk.underseerr.presentation.profile.ProfileViewModel>(relaxed = true)
+                    val issueViewModel = mockk<app.lusk.underseerr.presentation.issue.IssueViewModel>(relaxed = true)
+                    val requestViewModel = mockk<app.lusk.underseerr.presentation.request.RequestViewModel>(relaxed = true)
+                    val settingsRepository = mockk<app.lusk.underseerr.domain.repository.SettingsRepository>(relaxed = true)
+                    
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        profileViewModel,
+                        issueViewModel,
+                        requestViewModel,
+                        settingsRepository
+                    )
                     
                     val searchResults = SearchResults(
                         page = 1,
@@ -110,7 +123,20 @@ class DiscoveryViewModelTest : DescribeSpec({
                     coEvery { repository.getUpcomingTvShows() } returns flowOf(PagingData.empty())
                     coEvery { repository.getWatchlist() } returns flowOf(PagingData.empty())
 
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val profileViewModel = mockk<app.lusk.underseerr.presentation.profile.ProfileViewModel>(relaxed = true)
+                    val issueViewModel = mockk<app.lusk.underseerr.presentation.issue.IssueViewModel>(relaxed = true)
+                    val requestViewModel = mockk<app.lusk.underseerr.presentation.request.RequestViewModel>(relaxed = true)
+                    val settingsRepository = mockk<app.lusk.underseerr.domain.repository.SettingsRepository>(relaxed = true)
+                    
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        profileViewModel,
+                        issueViewModel,
+                        requestViewModel,
+                        settingsRepository
+                    )
                     
                     // When
                     viewModel.search("")
@@ -135,7 +161,20 @@ class DiscoveryViewModelTest : DescribeSpec({
                     coEvery { repository.getMovieGenres() } returns Result.success(emptyList())
                     coEvery { repository.getTvGenres() } returns Result.success(emptyList())
 
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val profileViewModel = mockk<app.lusk.underseerr.presentation.profile.ProfileViewModel>(relaxed = true)
+                    val issueViewModel = mockk<app.lusk.underseerr.presentation.issue.IssueViewModel>(relaxed = true)
+                    val requestViewModel = mockk<app.lusk.underseerr.presentation.request.RequestViewModel>(relaxed = true)
+                    val settingsRepository = mockk<app.lusk.underseerr.domain.repository.SettingsRepository>(relaxed = true)
+                    
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        profileViewModel,
+                        issueViewModel,
+                        requestViewModel,
+                        settingsRepository
+                    )
                     
                     // When
                     viewModel.search("test")
@@ -187,7 +226,20 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val profileViewModel = mockk<app.lusk.underseerr.presentation.profile.ProfileViewModel>(relaxed = true)
+                    val issueViewModel = mockk<app.lusk.underseerr.presentation.issue.IssueViewModel>(relaxed = true)
+                    val requestViewModel = mockk<app.lusk.underseerr.presentation.request.RequestViewModel>(relaxed = true)
+                    val settingsRepository = mockk<app.lusk.underseerr.domain.repository.SettingsRepository>(relaxed = true)
+                    
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        profileViewModel,
+                        issueViewModel,
+                        requestViewModel,
+                        settingsRepository
+                    )
                     
                     // When
                     viewModel.search("test")
@@ -216,7 +268,20 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val profileViewModel = mockk<app.lusk.underseerr.presentation.profile.ProfileViewModel>(relaxed = true)
+                    val issueViewModel = mockk<app.lusk.underseerr.presentation.issue.IssueViewModel>(relaxed = true)
+                    val requestViewModel = mockk<app.lusk.underseerr.presentation.request.RequestViewModel>(relaxed = true)
+                    val settingsRepository = mockk<app.lusk.underseerr.domain.repository.SettingsRepository>(relaxed = true)
+                    
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        profileViewModel,
+                        issueViewModel,
+                        requestViewModel,
+                        settingsRepository
+                    )
                     
                     // When
                     viewModel.search("test")
@@ -253,7 +318,15 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true)
+                    )
                     
                     // When
                     viewModel.loadMediaDetails(MediaType.MOVIE, 1)
@@ -291,7 +364,15 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true)
+                    )
                     
                     // When
                     viewModel.loadMediaDetails(MediaType.TV, 1)
@@ -320,7 +401,15 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
 
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true)
+                    )
                     
                     // When
                     viewModel.loadMediaDetails(MediaType.MOVIE, 1)
@@ -361,7 +450,15 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true)
+                    )
                     advanceTimeBy(100)
                     
                     // Then
@@ -396,7 +493,15 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
                     
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true)
+                    )
                     advanceTimeBy(100)
                     
                     // Then
@@ -424,7 +529,15 @@ class DiscoveryViewModelTest : DescribeSpec({
                     coEvery { repository.getMovieGenres() } returns Result.success(emptyList())
                     coEvery { repository.getTvGenres() } returns Result.success(emptyList())
                     
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true),
+                        mockk(relaxed = true)
+                    )
                     
                     viewModel.search("test")
                     advanceTimeBy(600)
@@ -446,7 +559,21 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val profileRepository = mockk<ProfileRepository>(relaxed = true)
                     coEvery { requestRepository.getPartialRequestsEnabled() } returns Result.success(false)
                     coEvery { profileRepository.getUserProfile() } returns Result.success(UserProfile(1, "test@test.com", "Test", null, 0, mockk(), 0L, false))
-                    val viewModel = DiscoveryViewModel(repository, requestRepository, profileRepository)
+                    
+                    val profileViewModel = mockk<app.lusk.underseerr.presentation.profile.ProfileViewModel>(relaxed = true)
+                    val issueViewModel = mockk<app.lusk.underseerr.presentation.issue.IssueViewModel>(relaxed = true)
+                    val requestViewModel = mockk<app.lusk.underseerr.presentation.request.RequestViewModel>(relaxed = true)
+                    val settingsRepository = mockk<app.lusk.underseerr.domain.repository.SettingsRepository>(relaxed = true)
+                    
+                    val viewModel = DiscoveryViewModel(
+                        repository, 
+                        requestRepository, 
+                        profileRepository,
+                        profileViewModel,
+                        issueViewModel,
+                        requestViewModel,
+                        settingsRepository
+                    )
                     
                     // When
                     viewModel.clearMediaDetails()
