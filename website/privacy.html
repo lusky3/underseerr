@@ -63,7 +63,8 @@
                             authenticate with your Overseerr server.</li>
                         <li><strong>User Preferences:</strong> Your in-app preferences such as theme settings,
                             notification preferences, and display options.</li>
-                        <li><strong>Serial Keys:</strong> If you choose to unlock premium features via a serial key, we collect and store the key you provide to validate your access.</li>
+                        <li><strong>Serial Keys:</strong> If you choose to unlock premium features via a serial key, we
+                            collect and store the key you provide to validate your access.</li>
                     </ul>
 
                     <h3>Information Collected Automatically</h3>
@@ -75,8 +76,11 @@
                         <li><strong>Crash Reports:</strong> Technical information about crashes and errors to help us
                             identify and fix bugs.</li>
                         <li><strong>Push Notification Tokens:</strong> If you enable push notifications, we collect
-                            device tokens to deliver notifications about your media requests.</li>
-                        <li><strong>Subscription Information:</strong> When you purchase a subscription via Google Play, we receive anonymized transaction identifiers to verify your premium status.</li>
+                            device tokens. For <strong>Premium</strong> users, these are used by our hosted relay to
+                            deliver messages. For self-hosted users, tokens are sent directly to your configured
+                            Cloudflare Worker.</li>
+                        <li><strong>Subscription Information:</strong> We collect anonymized purchase tokens and
+                            subscription status from Google Play to validate Premium access.</li>
                     </ul>
 
                     <h3>Information We Do NOT Collect</h3>
@@ -122,8 +126,11 @@
                         <li><strong>Firebase Crashlytics:</strong> For crash reporting and analytics. Subject to <a
                                 href="https://firebase.google.com/support/privacy" target="_blank">Google's Privacy
                                 Policy</a>.</li>
-                        <li><strong>Google Play Billing:</strong> For processing and managing subscriptions. Payments are handled entirely by Google. We do not store your credit card or payment details.</li>
-                        <li><strong>Cloudflare:</strong> We use Cloudflare Workers as a secure relay for delivering push notifications and validating serial keys. No personally identifiable information is permanently stored on these servers.</li>
+                        <li><strong>Google Play Billing:</strong> For processing and managing subscriptions. Payments
+                            are handled entirely by Google. We do not store your credit card or payment details.</li>
+                        <li><strong>Cloudflare Workers:</strong> Used as a secure, stateless relay for delivering push
+                            notifications to Premium users. Notification payloads are encrypted and transient; they are
+                            not permanently stored on our servers.</li>
                     </ul>
 
                     <h3>Security Measures</h3>
@@ -237,8 +244,7 @@
                     <p>If you have any questions about this Privacy Policy or our privacy practices, please contact us:
                     </p>
                     <ul>
-                        <li><strong>GitHub Issues:</strong> <a
-                                href="https://github.com/lusky3/underseerr/issues"
+                        <li><strong>GitHub Issues:</strong> <a href="https://github.com/lusky3/underseerr/issues"
                                 target="_blank">github.com/lusky3/underseerr/issues</a></li>
                         <li><strong>GitHub Discussions:</strong> <a
                                 href="https://github.com/lusky3/underseerr/discussions"

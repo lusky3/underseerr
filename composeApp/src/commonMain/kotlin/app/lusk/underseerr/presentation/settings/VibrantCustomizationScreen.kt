@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.RestartAlt
@@ -104,6 +105,48 @@ fun VibrantCustomizationScreen(
                             checked = colors.usePillShape,
                             onCheckedChange = { viewModel.updateVibrantThemeColors(colors.copy(usePillShape = it)) }
                         )
+                    }
+                }
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Gradient Direction",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.horizontalScroll(rememberScrollState())
+                        ) {
+                            app.lusk.underseerr.domain.repository.GradientDirection.values().forEach { direction ->
+                                FilterChip(
+                                    selected = colors.gradientDirection == direction,
+                                    onClick = { 
+                                        viewModel.updateVibrantThemeColors(colors.copy(gradientDirection = direction)) 
+                                    },
+                                    label = { 
+                                        Text(
+                                            when(direction) {
+                                                app.lusk.underseerr.domain.repository.GradientDirection.VERTICAL -> "Vertical"
+                                                app.lusk.underseerr.domain.repository.GradientDirection.HORIZONTAL -> "Horizontal"
+                                                app.lusk.underseerr.domain.repository.GradientDirection.DIAGONAL_TL_BR -> "Diagonal ↘"
+                                                app.lusk.underseerr.domain.repository.GradientDirection.DIAGONAL_TR_BL -> "Diagonal ↙"
+                                            }
+                                        ) 
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
 

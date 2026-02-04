@@ -18,6 +18,19 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.unit.dp
 import app.lusk.underseerr.domain.repository.ThemePreference
+import app.lusk.underseerr.domain.repository.GradientDirection
+import androidx.compose.ui.graphics.Brush
+
+private fun makeGradientBrush(startHex: String, endHex: String, direction: GradientDirection): Brush {
+    val colors = listOf(parseColor(startHex), parseColor(endHex))
+    return when (direction) {
+        GradientDirection.VERTICAL -> Brush.verticalGradient(colors)
+        GradientDirection.HORIZONTAL -> Brush.horizontalGradient(colors)
+        GradientDirection.DIAGONAL_TL_BR -> Brush.linearGradient(colors)
+        // Fallbacks or others
+        else -> Brush.linearGradient(colors)
+    }
+}
 
 /**
  * Material You theme configuration for Underseerr.
@@ -153,45 +166,19 @@ fun UnderseerrTheme(
     val gradients = when {
         themePreference == ThemePreference.VIBRANT -> {
             app.lusk.underseerr.ui.theme.UnderseerrGradients(
-                primary = androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(parseColor(vibrantColors.primaryStart), parseColor(vibrantColors.primaryEnd))
-                ),
-                secondary = androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(parseColor(vibrantColors.secondaryStart), parseColor(vibrantColors.secondaryEnd))
-                ),
-                tertiary = androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(parseColor(vibrantColors.tertiaryStart), parseColor(vibrantColors.tertiaryEnd))
-                ),
-                background = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(parseColor(vibrantColors.backgroundStart), parseColor(vibrantColors.backgroundEnd))
-                ),
-                surface = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(parseColor(vibrantColors.surfaceStart), parseColor(vibrantColors.surfaceEnd))
-                ),
-                accent = androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(parseColor(vibrantColors.accentStart), parseColor(vibrantColors.accentEnd))
-                ),
-                highlight = androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(parseColor(vibrantColors.highlightStart), parseColor(vibrantColors.highlightEnd))
-                ),
-                appBar = androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(parseColor(vibrantColors.appBarStart), parseColor(vibrantColors.appBarEnd))
-                ),
-                navBar = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(parseColor(vibrantColors.navBarStart), parseColor(vibrantColors.navBarEnd))
-                ),
-                settings = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(parseColor(vibrantColors.settingsStart), parseColor(vibrantColors.settingsEnd))
-                ),
-                profiles = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(parseColor(vibrantColors.profilesStart), parseColor(vibrantColors.profilesEnd))
-                ),
-                requestDetails = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(parseColor(vibrantColors.requestDetailsStart), parseColor(vibrantColors.requestDetailsEnd))
-                ),
-                issueDetails = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(parseColor(vibrantColors.issueDetailsStart), parseColor(vibrantColors.issueDetailsEnd))
-                ),
+                primary = makeGradientBrush(vibrantColors.primaryStart, vibrantColors.primaryEnd, vibrantColors.gradientDirection),
+                secondary = makeGradientBrush(vibrantColors.secondaryStart, vibrantColors.secondaryEnd, vibrantColors.gradientDirection),
+                tertiary = makeGradientBrush(vibrantColors.tertiaryStart, vibrantColors.tertiaryEnd, vibrantColors.gradientDirection),
+                background = makeGradientBrush(vibrantColors.backgroundStart, vibrantColors.backgroundEnd, vibrantColors.gradientDirection),
+                surface = makeGradientBrush(vibrantColors.surfaceStart, vibrantColors.surfaceEnd, vibrantColors.gradientDirection),
+                accent = makeGradientBrush(vibrantColors.accentStart, vibrantColors.accentEnd, vibrantColors.gradientDirection),
+                highlight = makeGradientBrush(vibrantColors.highlightStart, vibrantColors.highlightEnd, vibrantColors.gradientDirection),
+                appBar = makeGradientBrush(vibrantColors.appBarStart, vibrantColors.appBarEnd, vibrantColors.gradientDirection),
+                navBar = makeGradientBrush(vibrantColors.navBarStart, vibrantColors.navBarEnd, vibrantColors.gradientDirection),
+                settings = makeGradientBrush(vibrantColors.settingsStart, vibrantColors.settingsEnd, vibrantColors.gradientDirection),
+                profiles = makeGradientBrush(vibrantColors.profilesStart, vibrantColors.profilesEnd, vibrantColors.gradientDirection),
+                requestDetails = makeGradientBrush(vibrantColors.requestDetailsStart, vibrantColors.requestDetailsEnd, vibrantColors.gradientDirection),
+                issueDetails = makeGradientBrush(vibrantColors.issueDetailsStart, vibrantColors.issueDetailsEnd, vibrantColors.gradientDirection),
                 onPrimary = contentColorFor(parseColor(vibrantColors.primaryStart)),
                 onSecondary = contentColorFor(parseColor(vibrantColors.secondaryStart)),
                 onTertiary = contentColorFor(parseColor(vibrantColors.tertiaryStart)),
@@ -228,14 +215,14 @@ fun UnderseerrTheme(
             onIssueDetails = Color.White
         )
         else -> DefaultLightGradients.copy(
-            onPrimary = Color.White,
-            onSecondary = Color.White,
-            onTertiary = Color.White,
+            onPrimary = Color.Black,
+            onSecondary = Color.Black,
+            onTertiary = Color.Black,
             onBackground = Color.Black,
             onSurface = Color.Black,
             onAccent = Color.White,
             onHighlight = Color.White,
-            onAppBar = Color.White,
+            onAppBar = Color.Black,
             onNavBar = Color.Black,
             onSettings = Color.Black,
             onProfiles = Color.Black,

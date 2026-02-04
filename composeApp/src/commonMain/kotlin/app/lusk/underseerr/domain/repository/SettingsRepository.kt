@@ -295,5 +295,14 @@ data class VibrantThemeColors(
     val requestDetailsEnd: String = "#FF1A0033",
     val issueDetailsStart: String = "#FF0A001F",
     val issueDetailsEnd: String = "#FF1A0033",
-    val usePillShape: Boolean = true
+    val usePillShape: Boolean = true,
+    val gradientDirection: GradientDirection = GradientDirection.VERTICAL
 )
+
+@Serializable
+enum class GradientDirection {
+    VERTICAL,
+    HORIZONTAL,
+    DIAGONAL_TL_BR, // Top-Left to Bottom-Right
+    DIAGONAL_TR_BL  // Top-Right to Bottom-Left
+}

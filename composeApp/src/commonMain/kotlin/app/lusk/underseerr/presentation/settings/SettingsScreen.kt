@@ -1026,11 +1026,50 @@ private fun SubscriptionPaywallDialog(
                 
                 if (!showSerialInput) {
                     Text(
-                        text = "Support development and unlock all features with a one-time purchase.",
+                        text = "Support development and unlock all features with a recurring subscription.",
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Monthly Button
+                    Button(
+                        onClick = { onPurchase(false) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Monthly Premium")
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Annual Button with Badge
+                    Button(
+                        onClick = { onPurchase(true) },
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(vertical = 12.dp, horizontal = 16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Annual Premium")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                shape = androidx.compose.foundation.shape.CircleShape
+                            ) {
+                                Text(
+                                    text = "BEST VALUE",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                 } else {
                     OutlinedTextField(
                         value = serialKey,
@@ -1039,7 +1078,17 @@ private fun SubscriptionPaywallDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { onUnlock(serialKey) },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = serialKey.isNotBlank()
+                    ) {
+                        Text("Unlock")
+                    }
                 }
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 TextButton(onClick = { showSerialInput = !showSerialInput }) {
                     Text(if (showSerialInput) "Back to purchase" else "Have a serial key?")
@@ -1047,31 +1096,7 @@ private fun SubscriptionPaywallDialog(
             }
         },
         confirmButton = {
-            if (!showSerialInput) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Button(
-                        onClick = { onPurchase(false) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Monthly Premium")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = { onPurchase(true) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Annual Premium (Best Value)")
-                    }
-                }
-            } else {
-                Button(
-                    onClick = { onUnlock(serialKey) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = serialKey.isNotBlank()
-                ) {
-                    Text("Unlock")
-                }
-            }
+            // Buttons moved to content
         },
         dismissButton = {
             TextButton(
