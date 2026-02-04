@@ -9,6 +9,9 @@ config-templates/
 ├── overseerr/
 │   ├── settings.json # Overseerr configuration with Plex/Radarr/Sonarr
 │   └── README.md     # Detailed Overseerr template documentation
+├── jellyseerr/
+│   ├── settings.json # Jellyseerr configuration with Plex/Radarr/Sonarr
+│   └── README.md     # Detailed Jellyseerr template documentation
 ├── radarr/
 │   ├── config.xml    # Radarr configuration with API key
 │   ├── radarr.db     # Pre-configured Radarr database
@@ -29,7 +32,7 @@ Each service has its own README with detailed information about:
 
 ## Purpose
 
-These templates are copied to the runtime directories (`overseerr-config/`, `radarr-config/`, and `sonarr-config/`) when you run `setup-overseerr-test.sh`. This approach:
+These templates are copied to the runtime directories (`overseerr-config/`, `jellyseerr-config/`, `radarr-config/`, and `sonarr-config/`) when you run `setup-overseerr-test.sh`. This approach:
 
 1. **Keeps the repo clean** - Runtime files (logs, PIDs, temp files) are not committed
 2. **Provides consistent setup** - Everyone gets the same starting configuration
@@ -50,6 +53,19 @@ These templates are copied to the runtime directories (`overseerr-config/`, `rad
 - Application settings (title, permissions, etc.)
 
 See `overseerr/README.md` for detailed information.
+
+### Jellyseerr
+
+**settings.json** - Complete Jellyseerr configuration including:
+
+- Plex server connection (plex-mock)
+- Radarr integration with API key
+- Sonarr integration with API key
+- Scan schedules optimized for testing
+- Dummy VAPID keys for web push notifications
+- Application settings (title, permissions, etc.)
+
+See `jellyseerr/README.md` for detailed information.
 
 ### Radarr & Sonarr
 
@@ -90,7 +106,7 @@ To reset to template defaults:
 ```bash
 cd docker
 docker compose down
-rm -rf overseerr-config radarr-config sonarr-config
+rm -rf overseerr-config jellyseerr-config radarr-config sonarr-config
 ./setup-overseerr-test.sh
 ```
 

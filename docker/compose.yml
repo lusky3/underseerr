@@ -18,7 +18,32 @@ services:
       - sonarr-mock
       - plex-mock
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5055/api/v1/status"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5055/api/v1/status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  jellyseerr:
+    image: ghcr.io/fallenbagel/jellyseerr:latest
+    init: true
+    container_name: jellyseerr-test
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=America/New_York
+    volumes:
+      - ./jellyseerr-config:/app/config
+    ports:
+      - "0.0.0.0:5056:5055"
+    restart: unless-stopped
+    networks:
+      - overseerr-network
+    depends_on:
+      - radarr-mock
+      - sonarr-mock
+      - plex-mock
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5055/api/v1/status" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -36,7 +61,7 @@ services:
     networks:
       - overseerr-network
     healthcheck:
-      test: ["CMD-SHELL", "pidof nginx || exit 1"]
+      test: [ "CMD-SHELL", "pidof nginx || exit 1" ]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -57,7 +82,7 @@ services:
     networks:
       - overseerr-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7878/ping"]
+      test: [ "CMD", "curl", "-f", "http://localhost:7878/ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -78,7 +103,7 @@ services:
     networks:
       - overseerr-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8989/ping"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8989/ping" ]
       interval: 10s
       timeout: 5s
       retries: 5

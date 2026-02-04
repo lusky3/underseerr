@@ -4,7 +4,7 @@
     "vapidPublic": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
     "main": {
         "apiKey": "1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x",
-        "applicationTitle": "Overseerr (Test Environment)",
+        "applicationTitle": "Jellyseerr (Test Environment)",
         "applicationUrl": "",
         "csrfProtection": false,
         "cacheImages": false,
@@ -27,23 +27,24 @@
         "ip": "plex-mock",
         "port": 32400,
         "useSsl": false,
-        "libraries": [
-            {
-                "id": "1",
-                "name": "Movies",
-                "enabled": true,
-                "type": "movie"
-            },
-            {
-                "id": "2",
-                "name": "TV Shows",
-                "enabled": true,
-                "type": "show"
-            }
-        ],
+        "libraries": [],
         "machineId": "mock-plex-server-12345"
     },
-    "tautulli": {},
+    "jellyfin": {
+        "name": "Mock Jellyfin Server",
+        "hostname": "jellyfin-mock",
+        "port": 8096,
+        "apiKey": "1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x",
+        "useSsl": false,
+        "libraries": [],
+        "id": 0
+    },
+    "tautulli": {
+        "hostname": "",
+        "port": 8181,
+        "apiKey": "",
+        "useSsl": false
+    },
     "radarr": [
         {
             "name": "radarr",
@@ -102,7 +103,7 @@
                     "ignoreTls": false,
                     "requireTls": false,
                     "allowSelfSigned": false,
-                    "senderName": "Overseerr"
+                    "senderName": "Jellyseerr"
                 }
             },
             "discord": {

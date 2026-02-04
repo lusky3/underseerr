@@ -105,6 +105,7 @@ qa_evidence
 overseerr-config/
 radarr-config/
 sonarr-config/
+jellyseerr-config/
 
 .env
 .env.ios

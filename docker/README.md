@@ -8,7 +8,7 @@ Complete Dockerized Overseerr setup for testing the Android app.
 
 **Quick links:**
 
-- [Configuration Templates](config-templates/README.md) - Pre-configured service templates
+- [Configuration Templates](config-templates/README.md) - Pre-configured service templates for Overseerr and Jellyseerr
 - [Plex Mock API](plex-mock/API_REFERENCE.md) - Complete API reference
 - [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
 
@@ -34,22 +34,38 @@ docker/
 │   └── sonarr/                 # Sonarr templates
 │       ├── config.xml          # Pre-configured settings
 │       └── sonarr.db           # Pre-configured database
+│   └── jellyseerr/             # Jellyseerr templates
+│       └── settings.json       # Pre-configured settings
 ├── plex-mock/                  # Mock Plex server
 │   ├── nginx.conf              # Nginx configuration
 │   ├── html/                   # Static files
 │   └── API_REFERENCE.md        # Plex API documentation
-├── overseerr-config/           # Runtime data (not in git)
-├── radarr-config/              # Runtime data (not in git)
-├── sonarr-config/              # Runtime data (not in git)
+├── overseerr-config/           # Runtime data for Overseerr (not in git)
+├── jellyseerr-config/          # Runtime data for Jellyseerr (not in git)
+├── radarr-config/              # Runtime data for Radarr (not in git)
+├── sonarr-config/              # Runtime data for Sonarr (not in git)
 
 ## 🎯 What's Included
 
 ### Services
 
-- **Overseerr** (port 5055) - Main API server
+- **Overseerr** (port 5055) - Main API server (based on Overseerr)
+- **Jellyseerr** (port 5056) - Main API server (fork of Overseerr for Jellyfin)
 - **Radarr** (port 7878) - Movie management (pre-configured with API key)
 - **Sonarr** (port 8989) - TV show management (pre-configured with API key)
 - **Plex Mock** (port 32400) - Authentication server (comprehensive API mock)
+
+### Default Credentials
+
+| Service | URL | Username / Email | Password |
+|---------|-----|------------------|----------|
+| **Overseerr** | http://localhost:5055 | `admin@overseerr.local` | `admin123` |
+| **Jellyseerr** | http://localhost:5056 | `admin@overseerr.local` | `admin123` |
+| **Plex Mock** | http://localhost:32400 | N/A (Mocked) | N/A |
+| **Radarr** | http://localhost:7878 | N/A (API Only) | API Key: `1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x` |
+| **Sonarr** | http://localhost:8989 | N/A (API Only) | API Key: `1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x` |
+
+> **Note**: Both Overseerr and Jellyseerr are pre-configured to point to the mock Radarr, Sonarr, and Plex services.
 
 ### Features
 
@@ -96,7 +112,7 @@ The setup uses a template-based approach:
 
 2. **Configure Overseerr**:
 
-   - Open <http://localhost:5055>
+   - Open <http://localhost:5055> (Overseerr) or <http://localhost:5056> (Jellyseerr)
    - Follow instructions
 
 3. **Done!** Ready for Android app testing
@@ -107,7 +123,7 @@ The setup uses a template-based approach:
 docker compose up -d
 ```
 
-Configuration is preserved in `overseerr-config/`, `radarr-config/`, and `sonarr-config/`.
+Configuration is preserved in `overseerr-config/`, `jellyseerr-config/`, `radarr-config/`, and `sonarr-config/`.
 
 ## 📱 For Android App
 
@@ -119,7 +135,7 @@ hostname -I | awk '{print $1}'
 
 ### Configure App
 
-- Server URL: `http://YOUR_IP:5055`
+- Server URL: `http://YOUR_IP:5055` (Overseerr) or `http://YOUR_IP:5056` (Jellyseerr)
 - Username: `admin@overseerr.local`
 - Password: `admin123`
 
@@ -127,7 +143,7 @@ hostname -I | awk '{print $1}'
 
 After setup:
 
-- **Username**: `admin@overseerr.local`
+- **Username**: `admin@overseerr.local` (or your synced account)
 - **Password**: `admin123`
 - **API Key**: Available in Settings → General
 
@@ -151,7 +167,7 @@ docker compose ps
 
 # Reset everything
 docker compose down
-rm -rf overseerr-config radarr-config sonarr-config
+rm -rf overseerr-config jellyseerr-config radarr-config sonarr-config
 ./setup-overseerr-test.sh
 ```
 
@@ -160,7 +176,7 @@ rm -rf overseerr-config radarr-config sonarr-config
 ### Backup Configuration
 
 ```bash
-tar -czf overseerr-backup.tar.gz overseerr-config radarr-config sonarr-config
+tar -czf overseerr-backup.tar.gz overseerr-config jellyseerr-config radarr-config sonarr-config
 ```
 
 ### Restore Configuration
@@ -183,6 +199,7 @@ docker compose logs
 ```bash
 # Check firewall
 sudo ufw allow 5055
+sudo ufw allow 5056
 
 # Verify IP
 hostname -I
@@ -200,6 +217,7 @@ Your configuration was reset. Either:
 ```bash
 # Check what's using the port
 sudo lsof -i :5055
+sudo lsof -i :5056
 
 # Or change the port in compose.yml
 ```
@@ -207,7 +225,7 @@ sudo lsof -i :5055
 ## 📊 Resource Usage
 
 - **CPU**: < 5% idle
-- **Memory**: ~500 MB total
+- **Memory**: ~800 MB total
 - **Disk**: ~2 GB
 - **Startup**: 30-40 seconds
 

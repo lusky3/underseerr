@@ -51,15 +51,43 @@ mkdir -p plex-mock/html
 # Setup Overseerr with template
 if [ ! -d "overseerr-config" ]; then
     echo "  Creating Overseerr configuration from template..."
-    mkdir -p overseerr-config
+    mkdir -p overseerr-config/db
     cp config-templates/overseerr/settings.json overseerr-config/
+    if [ -f "config-templates/overseerr/db.sqlite3" ]; then
+        cp config-templates/overseerr/db.sqlite3 overseerr-config/db/
+    fi
     echo -e "  ${GREEN}✓ Overseerr configured${NC}"
 elif [ ! -f "overseerr-config/settings.json" ]; then
     echo -e "  ${YELLOW}⚠ Overseerr config incomplete, restoring from template...${NC}"
+    mkdir -p overseerr-config/db
     cp config-templates/overseerr/settings.json overseerr-config/
+    if [ -f "config-templates/overseerr/db.sqlite3" ]; then
+        cp config-templates/overseerr/db.sqlite3 overseerr-config/db/
+    fi
     echo -e "  ${GREEN}✓ Overseerr restored${NC}"
 else
     echo -e "  ${GREEN}✓ Overseerr already configured${NC}"
+fi
+
+# Setup Jellyseerr with template
+if [ ! -d "jellyseerr-config" ]; then
+    echo "  Creating Jellyseerr configuration from template..."
+    mkdir -p jellyseerr-config/db
+    cp config-templates/jellyseerr/settings.json jellyseerr-config/
+    if [ -f "config-templates/jellyseerr/db.sqlite3" ]; then
+        cp config-templates/jellyseerr/db.sqlite3 jellyseerr-config/db/
+    fi
+    echo -e "  ${GREEN}✓ Jellyseerr configured${NC}"
+elif [ ! -f "jellyseerr-config/settings.json" ]; then
+    echo -e "  ${YELLOW}⚠ Jellyseerr config incomplete, restoring from template...${NC}"
+    mkdir -p jellyseerr-config/db
+    cp config-templates/jellyseerr/settings.json jellyseerr-config/
+    if [ -f "config-templates/jellyseerr/db.sqlite3" ]; then
+        cp config-templates/jellyseerr/db.sqlite3 jellyseerr-config/db/
+    fi
+    echo -e "  ${GREEN}✓ Jellyseerr restored${NC}"
+else
+    echo -e "  ${GREEN}✓ Jellyseerr already configured${NC}"
 fi
 
 # Setup Radarr with template
@@ -105,7 +133,7 @@ echo -e "${GREEN}✓ Cleaned up existing containers${NC}"
 echo ""
 
 # Start the services
-echo "Starting Overseerr and mock services..."
+echo "Starting Overseerr, Jellyseerr and mock services..."
 $DOCKER_COMPOSE up -d
 
 echo ""
@@ -192,6 +220,9 @@ wait_for_healthy "sonarr-mock" "Sonarr"
 # Overseerr (depends on others)
 wait_for_healthy "overseerr-test" "Overseerr"
 
+# Jellyseerr (depends on others)
+wait_for_healthy "jellyseerr-test" "Jellyseerr"
+
 echo ""
 echo -e "${GREEN}✓ All services are healthy!${NC}"
 echo ""
@@ -210,6 +241,8 @@ echo "Services are now running:"
 echo ""
 echo -e "${GREEN}Overseerr:${NC}     http://localhost:5055"
 echo -e "  ${YELLOW}⚠ Requires 2-minute setup (see QUICK_SETUP_GUIDE.md)${NC}"
+echo -e "${GREEN}Jellyseerr:${NC}    http://localhost:5056"
+echo -e "  ${YELLOW}⚠ Requires 2-minute setup (see QUICK_SETUP_GUIDE.md)${NC}"
 echo ""
 echo -e "${GREEN}Radarr:${NC}        http://localhost:7878"
 echo -e "  ${BLUE}API Key: 1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x${NC}"
@@ -220,9 +253,9 @@ echo ""
 echo -e "${BLUE}ℹ️  Radarr and Sonarr are pre-configured with databases and API keys!${NC}"
 echo ""
 echo "Next steps:"
-echo "  1. Open http://localhost:5055 in your browser"
+echo "  1. Open http://localhost:5055 (Overseerr) or http://localhost:5056 (Jellyseerr) in your browser"
 echo -e "  2. Follow steps"
-echo -e "  3. Configure your Android app with ${GREEN}http://YOUR_IP:5055${NC}"
+echo -e "  3. Configure your Android app with ${GREEN}http://YOUR_IP:5055${NC} or ${GREEN}:5056${NC}"
 echo ""
 echo "Get your IP address:"
 echo -e "  ${GREEN}hostname -I | awk '{print \$1}'${NC}"
@@ -231,7 +264,7 @@ echo "Useful commands:"
 echo "  View logs:    docker compose logs -f overseerr"
 echo "  Stop:         docker compose down"
 echo "  Restart:      docker compose restart"
-echo "  Clean reset:  docker compose down && rm -rf overseerr-config radarr-config sonarr-config && ./setup-overseerr-test.sh"
+echo "  Clean reset:  docker compose down && rm -rf overseerr-config jellyseerr-config radarr-config sonarr-config && ./setup-overseerr-test.sh"
 echo "  Note: Clean reset will restore all services from templates with pre-configured settings"
 echo ""
 echo -e "${RED}=========================================="
@@ -245,6 +278,7 @@ echo -e "${RED}This is for DEVELOPMENT and TESTING purposes ONLY!${NC}"
 echo ""
 echo "Exposed ports:"
 echo "  - 5055  (Overseerr)"
+echo "  - 5056  (Jellyseerr)"
 echo "  - 7878  (Radarr - API Key: 1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x)"
 echo "  - 8989  (Sonarr - API Key: 1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x1x)"
 echo "  - 32400 (Plex Mock (nginx))"
