@@ -77,13 +77,27 @@ class RequestRepositoryImpl(
                     )
                     offlineRequestDao.insert(offlineRequest)
                     
+                    // Try to get title/poster from cache since we are offline
+                    var cachedTitle = "Queued Request"
+                    var cachedPoster: String? = null
+                    
+                    try {
+                        val cachedMovie = discoveryRepository.getMovieDetails(movieId)
+                        if (cachedMovie is Result.Success) {
+                            cachedTitle = cachedMovie.data.title
+                            cachedPoster = cachedMovie.data.posterPath
+                        }
+                    } catch (e: Exception) {
+                        // Ignore, fallback to defaults
+                    }
+
                     // Also save to MediaRequestDao for UI immediate feedback
                     val dummyRequest = MediaRequest(
                         id = -movieId, // Negative ID to indicate local/temporary
                         mediaType = app.lusk.underseerr.domain.model.MediaType.MOVIE,
                         mediaId = movieId,
-                        title = "Queued Request",
-                        posterPath = null,
+                        title = cachedTitle,
+                        posterPath = cachedPoster,
                         status = RequestStatus.PENDING,
                         requestedDate = app.lusk.underseerr.util.nowMillis(),
                         seasons = null,
@@ -145,12 +159,26 @@ class RequestRepositoryImpl(
                     )
                     offlineRequestDao.insert(offlineRequest)
                     
+                    // Try to get title/poster from cache since we are offline
+                    var cachedTitle = "Queued TV Request"
+                    var cachedPoster: String? = null
+                    
+                    try {
+                        val cachedTv = discoveryRepository.getTvShowDetails(tvShowId)
+                        if (cachedTv is Result.Success) {
+                            cachedTitle = cachedTv.data.name
+                            cachedPoster = cachedTv.data.posterPath
+                        }
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
+
                     val dummyRequest = MediaRequest(
                         id = -tvShowId,
                         mediaType = app.lusk.underseerr.domain.model.MediaType.TV,
                         mediaId = tvShowId,
-                        title = "Queued TV Request",
-                        posterPath = null,
+                        title = cachedTitle,
+                        posterPath = cachedPoster,
                         status = RequestStatus.PENDING,
                         requestedDate = app.lusk.underseerr.util.nowMillis(),
                         seasons = seasons,

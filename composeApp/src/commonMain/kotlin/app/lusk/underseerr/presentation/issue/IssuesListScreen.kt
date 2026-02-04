@@ -62,6 +62,18 @@ fun IssuesListScreen(
     val tabTitles = listOf("Open", "All", "Resolved")
     val selectedTabIndex = tabTitles.indexOf(inverseFilterMap[selectedFilter] ?: "Open")
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(selectedFilter) {
+        val displayFilter = inverseFilterMap[selectedFilter] ?: "Open"
+        // Don't show on initial load if desired, but good for feedback
+        // Or only show if it changes interactively. 
+        // For simplicity, showing it gives clear feedback.
+        if (selectedFilter != "open") { // Optional: Skip default
+             snackbarHostState.showSnackbar("Showing $displayFilter issues")
+        }
+    }
+
     val gradients = LocalUnderseerrGradients.current
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -124,7 +136,8 @@ fun IssuesListScreen(
             )
         },
         modifier = modifier.background(gradients.background),
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,

@@ -61,9 +61,18 @@ fun RequestsListScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    var selectedFilter by remember { mutableStateOf(initialFilter ?: "All") }
     val filters = listOf("All", "Pending", "Approved", "Available", "Declined")
+    // Case-insensitive matching for initial filter
+    var selectedFilter by remember { 
+        mutableStateOf(filters.find { it.equals(initialFilter, ignoreCase = true) } ?: "All") 
+    }
     var showFilterMenu by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(selectedFilter) {
+        if (selectedFilter != "All") {
+             snackbarHostState.showSnackbar("Showing $selectedFilter requests")
+        }
+    }
     
     var pullRefreshing by remember { mutableStateOf(false) }
     
@@ -192,7 +201,7 @@ fun RequestsListScreen(
                         
                         if (isOffline && !hasCachedData) {
                             app.lusk.underseerr.ui.components.UnifiedErrorDisplay(
-                                message = error!!,
+                                message = error ?: "Unknown error",
                                 onRetry = { viewModel.refreshRequests() }
                             )
                         } else if (!isLoading && !hasCachedData) {

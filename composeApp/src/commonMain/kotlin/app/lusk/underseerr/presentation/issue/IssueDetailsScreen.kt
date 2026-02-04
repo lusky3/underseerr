@@ -237,25 +237,9 @@ fun IssueDetailsScreen(
                     )
                 }
                 error != null -> {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = error!!,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = {
+                    UnifiedErrorDisplay(
+                        message = error!!,
+                        onRetry = {
                             scope.launch {
                                 isLoading = true
                                 error = null
@@ -269,10 +253,8 @@ fun IssueDetailsScreen(
                                         isLoading = false
                                     }
                             }
-                        }) {
-                            Text("Retry")
                         }
-                    }
+                    )
                 }
                 issue != null -> {
                     IssueDetailsContent(

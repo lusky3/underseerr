@@ -57,25 +57,25 @@ interface MediaRequestDao {
     /**
      * Get all media requests.
      */
-    @Query("SELECT * FROM user_requests ORDER BY id DESC")
+    @Query("SELECT * FROM user_requests ORDER BY requestedDate DESC")
     fun getAll(): Flow<List<MediaRequestEntity>>
     
     /**
      * Get all media requests ordered by requested date.
      */
-    @Query("SELECT * FROM user_requests ORDER BY id DESC")
+    @Query("SELECT * FROM user_requests ORDER BY requestedDate DESC")
     suspend fun getAllSync(): List<MediaRequestEntity>
     
     /**
      * Get media requests by status.
      */
-    @Query("SELECT * FROM user_requests WHERE status = :status ORDER BY id DESC")
+    @Query("SELECT * FROM user_requests WHERE status = :status ORDER BY requestedDate DESC")
     fun getByStatus(status: Int): Flow<List<MediaRequestEntity>>
     
     /**
      * Get media requests by media type.
      */
-    @Query("SELECT * FROM user_requests WHERE mediaType = :mediaType ORDER BY id DESC")
+    @Query("SELECT * FROM user_requests WHERE mediaType = :mediaType ORDER BY requestedDate DESC")
     fun getByMediaType(mediaType: String): Flow<List<MediaRequestEntity>>
     
     /**
@@ -105,13 +105,13 @@ interface MediaRequestDao {
     /**
      * Get all media requests.
      */
-    @Query("SELECT * FROM user_requests ORDER BY id DESC")
+    @Query("SELECT * FROM user_requests ORDER BY requestedDate DESC")
     fun getAllRequests(): Flow<List<MediaRequestEntity>>
     
     /**
      * Get requests by status.
      */
-    @Query("SELECT * FROM user_requests WHERE status = :status ORDER BY id DESC")
+    @Query("SELECT * FROM user_requests WHERE status = :status ORDER BY requestedDate DESC")
     fun getRequestsByStatus(status: Int): Flow<List<MediaRequestEntity>>
     
     /**

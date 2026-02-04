@@ -60,11 +60,15 @@ class OfflineRequestWorker(
                  
                 // Remove offline request
                 offlineRequestDao.delete(request)
+                
+                // Remove local dummy placeholder
+                mediaRequestDao.deleteById(-request.mediaId) // Dummy ID is negative mediaId
                  
             } catch (e: Exception) {
                 if (e is ResponseException && e.response.status.value in 400..499) {
                     // Fatal error (e.g. already requested, 403, etc), don't retry, just delete
                     offlineRequestDao.delete(request)
+                    mediaRequestDao.deleteById(-request.mediaId)
                 } else {
                     // Start next cycle effectively
                     allSuccess = false

@@ -412,7 +412,7 @@ private fun ProfileContent(
                     value = statistics.totalRequests.toString(),
                     label = "Requests",
                     color = MaterialTheme.colorScheme.primary,
-                    onClick = { onNavigateToRequests(null) }, // All requests
+                    onClick = { onNavigateToRequests("all") }, // All requests
                     modifier = Modifier.weight(1f),
                     backgroundBrush = gradients.primary
                 )
@@ -421,7 +421,7 @@ private fun ProfileContent(
                     value = statistics.availableRequests.toString(),
                     label = "Available",
                     color = Color(0xFF4CAF50),
-                    onClick = { onNavigateToRequests("Available") },
+                    onClick = { onNavigateToRequests("available") },
                     modifier = Modifier.weight(1f),
                     backgroundBrush = gradients.secondary
                 )
@@ -430,7 +430,7 @@ private fun ProfileContent(
                     value = statistics.pendingRequests.toString(),
                     label = "Pending",
                     color = Color(0xFFFF9800),
-                    onClick = { onNavigateToRequests("Pending") },
+                    onClick = { onNavigateToRequests("pending") },
                     modifier = Modifier.weight(1f),
                     backgroundBrush = gradients.tertiary
                 )
