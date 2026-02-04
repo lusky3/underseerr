@@ -25,6 +25,7 @@ fun sharedModule(context: PlatformContext) = module {
     single { DiscoveryKtorService(get()) }
     single { UserKtorService(get()) }
     single { PlexKtorService(get()) }
+    single { JellyseerrKtorService(get()) }
     single<RequestKtorService> { RequestServiceImpl(get()) }
     single<IssueService> { IssueKtorService(get()) }
     single { SettingsKtorService(get()) }
@@ -55,8 +56,9 @@ fun sharedModule(context: PlatformContext) = module {
     single { get<UnderseerrDatabase>().issueDao() }
     
     // Repositories
-    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get(), get()) }
+    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get(), get(), get()) }
     single<DiscoveryRepository> { DiscoveryRepositoryImpl(get(), get(), get(), get(), get(), get(), get()) }
+    single<WatchlistRepository> { WatchlistRepositoryImpl(get(), get(), get(), get(), get(), get()) }
     single<RequestRepository> { RequestRepositoryImpl(get(), get(), get(), get(), get()) }
     single<ProfileRepository> { ProfileRepositoryImpl(get(), get(), get()) }
     single<SettingsRepository> { SettingsRepositoryImpl(get(), get(), get(), get()) }

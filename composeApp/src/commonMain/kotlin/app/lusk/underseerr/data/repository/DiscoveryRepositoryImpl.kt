@@ -194,20 +194,6 @@ class DiscoveryRepositoryImpl(
         ).flow
     }
 
-    override fun getWatchlist(): Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> {
-        return Pager(
-            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
-            pagingSourceFactory = { 
-                WatchlistPagingSource(
-                    plexKtorService = plexKtorService,
-                    discoveryKtorService = discoveryKtorService,
-                    securityManager = securityManager,
-                    mediaRequestDao = mediaRequestDao
-                )
-            }
-        ).flow
-    }
-
     override suspend fun getMovieGenres(): Result<List<Genre>> = safeApiCall {
         discoveryKtorService.getMovieGenres().map { it.toGenre() }
     }
@@ -244,8 +230,4 @@ class DiscoveryRepositoryImpl(
         ).flow
     }
 
-    override suspend fun removeFromWatchlist(ratingKey: String): Result<Unit> = safeApiCall {
-        val plexToken = securityManager.retrieveSecureData("plex_token") ?: throw Exception("Plex token not found")
-        plexKtorService.removeFromWatchlist(plexToken, ratingKey)
-    }
 }

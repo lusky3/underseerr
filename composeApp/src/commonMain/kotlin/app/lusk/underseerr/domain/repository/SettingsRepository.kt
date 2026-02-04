@@ -225,7 +225,8 @@ data class NotificationSettings(
 data class ServerConfig(
     val url: String,
     val name: String,
-    val isActive: Boolean = false
+    val isActive: Boolean = false,
+    val isJellyseerr: Boolean = false
 )
 
 /**

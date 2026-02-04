@@ -333,7 +333,7 @@ fun HomeScreen(
             message = "This will remove '${item.title}' from your Plex watchlist across all your devices.",
             confirmText = "Remove",
             onConfirm = {
-                item.ratingKey?.let { viewModel.removeFromWatchlist(it) }
+                viewModel.removeFromWatchlist(item.id, item.ratingKey)
                 itemToRemoveFromWatchlist = null
             },
             onDismiss = { itemToRemoveFromWatchlist = null }

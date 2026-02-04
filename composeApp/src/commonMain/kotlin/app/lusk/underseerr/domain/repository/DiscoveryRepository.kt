@@ -65,10 +65,6 @@ interface DiscoveryRepository {
      */
     fun getUpcomingTvShows(): Flow<PagingData<TvShow>>
 
-    /**
-     * Get user watchlist with paging.
-     */
-    fun getWatchlist(): Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>>
 
     /**
      * Get movie genres.
@@ -99,8 +95,4 @@ interface DiscoveryRepository {
      * Get TV shows by network.
      */
     fun getTvByNetwork(networkId: Int): Flow<PagingData<TvShow>>
-    /**
-     * Remove from watchlist.
-     */
-    suspend fun removeFromWatchlist(ratingKey: String): Result<Unit>
 }

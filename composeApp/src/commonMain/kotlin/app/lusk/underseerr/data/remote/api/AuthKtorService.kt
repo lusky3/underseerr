@@ -25,6 +25,12 @@ class AuthKtorService(private val client: HttpClient) {
             setBody(LocalAuthRequest(username, password))
         }
     }
+
+    suspend fun authenticateWithJellyfin(username: String, password: String, hostname: String): io.ktor.client.statement.HttpResponse {
+        return client.post("/api/v1/auth/jellyfin") {
+            setBody(JellyfinAuthRequest(username, password, hostname))
+        }
+    }
     
     suspend fun getCurrentUser(): ApiUserProfile {
         return client.get("/api/v1/auth/me").body()
@@ -51,4 +57,14 @@ data class LocalAuthRequest(
     val email: String,
     @SerialName("password")
     val password: String
+)
+
+@Serializable
+data class JellyfinAuthRequest(
+    @SerialName("username")
+    val username: String,
+    @SerialName("password")
+    val password: String,
+    @SerialName("hostname")
+    val hostname: String
 )

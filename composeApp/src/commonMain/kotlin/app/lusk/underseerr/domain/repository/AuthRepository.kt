@@ -40,6 +40,11 @@ interface AuthRepository {
      * Authenticate using an API key directly.
      */
     suspend fun authenticateWithApiKey(apiKey: String): Result<UserProfile>
+    
+    /**
+     * Authenticate with Jellyfin credentials.
+     */
+    suspend fun authenticateWithJellyfin(username: String, password: String, hostname: String): Result<UserProfile>
 
     /**
      * Initiate Plex login by requesting a PIN.
@@ -84,4 +89,9 @@ interface AuthRepository {
      * Get the currently configured server URL.
      */
     fun getServerUrl(): Flow<String?>
+    
+    /**
+     * Check if the current server is detected as Jellyseerr.
+     */
+    fun getIsJellyseerr(): Flow<Boolean>
 }

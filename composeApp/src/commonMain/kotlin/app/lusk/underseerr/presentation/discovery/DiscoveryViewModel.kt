@@ -27,6 +27,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class DiscoveryViewModel(
     private val discoveryRepository: DiscoveryRepository,
+    private val watchlistRepository: app.lusk.underseerr.domain.repository.WatchlistRepository,
     private val requestRepository: RequestRepository,
     private val profileRepository: ProfileRepository,
     private val profileViewModel: app.lusk.underseerr.presentation.profile.ProfileViewModel,
@@ -115,7 +116,7 @@ class DiscoveryViewModel(
     val isPlexUser: StateFlow<Boolean> = _isPlexUser.asStateFlow()
 
     // Watchlist
-    val watchlist: StateFlow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = discoveryRepository.getWatchlist()
+    val watchlist: StateFlow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = watchlistRepository.getWatchlist()
         .cachedIn(viewModelScope)
         .stateIn(
             scope = viewModelScope,
@@ -432,11 +433,11 @@ class DiscoveryViewModel(
         }
     }
 
-    fun removeFromWatchlist(ratingKey: String) {
+    fun removeFromWatchlist(tmdbId: Int, ratingKey: String?) {
         viewModelScope.launch {
-            val result = discoveryRepository.removeFromWatchlist(ratingKey)
+            val result = watchlistRepository.removeFromWatchlist(tmdbId, ratingKey)
             if (result is Result.Success) {
-                _uiEvent.emit("Removed from Plex watchlist")
+                _uiEvent.emit("Removed from watchlist")
                 // We might want to refresh the watchlist flow
                 // Since it's a StateFlow from pager, we might need to trigger a refresh on the paging data
             } else if (result is Result.Error) {

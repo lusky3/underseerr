@@ -36,6 +36,9 @@ class AuthViewModel(
     private val _currentUser = MutableStateFlow<UserProfile?>(null)
     val currentUser: StateFlow<UserProfile?> = _currentUser.asStateFlow()
     
+    private val _isJellyseerr = MutableStateFlow(false)
+    val isJellyseerr: StateFlow<Boolean> = _isJellyseerr.asStateFlow()
+
     init {
         checkAuthStatus()
     }
@@ -45,6 +48,12 @@ class AuthViewModel(
      */
     private fun checkAuthStatus() {
         viewModelScope.launch {
+            launch {
+                authRepository.getIsJellyseerr().collect { isJelly ->
+                    _isJellyseerr.value = isJelly
+                }
+            }
+
             authRepository.isAuthenticated().collect { isAuthenticated ->
                 val currentState = _authState.value
                 if (isAuthenticated) {
@@ -70,10 +79,6 @@ class AuthViewModel(
         }
     }
     
-    /**
-     * Validate server URL.
-     * Property 1: URL Validation Correctness
-     */
     /**
      * Validate server URL.
      * Property 1: URL Validation Correctness
@@ -105,7 +110,10 @@ class AuthViewModel(
                     // We need to re-fetch isAuthenticated or rely on checkAuthStatus loop
                     checkAuthStatus()
                 }
-                _serverValidationState.value = ServerValidationState.Valid(result.data)
+                
+                val serverInfo = result.data
+                _isJellyseerr.value = serverInfo.isJellyseerr
+                _serverValidationState.value = ServerValidationState.Valid(serverInfo)
             }
             is Result.Error -> {
                 val rawMessage = result.error.message
@@ -214,6 +222,27 @@ class AuthViewModel(
                 }
                 is Result.Error -> {
                     logger.e("AuthViewModel", "Local login failed: ${result.error.message}")
+                    _authState.value = AuthState.Error(result.error.message)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    /**
+     * Login with Jellyfin credentials.
+     */
+    fun loginWithJellyfin(username: String, password: String, hostname: String) {
+        viewModelScope.launch {
+            logger.d("AuthViewModel", "Logging in with Jellyfin account...")
+            _authState.value = AuthState.Authenticating
+            when (val result = authRepository.authenticateWithJellyfin(username, password, hostname)) {
+                is Result.Success -> {
+                    logger.d("AuthViewModel", "Jellyfin login successful!")
+                    _authState.value = AuthState.Authenticated
+                }
+                is Result.Error -> {
+                    logger.e("AuthViewModel", "Jellyfin login failed: ${result.error.message}")
                     _authState.value = AuthState.Error(result.error.message)
                 }
                 else -> {}

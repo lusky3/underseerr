@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.map
 class AuthRepositoryImpl(
     private val authKtorService: AuthKtorService,
     private val plexKtorService: PlexKtorService,
+    private val settingsKtorService: app.lusk.underseerr.data.remote.api.SettingsKtorService,
     private val securityManager: SecurityManager,
     private val preferencesManager: PreferencesManager,
     private val database: app.lusk.underseerr.data.local.UnderseerrDatabase
@@ -64,31 +65,49 @@ class AuthRepositoryImpl(
             
             // Try to fetch server info to validate connectivity
             val result = safeApiCall {
-                authKtorService.getServerInfo()
+                // authKtorService.getServerInfo() // Deprecated: Use public settings to detect Jellyseerr
+                settingsKtorService.getPublicSettings()
             }
             
             when (result) {
                 is Result.Success -> {
-                    val apiServerInfo = result.data
+                    val publicSettings = result.data
+                    val isJellyseerr = publicSettings.mediaServerType == 4
                     
                     // Add to configured servers list
                     preferencesManager.addServer(
                         app.lusk.underseerr.domain.repository.ServerConfig(
                             url = cleanUrl,
                             name = "Server ${cleanUrl.replace("https://", "").replace("http://", "").substringBefore("/")}",
-                            isActive = true
+                            isActive = true,
+                            isJellyseerr = isJellyseerr
                         )
                     )
                     
+                    // Only persist isJellyseerr in a basic way for now (via preferences if we had a field, or inferred)
+                    // Ideally, we should store server type in PreferencesManager.ServerConfig too.
+                    // For now, key features will re-check or rely on this initial check.
+                    
                     Result.success(
                         ServerInfo(
-                            version = apiServerInfo.version,
-                            initialized = apiServerInfo.initialized,
-                            applicationUrl = apiServerInfo.applicationUrl
+                            version = "Unknown", // Public settings might not return version, strictly speaking
+                            initialized = publicSettings.initialized,
+                            applicationUrl = publicSettings.applicationUrl,
+                            isJellyseerr = isJellyseerr
                         )
                     )
                 }
-                is Result.Error -> result
+                is Result.Error -> {
+                    // Fallback to old status endpoint if public settings fails (legacy support)
+                     val fallbackResult = safeApiCall { authKtorService.getServerInfo() }
+                     if (fallbackResult is Result.Success) {
+                         val info = fallbackResult.data
+                         preferencesManager.setServerUrl(cleanUrl)
+                         Result.success(ServerInfo(info.version, info.initialized, info.applicationUrl, false))
+                     } else {
+                         result // Return original error
+                     }
+                }
                 is Result.Loading -> Result.loading()
             }
         } catch (e: Exception) {
@@ -214,6 +233,41 @@ class AuthRepositoryImpl(
             }
         } catch (e: Exception) {
             Result.error(app.lusk.underseerr.domain.model.AppError.AuthError("Local authentication failed: ${e.message}"))
+        }
+    }
+
+    override suspend fun authenticateWithJellyfin(username: String, password: String, hostname: String): Result<UserProfile> {
+        return try {
+            val result = safeApiCall {
+                authKtorService.authenticateWithJellyfin(username, password, hostname)
+            }
+
+            when (result) {
+                is Result.Success -> {
+                    val response = result.data
+                    val apiUserProfile: app.lusk.underseerr.data.remote.model.ApiUserProfile = response.body()
+
+                    // Store session cookie
+                    val setCookieHeader = response.headers["Set-Cookie"]
+                    if (setCookieHeader != null) {
+                        val cookieValue = setCookieHeader.split(";").firstOrNull()
+                        if (cookieValue != null) {
+                            securityManager.storeSecureData("cookie_auth_token", cookieValue)
+                        }
+                    }
+
+                    // Store session marker and user ID
+                    val sessionMarker = "SESSION_COOKIE"
+                    securityManager.storeSecureData(API_KEY_STORAGE_KEY, sessionMarker)
+                    preferencesManager.setUserId(apiUserProfile.id)
+
+                    Result.success(apiUserProfile.toDomain())
+                }
+                is Result.Error -> result
+                is Result.Loading -> Result.loading()
+            }
+        } catch (e: Exception) {
+            Result.error(app.lusk.underseerr.domain.model.AppError.AuthError("Jellyfin authentication failed: ${e.message}"))
         }
     }
 
@@ -366,6 +420,15 @@ class AuthRepositoryImpl(
 
     override fun getServerUrl(): Flow<String?> {
         return preferencesManager.getServerUrl()
+    }
+    
+    override fun getIsJellyseerr(): Flow<Boolean> {
+        return kotlinx.coroutines.flow.combine(
+            preferencesManager.getConfiguredServers(),
+            preferencesManager.getServerUrl()
+        ) { servers, currentUrl ->
+            servers.find { it.url == currentUrl }?.isJellyseerr ?: false
+        }
     }
     
     override suspend fun getPlexToken(): String? {

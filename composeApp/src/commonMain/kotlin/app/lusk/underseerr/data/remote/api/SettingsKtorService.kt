@@ -29,4 +29,9 @@ class SettingsKtorService(private val client: HttpClient) {
     suspend fun getUserNotificationSettings(userId: Int): ApiUserNotificationSettings {
         return client.get("/api/v1/user/$userId/settings/notifications").body()
     }
+
+    suspend fun getPublicSettings(): app.lusk.underseerr.data.remote.model.ApiServerPublicSettings {
+        return client.get("/api/v1/settings/public").body()
+    }
 }
+

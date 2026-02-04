@@ -65,6 +65,9 @@ fun PlexAuthScreen(
     var showLocalLoginForm by remember { mutableStateOf(false) }
     var showApiKeyForm by remember { mutableStateOf(false) }
     
+    val isJellyseerr by viewModel.isJellyseerr.collectAsState()
+    var showJellyfinLoginForm by remember { mutableStateOf(false) }
+    
     // Handle success/error states
     LaunchedEffect(authState) {
         when (authState) {
@@ -81,7 +84,7 @@ fun PlexAuthScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Authenticate with Plex") },
+                title = { Text(if (isJellyseerr) "Authentication" else "Authenticate with Plex") },
                 navigationIcon = {
                     IconButton(onClick = {
                         viewModel.resetAuth()
@@ -194,25 +197,54 @@ fun PlexAuthScreen(
                 }
                 
                 else -> {
-                    Text(
-                        text = "Sign in with Plex",
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    if (isJellyseerr) {
+                        Text(
+                            text = "Sign in to Jellyseerr",
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Text(
+                            text = "Use your Jellyfin account to access Jellyseerr",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 32.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "Sign in with Plex",
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        
+                        Text(
+                            text = "Use your Plex account to access Overseerr",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 32.dp)
+                        )
+                    }
                     
-                    Text(
-                        text = "Use your Plex account to access Overseerr",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 32.dp)
-                    )
-                    
-                    Button(
-                        onClick = { viewModel.initiatePlexAuth() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Sign in with Plex")
+                    if (!isJellyseerr) {
+                        Button(
+                            onClick = { viewModel.initiatePlexAuth() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Sign in with Plex")
+                        }
+                    } else {
+                         // For Jellyseerr, main action is Jellyfin login or Local?
+                         // Jellyseerr supports local login too.
+                         // Let's make "Sign in with Jellyfin" the primary action, which shows a form.
+                         if (!showJellyfinLoginForm && !showLocalLoginForm && !showApiKeyForm) {
+                             Button(
+                                 onClick = { showJellyfinLoginForm = true },
+                                 modifier = Modifier.fillMaxWidth()
+                             ) {
+                                 Text("Sign in with Jellyfin")
+                             }
+                         }
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))
@@ -241,7 +273,7 @@ fun PlexAuthScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     
-                    if (!showLocalLoginForm && !showApiKeyForm) {
+                    if (!showLocalLoginForm && !showApiKeyForm && !showJellyfinLoginForm) {
                         OutlinedButton(
                             onClick = { showLocalLoginForm = true },
                             modifier = Modifier.fillMaxWidth()
@@ -272,15 +304,24 @@ fun PlexAuthScreen(
                             onCancel = { showApiKeyForm = false }
                         )
                     }
+
+                    if (showJellyfinLoginForm) {
+                        JellyfinLoginForm(
+                            onLogin = { username, password, hostname -> viewModel.loginWithJellyfin(username, password, hostname) },
+                            onCancel = { showJellyfinLoginForm = false }
+                        )
+                    }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    Text(
-                        text = "You'll be redirected to Plex to authorize this app",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
+                    if (!isJellyseerr) {
+                        Text(
+                            text = "You'll be redirected to Plex to authorize this app",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }
@@ -338,6 +379,77 @@ private fun LocalLoginForm(
                 onClick = { onLogin(email, password) },
                 modifier = Modifier.weight(1f),
                 enabled = email.isNotBlank() && password.isNotBlank()
+            ) {
+                Text("Login")
+            }
+        }
+    }
+}
+
+@Composable
+private fun JellyfinLoginForm(
+    onLogin: (String, String, String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var hostname by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedTextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Jellyfin Username") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Next
+            )
+        )
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Next
+            )
+        )
+        OutlinedTextField(
+            value = hostname,
+            onValueChange = { hostname = it },
+            label = { Text("Jellyfin Server URL") },
+            placeholder = { Text("http://jellyfin.local:8096") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onDone = {
+                    if (username.isNotBlank() && password.isNotBlank() && hostname.isNotBlank()) {
+                        onLogin(username, password, hostname)
+                    }
+                }
+            )
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) {
+                Text("Cancel")
+            }
+            Button(
+                onClick = { onLogin(username, password, hostname) },
+                modifier = Modifier.weight(1f),
+                enabled = username.isNotBlank() && password.isNotBlank() && hostname.isNotBlank()
             ) {
                 Text("Login")
             }
