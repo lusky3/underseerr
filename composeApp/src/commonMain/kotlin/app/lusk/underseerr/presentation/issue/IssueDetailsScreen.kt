@@ -27,6 +27,7 @@ import app.lusk.underseerr.domain.model.IssueStatus
 import app.lusk.underseerr.domain.model.IssueType
 import app.lusk.underseerr.domain.repository.IssueRepository
 import app.lusk.underseerr.ui.components.AsyncImage
+import app.lusk.underseerr.ui.components.UnifiedErrorDisplay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 

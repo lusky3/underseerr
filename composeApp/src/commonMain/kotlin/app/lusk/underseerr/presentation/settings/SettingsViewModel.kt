@@ -404,7 +404,7 @@ class SettingsViewModel(
             if (result is app.lusk.underseerr.domain.model.Result.Success) {
                 _uiEvent.emit("Webhook configured successfully")
             } else if (result is app.lusk.underseerr.domain.model.Result.Error) {
-                _uiEvent.emit("Failed: ${result.error.message ?: "Unknown error"}")
+                _uiEvent.emit("Failed: ${result.error.message}")
             }
         }
     }
