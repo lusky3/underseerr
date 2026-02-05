@@ -72,7 +72,7 @@ class PlexKtorService(private val client: HttpClient) {
             header("Accept", "application/json")
             parameter("query", "tmdb://$type/$tmdbId")
             parameter("limit", 1)
-            parameter("searchTypes", type)
+            parameter("searchProviders", "discover")
         }.body()
     }
 }

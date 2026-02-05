@@ -134,7 +134,15 @@ class WatchlistRepositoryImpl(
                 
                 if (finalRatingKey != null) {
                     println("WatchlistRepository: Removing from Plex watchlist with ratingKey $finalRatingKey")
-                    plexKtorService.removeFromWatchlist(plexToken, finalRatingKey)
+                    try {
+                        plexKtorService.removeFromWatchlist(plexToken, finalRatingKey)
+                    } catch (e: io.ktor.client.plugins.ClientRequestException) {
+                        if (e.response.status.value == 404) {
+                            println("WatchlistRepository: Item already removed (404), treating as success")
+                        } else {
+                            throw e
+                        }
+                    }
                 } else {
                     throw Exception("Could not find Plex ratingKey for TMDB ID $tmdbId")
                 }
