@@ -13,6 +13,10 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Theaters
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.*
 import androidx.compose.runtime.*
@@ -39,6 +43,9 @@ import app.lusk.underseerr.ui.components.PosterImage
 import app.lusk.underseerr.ui.components.BackdropImage
 import app.lusk.underseerr.ui.components.AsyncImage
 import app.lusk.underseerr.ui.theme.LocalUnderseerrGradients
+import app.lusk.underseerr.domain.model.RelatedVideo
+import app.lusk.underseerr.domain.model.VideoType
+import app.lusk.underseerr.util.openUrl
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -479,6 +486,72 @@ private fun MediaDetailsContent(
                 }
             }
 
+            // Videos section (Trailers, Featurettes, etc.)
+            if (details.relatedVideos.isNotEmpty()) {
+                item {
+                    val gradients = LocalUnderseerrGradients.current
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Videos",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = gradients.onSurface,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                
+                // Group videos by type and display each group
+                val groupedVideos = details.relatedVideos.groupBy { it.type }
+                val videoOrder = listOf(
+                    VideoType.TRAILER,
+                    VideoType.TEASER,
+                    VideoType.CLIP,
+                    VideoType.FEATURETTE,
+                    VideoType.BEHIND_THE_SCENES,
+                    VideoType.BLOOPERS,
+                    VideoType.OPENING_CREDITS,
+                    VideoType.OTHER
+                )
+                
+                videoOrder.forEach { videoType ->
+                    groupedVideos[videoType]?.let { videos ->
+                        item {
+                            val gradients = LocalUnderseerrGradients.current
+                            Text(
+                                text = when (videoType) {
+                                    VideoType.TRAILER -> "Trailers"
+                                    VideoType.TEASER -> "Teasers"
+                                    VideoType.CLIP -> "Clips"
+                                    VideoType.FEATURETTE -> "Featurettes"
+                                    VideoType.BEHIND_THE_SCENES -> "Behind the Scenes"
+                                    VideoType.BLOOPERS -> "Bloopers"
+                                    VideoType.OPENING_CREDITS -> "Opening Credits"
+                                    VideoType.OTHER -> "Other Videos"
+                                },
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = gradients.onSurface.copy(alpha = 0.9f),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                            
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(videos) { video ->
+                                    VideoCard(
+                                        video = video,
+                                        onClick = { openUrl(video.url) }
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
+            }
+
             // Runtime/Status info
             item {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -582,4 +655,119 @@ private fun InfoItem(
     }
 }
 
-
+/**
+ * Video card component for displaying video thumbnails with play button overlay.
+ */
+@Composable
+private fun VideoCard(
+    video: RelatedVideo,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val gradients = LocalUnderseerrGradients.current
+    
+    Column(
+        modifier = modifier
+            .width(200.dp)
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Video thumbnail with play button overlay
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(gradients.surface),
+            contentAlignment = Alignment.Center
+        ) {
+            // YouTube thumbnail
+            if (video.site == "YouTube") {
+                AsyncImage(
+                    imageUrl = "https://img.youtube.com/vi/${video.key}/hqdefault.jpg",
+                    contentDescription = video.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            
+            // Gradient overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.3f),
+                                Color.Black.copy(alpha = 0.1f)
+                            )
+                        )
+                    )
+            )
+            
+            // Play button
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Play",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+            
+            // Video type badge
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = when (video.type) {
+                    VideoType.TRAILER -> MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                    VideoType.TEASER -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f)
+                    VideoType.FEATURETTE -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.9f)
+                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = when (video.type) {
+                        VideoType.TRAILER -> "Trailer"
+                        VideoType.TEASER -> "Teaser"
+                        VideoType.CLIP -> "Clip"
+                        VideoType.FEATURETTE -> "Featurette"
+                        VideoType.BEHIND_THE_SCENES -> "BTS"
+                        VideoType.BLOOPERS -> "Bloopers"
+                        VideoType.OPENING_CREDITS -> "Opening"
+                        VideoType.OTHER -> "Video"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Video name
+        Text(
+            text = video.name,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = gradients.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+    }
+}

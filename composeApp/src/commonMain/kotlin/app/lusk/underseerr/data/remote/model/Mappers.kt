@@ -18,7 +18,38 @@ fun ApiMovie.toMovie(): Movie {
         releaseDate = releaseDate,
         voteAverage = voteAverage ?: 0.0,
         mediaInfo = mediaInfo?.toMediaInfo(),
-        cast = credits?.cast?.map { it.toCastMember() } ?: emptyList()
+        cast = credits?.cast?.map { it.toCastMember() } ?: emptyList(),
+        relatedVideos = relatedVideos?.mapNotNull { it.toRelatedVideo() } ?: emptyList(),
+        genres = genres?.map { it.toGenre() } ?: emptyList(),
+        runtime = runtime,
+        tagline = tagline,
+        status = status
+    )
+}
+
+fun ApiRelatedVideo.toRelatedVideo(): RelatedVideo? {
+    val url = this.url ?: return null
+    val key = this.key ?: return null
+    val name = this.name ?: return null
+    val site = this.site ?: return null
+    
+    val videoType = when (type?.lowercase()) {
+        "trailer" -> VideoType.TRAILER
+        "teaser" -> VideoType.TEASER
+        "clip" -> VideoType.CLIP
+        "featurette" -> VideoType.FEATURETTE
+        "behind the scenes" -> VideoType.BEHIND_THE_SCENES
+        "bloopers" -> VideoType.BLOOPERS
+        "opening credits" -> VideoType.OPENING_CREDITS
+        else -> VideoType.OTHER
+    }
+    
+    return RelatedVideo(
+        url = url,
+        key = key,
+        name = name,
+        type = videoType,
+        site = site
     )
 }
 
@@ -43,7 +74,11 @@ fun ApiTvShow.toTvShow(): TvShow {
         voteAverage = voteAverage ?: 0.0,
         numberOfSeasons = numberOfSeasons ?: 0,
         mediaInfo = mediaInfo?.toMediaInfo(),
-        cast = credits?.cast?.map { it.toCastMember() } ?: emptyList()
+        cast = credits?.cast?.map { it.toCastMember() } ?: emptyList(),
+        relatedVideos = relatedVideos?.mapNotNull { it.toRelatedVideo() } ?: emptyList(),
+        genres = genres?.map { it.toGenre() } ?: emptyList(),
+        tagline = tagline,
+        status = status
     )
 }
 

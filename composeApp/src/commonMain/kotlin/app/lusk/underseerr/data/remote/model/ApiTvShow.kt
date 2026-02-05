@@ -18,5 +18,10 @@ data class ApiTvShow(
     val numberOfSeasons: Int? = null,
     val mediaInfo: ApiMediaInfo? = null,
     @SerialName("credits")
-    val credits: ApiCredits? = null
+    val credits: ApiCredits? = null,
+    val relatedVideos: List<ApiRelatedVideo>? = null,
+    val genres: List<ApiGenre>? = null,
+    val tagline: String? = null,
+    val status: String? = null
 )
+

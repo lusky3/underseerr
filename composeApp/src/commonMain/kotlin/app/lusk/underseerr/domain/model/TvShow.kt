@@ -13,5 +13,10 @@ data class TvShow(
     val voteAverage: Double,
     val numberOfSeasons: Int,
     val mediaInfo: MediaInfo?,
-    val cast: List<CastMember> = emptyList()
+    val cast: List<CastMember> = emptyList(),
+    val relatedVideos: List<RelatedVideo> = emptyList(),
+    val genres: List<Genre> = emptyList(),
+    val tagline: String? = null,
+    val status: String? = null
 )
+

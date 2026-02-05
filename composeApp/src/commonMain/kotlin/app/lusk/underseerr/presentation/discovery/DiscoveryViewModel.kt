@@ -514,7 +514,9 @@ data class MediaDetails(
     val requestedSeasons: List<Int> = emptyList(),
     val mediaInfoId: Int? = null,
     val ratingKey: String? = null,
-    val cast: List<app.lusk.underseerr.domain.model.CastMember> = emptyList()
+    val cast: List<app.lusk.underseerr.domain.model.CastMember> = emptyList(),
+    val relatedVideos: List<app.lusk.underseerr.domain.model.RelatedVideo> = emptyList(),
+    val tagline: String? = null
 )
 
 /**
@@ -527,9 +529,9 @@ private fun Movie.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails
     backdropPath = backdropPath,
     releaseDate = releaseDate,
     voteAverage = voteAverage,
-    genres = emptyList(), // Not available in basic model
-    runtime = null, // Not available in basic model
-    status = mediaInfo?.status?.name,
+    genres = genres.map { it.name },
+    runtime = runtime,
+    status = status ?: mediaInfo?.status?.name,
     isAvailable = mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.AVAILABLE,
     isRequested = mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.PENDING ||
                   mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.PROCESSING,
@@ -537,8 +539,10 @@ private fun Movie.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails
     isPartiallyAvailable = false,
     isPartialRequestsEnabled = partialRequestsEnabled,
     mediaInfoId = mediaInfo?.id,
-    ratingKey = mediaInfo?.ratingKey, // Most basic models don't have it, but maybe?
-    cast = cast
+    ratingKey = mediaInfo?.ratingKey,
+    cast = cast,
+    relatedVideos = relatedVideos,
+    tagline = tagline
 )
 
 private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails(
@@ -548,9 +552,9 @@ private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetail
     backdropPath = backdropPath,
     releaseDate = firstAirDate,
     voteAverage = voteAverage,
-    genres = emptyList(), // Not available in basic model
-    runtime = null, // Not available in basic model
-    status = mediaInfo?.status?.name,
+    genres = genres.map { it.name },
+    runtime = null,
+    status = status ?: mediaInfo?.status?.name,
     isAvailable = mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.AVAILABLE,
     isRequested = mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.PENDING ||
                   mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.PROCESSING,
@@ -567,7 +571,9 @@ private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetail
     } ?: emptyList(),
     mediaInfoId = mediaInfo?.id,
     ratingKey = mediaInfo?.ratingKey,
-    cast = cast
+    cast = cast,
+    relatedVideos = relatedVideos,
+    tagline = tagline
 )
 
 // Custom stateIn removed in favor of standard library stateIn

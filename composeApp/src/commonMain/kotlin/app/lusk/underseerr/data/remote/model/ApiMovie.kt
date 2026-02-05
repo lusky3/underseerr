@@ -17,5 +17,11 @@ data class ApiMovie(
     val voteAverage: Double? = null,
     val mediaInfo: ApiMediaInfo? = null,
     @SerialName("credits")
-    val credits: ApiCredits? = null
+    val credits: ApiCredits? = null,
+    val relatedVideos: List<ApiRelatedVideo>? = null,
+    val genres: List<ApiGenre>? = null,
+    val runtime: Int? = null,
+    val tagline: String? = null,
+    val status: String? = null
 )
+

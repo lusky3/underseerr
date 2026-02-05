@@ -12,5 +12,11 @@ data class Movie(
     val releaseDate: String?,
     val voteAverage: Double,
     val mediaInfo: MediaInfo?,
-    val cast: List<CastMember> = emptyList()
+    val cast: List<CastMember> = emptyList(),
+    val relatedVideos: List<RelatedVideo> = emptyList(),
+    val genres: List<Genre> = emptyList(),
+    val runtime: Int? = null,
+    val tagline: String? = null,
+    val status: String? = null
 )
+
