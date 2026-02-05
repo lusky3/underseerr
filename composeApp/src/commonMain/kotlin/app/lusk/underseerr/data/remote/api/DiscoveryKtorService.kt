@@ -8,6 +8,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.http.encodeURLParameter
 
 /**
  * Ktor implementation of media discovery endpoints.
@@ -111,7 +112,10 @@ class DiscoveryKtorService(private val client: HttpClient) {
     
     suspend fun search(query: String, page: Int = 1, language: String = "en"): ApiSearchResults {
         return client.get("/api/v1/search") {
-            parameter("query", query.trim())
+            // Force %20 encoding for spaces to satisfy Overseerr API which rejects '+'
+            val encodedQuery = query.trim().encodeURLParameter()
+            url.encodedParameters.append("query", encodedQuery)
+            
             parameter("page", page)
             parameter("language", language)
         }.body()

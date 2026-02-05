@@ -127,9 +127,6 @@ class DiscoveryViewModel(
     // Search state
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-    
-    private val _searchState = MutableStateFlow<SearchState>(SearchState.Idle)
-    val searchState: StateFlow<SearchState> = _searchState.asStateFlow()
 
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent = _uiEvent.asSharedFlow()
@@ -233,16 +230,7 @@ class DiscoveryViewModel(
             }
         }
 
-        // Set up search debouncing
-        viewModelScope.launch {
-            _searchQuery
-                .debounce(SEARCH_DEBOUNCE_MS)
-                .filter { it.isNotBlank() }
-                .distinctUntilChanged()
-                .collect { query ->
-                    performSearch(query)
-                }
-        }
+        // Search is handled by pagedSearchResults flow
 
         // Background load other pages after a short delay to prioritize Home content
         viewModelScope.launch {
@@ -270,35 +258,8 @@ class DiscoveryViewModel(
      */
     fun search(query: String) {
         _searchQuery.value = query
-        if (query.isBlank()) {
-            _searchState.value = SearchState.Idle
-        } else {
-            _searchState.value = SearchState.Loading
-        }
     }
     
-    /**
-     * Perform search.
-     * Property 5: Search Performance
-     * Property 6: Search Result Completeness
-     */
-    private fun performSearch(query: String) {
-        viewModelScope.launch {
-            _searchState.value = SearchState.Loading
-            
-            when (val result = discoveryRepository.searchMedia(query)) {
-                is Result.Success -> {
-                    _searchState.value = SearchState.Success(result.data.results)
-                }
-                is Result.Error -> {
-                    _searchState.value = SearchState.Error(result.error.message)
-                }
-                is Result.Loading -> {
-                    _searchState.value = SearchState.Loading
-                }
-            }
-        }
-    }
     
     /**
      * Load media details based on type.
@@ -371,7 +332,6 @@ class DiscoveryViewModel(
      */
     fun clearSearch() {
         _searchQuery.value = ""
-        _searchState.value = SearchState.Idle
     }
     
     /**
@@ -386,10 +346,7 @@ class DiscoveryViewModel(
      * Retry search.
      */
     fun retrySearch() {
-        val currentQuery = _searchQuery.value
-        if (currentQuery.isNotBlank()) {
-            performSearch(currentQuery)
-        }
+        // Paging handles retry through LazyPagingItems.retry()
     }
     
     /**
@@ -515,12 +472,6 @@ data class CategoryInfo(
 /**
  * Search state.
  */
-sealed class SearchState {
-    data object Idle : SearchState()
-    data object Loading : SearchState()
-    data class Success(val results: List<app.lusk.underseerr.domain.model.SearchResult>) : SearchState()
-    data class Error(val message: String) : SearchState()
-}
 
 /**
  * Media details state.
