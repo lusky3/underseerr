@@ -9,6 +9,8 @@ import app.lusk.underseerr.data.remote.api.DiscoveryKtorService
 import app.lusk.underseerr.data.remote.api.JellyseerrKtorService
 import app.lusk.underseerr.data.remote.api.JellyseerrWatchlistRequest
 import app.lusk.underseerr.data.remote.api.PlexKtorService
+import app.lusk.underseerr.data.remote.api.PlexWatchlistResponse
+import app.lusk.underseerr.data.remote.api.PlexMetadata
 import app.lusk.underseerr.data.remote.safeApiCall
 import app.lusk.underseerr.domain.model.Result
 import app.lusk.underseerr.domain.model.SearchResult

@@ -1,5 +1,6 @@
 package app.lusk.underseerr.presentation.discovery
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -149,33 +150,35 @@ private fun CategoryMediaCard(
                 .fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            if (!item.posterPath.isNullOrEmpty()) {
-                PosterImage(
-                    posterPath = item.posterPath,
-                    title = item.title,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                SimpleImagePlaceholder()
-            }
-
-            if (isInWatchlist) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 8.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
-                        )
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Bookmark,
-                        contentDescription = "In Watchlist",
-                        tint = androidx.compose.ui.graphics.Color.White,
-                        modifier = Modifier.size(12.dp)
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (!item.posterPath.isNullOrEmpty()) {
+                    PosterImage(
+                        posterPath = item.posterPath,
+                        title = item.title,
+                        modifier = Modifier.fillMaxSize()
                     )
+                } else {
+                    SimpleImagePlaceholder()
+                }
+
+                if (isInWatchlist) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 8.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
+                            )
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Bookmark,
+                            contentDescription = "In Watchlist",
+                            tint = androidx.compose.ui.graphics.Color.White,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
                 }
             }
         }
