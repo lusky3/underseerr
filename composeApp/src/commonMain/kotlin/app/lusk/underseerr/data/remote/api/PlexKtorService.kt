@@ -66,12 +66,15 @@ class PlexKtorService(private val client: HttpClient) {
      * Find a Plex item by its TMDB ID.
      */
     suspend fun searchByTmdbId(plexToken: String, tmdbId: Int, mediaType: String): PlexWatchlistResponse {
-        val type = if (mediaType == "movie") "movie" else "show"
+        val searchType = if (mediaType == "movie") "movies" else "tv"
+        val queryType = if (mediaType == "movie") "movie" else "tv"
+        
         return client.get("https://discover.provider.plex.tv/library/search") {
             header("X-Plex-Token", plexToken)
             header("Accept", "application/json")
-            parameter("query", "tmdb://$type/$tmdbId")
+            parameter("query", "tmdb://$queryType/$tmdbId")
             parameter("limit", 1)
+            parameter("searchTypes", searchType)
             parameter("searchProviders", "discover")
         }.body()
     }
@@ -87,7 +90,18 @@ data class PlexMediaContainer(
     val size: Int,
     val totalSize: Int? = null,
     val offset: Int? = null,
-    @SerialName("Metadata") val metadata: List<PlexMetadata> = emptyList()
+    @SerialName("Metadata") val metadata: List<PlexMetadata> = emptyList(),
+    @SerialName("SearchResults") val searchResults: List<PlexSearchResults> = emptyList()
+)
+
+@Serializable
+data class PlexSearchResults(
+    @SerialName("SearchResult") val searchResult: List<PlexSearchResult> = emptyList()
+)
+
+@Serializable
+data class PlexSearchResult(
+    @SerialName("Metadata") val metadata: PlexMetadata
 )
 
 @Serializable

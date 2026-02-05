@@ -111,11 +111,22 @@ class WatchlistRepositoryImpl(
         return try {
             println("WatchlistRepository: Searching Plex for TMDB ID $tmdbId ($plexMediaType)")
             val response = plexKtorService.searchByTmdbId(plexToken, tmdbId, plexMediaType)
-            val ratingKey = response.mediaContainer.metadata.firstOrNull()?.ratingKey
+            
+            // Check direct metadata first (unlikely for search)
+            var ratingKey = response.mediaContainer.metadata.firstOrNull()?.ratingKey
+            
+            // If not found, check search results
+            if (ratingKey == null) {
+                ratingKey = response.mediaContainer.searchResults
+                    .firstOrNull()?.searchResult
+                    ?.firstOrNull()?.metadata?.ratingKey
+            }
+            
             println("WatchlistRepository: Found Plex ratingKey $ratingKey for TMDB ID $tmdbId")
             ratingKey
         } catch (e: Exception) {
             println("WatchlistRepository: Failed to find Plex ratingKey for TMDB ID $tmdbId: ${e.message}")
+            e.printStackTrace()
             null
         }
     }
