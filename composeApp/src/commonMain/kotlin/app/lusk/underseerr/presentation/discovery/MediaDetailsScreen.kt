@@ -392,9 +392,13 @@ private fun MediaDetailsContent(
                         OutlinedButton(
                             onClick = { 
                                 if (isInWatchlist) {
-                                    viewModel.removeFromWatchlist(mediaId, mediaType, details.ratingKey)
+                                    // Pass null for ratingKey - details.ratingKey is the Plex Library key from Overseerr,
+                                    // but watchlist operations need the Plex Discover key which is different.
+                                    // findPlexRatingKey() will lookup the correct one.
+                                    viewModel.removeFromWatchlist(mediaId, mediaType, null)
                                 } else {
-                                    viewModel.addToWatchlist(mediaId, mediaType, details.ratingKey)
+                                    // For adding, also let it lookup the correct key
+                                    viewModel.addToWatchlist(mediaId, mediaType, null)
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),

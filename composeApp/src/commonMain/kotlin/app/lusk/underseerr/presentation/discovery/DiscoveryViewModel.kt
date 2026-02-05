@@ -117,10 +117,15 @@ class DiscoveryViewModel(
     val isPlexUser: StateFlow<Boolean> = _isPlexUser.asStateFlow()
 
     // Watchlist
-    // Watchlist
-    val watchlist: StateFlow<PagingData<SearchResult>> = watchlistRepository.getWatchlist()
+    private val _watchlistRefreshTrigger = MutableStateFlow(0)
+    val watchlist: StateFlow<PagingData<SearchResult>> = _watchlistRefreshTrigger
+        .flatMapLatest { watchlistRepository.getWatchlist() }
         .cachedIn(viewModelScope)
         .stateIn(viewModelScope, SharingStarted.Lazily, PagingData.empty<SearchResult>())
+    
+    fun refreshWatchlist() {
+        _watchlistRefreshTrigger.value++
+    }
     
     // Search state
     private val _searchQuery = MutableStateFlow("")
@@ -409,7 +414,8 @@ class DiscoveryViewModel(
                 _watchlistIds.value = _watchlistIds.value - tmdbId
                 _uiEvent.emit("Removed from watchlist")
                 // Delay re-fetch to allow for Plex API consistency
-                kotlinx.coroutines.delay(5000)
+                kotlinx.coroutines.delay(2000)
+                refreshWatchlist()
                 fetchWatchlistIds()
             } else if (result is Result.Error) {
                 _uiEvent.emit("Failed to remove: ${result.error.message}")
@@ -424,7 +430,8 @@ class DiscoveryViewModel(
                 _watchlistIds.value = _watchlistIds.value + tmdbId
                 _uiEvent.emit("Added to watchlist")
                 // Delay re-fetch to allow for Plex API consistency
-                kotlinx.coroutines.delay(5000)
+                kotlinx.coroutines.delay(2000)
+                refreshWatchlist()
                 fetchWatchlistIds()
             } else if (result is Result.Error) {
                 _uiEvent.emit("Failed to add: ${result.error.message}")

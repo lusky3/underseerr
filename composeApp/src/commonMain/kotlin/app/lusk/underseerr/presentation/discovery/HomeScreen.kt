@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.AddTask
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -360,7 +361,7 @@ fun HomeScreen(
         if (itemData.id != 0) {
             val status = itemData.mediaInfo?.status
             val gradients = LocalUnderseerrGradients.current
-            
+            val isInWatchlist = watchlistIds.contains(itemData.id)
             ModalBottomSheet(
                 onDismissRequest = { longPressedItem = null },
                 containerColor = Color.Transparent, // We'll use a gradients.surface background
@@ -440,11 +441,37 @@ fun HomeScreen(
                             }
                         }
 
-                        // Watchlist removal option
-                        if (itemData.ratingKey != null) {
+                        // Watchlist option (add or remove)
+                        if (isInWatchlist) {
+                            // Remove from Watchlist option
                             Surface(
                                 onClick = {
-                                    itemToRemoveFromWatchlist = item as SearchResult
+                                    itemToRemoveFromWatchlist = when (item) {
+                                        is SearchResult -> item
+                                        is Movie -> SearchResult(
+                                            id = item.id,
+                                            mediaType = MediaType.MOVIE,
+                                            title = item.title,
+                                            overview = item.overview,
+                                            posterPath = item.posterPath,
+                                            releaseDate = item.releaseDate,
+                                            voteAverage = item.voteAverage,
+                                            mediaInfo = item.mediaInfo,
+                                            ratingKey = null
+                                        )
+                                        is TvShow -> SearchResult(
+                                            id = item.id,
+                                            mediaType = MediaType.TV,
+                                            title = item.name,
+                                            overview = item.overview,
+                                            posterPath = item.posterPath,
+                                            releaseDate = item.firstAirDate,
+                                            voteAverage = item.voteAverage,
+                                            mediaInfo = item.mediaInfo,
+                                            ratingKey = null
+                                        )
+                                        else -> null
+                                    }
                                     longPressedItem = null
                                 },
                                 modifier = Modifier.fillMaxWidth(),
@@ -458,6 +485,29 @@ fun HomeScreen(
                                     colors = ListItemDefaults.colors(
                                         containerColor = Color.Transparent,
                                         headlineColor = gradients.onSurface
+                                    )
+                                )
+                            }
+                        } else {
+                            // Add to Watchlist option
+                            Surface(
+                                onClick = {
+                                    viewModel.addToWatchlist(itemData.id, itemData.type, null)
+                                    longPressedItem = null
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                            ) {
+                                ListItem(
+                                    headlineContent = { Text("Add to Watchlist", fontWeight = FontWeight.SemiBold) },
+                                    supportingContent = { Text("Save to your Plex watchlist") },
+                                    leadingContent = { Icon(Icons.Default.BookmarkBorder, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                    colors = ListItemDefaults.colors(
+                                        containerColor = Color.Transparent,
+                                        headlineColor = gradients.onSurface,
+                                        supportingColor = gradients.onSurface.copy(alpha = 0.7f)
                                     )
                                 )
                             }
