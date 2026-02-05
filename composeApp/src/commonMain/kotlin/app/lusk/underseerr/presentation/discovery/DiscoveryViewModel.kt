@@ -408,6 +408,8 @@ class DiscoveryViewModel(
             if (result is Result.Success) {
                 _watchlistIds.value = _watchlistIds.value - tmdbId
                 _uiEvent.emit("Removed from watchlist")
+                // Delay re-fetch to allow for Plex API consistency
+                kotlinx.coroutines.delay(5000)
                 fetchWatchlistIds()
             } else if (result is Result.Error) {
                 _uiEvent.emit("Failed to remove: ${result.error.message}")
@@ -419,7 +421,10 @@ class DiscoveryViewModel(
         viewModelScope.launch {
             val result = watchlistRepository.addToWatchlist(tmdbId, mediaType, ratingKey)
             if (result is Result.Success) {
+                _watchlistIds.value = _watchlistIds.value + tmdbId
                 _uiEvent.emit("Added to watchlist")
+                // Delay re-fetch to allow for Plex API consistency
+                kotlinx.coroutines.delay(5000)
                 fetchWatchlistIds()
             } else if (result is Result.Error) {
                 _uiEvent.emit("Failed to add: ${result.error.message}")

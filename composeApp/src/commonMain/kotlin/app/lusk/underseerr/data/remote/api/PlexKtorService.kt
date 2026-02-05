@@ -65,15 +65,14 @@ class PlexKtorService(private val client: HttpClient) {
     /**
      * Find a Plex item by its TMDB ID.
      */
-    suspend fun searchByTmdbId(plexToken: String, tmdbId: Int, mediaType: String): PlexWatchlistResponse {
+    suspend fun searchDiscover(plexToken: String, query: String, mediaType: String): PlexWatchlistResponse {
         val searchType = if (mediaType == "movie") "movies" else "tv"
-        val queryType = if (mediaType == "movie") "movie" else "tv"
         
         return client.get("https://discover.provider.plex.tv/library/search") {
             header("X-Plex-Token", plexToken)
             header("Accept", "application/json")
-            parameter("query", "tmdb://$queryType/$tmdbId")
-            parameter("limit", 1)
+            parameter("query", query)
+            parameter("limit", 5)
             parameter("searchTypes", searchType)
             parameter("searchProviders", "discover")
         }.body()

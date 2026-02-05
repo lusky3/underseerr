@@ -110,19 +110,43 @@ class WatchlistRepositoryImpl(
     private suspend fun findPlexRatingKey(plexToken: String, tmdbId: Int, plexMediaType: String): String? {
         return try {
             println("WatchlistRepository: Searching Plex for TMDB ID $tmdbId ($plexMediaType)")
-            val response = plexKtorService.searchByTmdbId(plexToken, tmdbId, plexMediaType)
             
-            // Check direct metadata first (unlikely for search)
-            var ratingKey = response.mediaContainer.metadata.firstOrNull()?.ratingKey
+            // 1. Fetch details to get Title and Year
+            val title: String
+            val year: Int?
             
-            // If not found, check search results
-            if (ratingKey == null) {
-                ratingKey = response.mediaContainer.searchResults
-                    .firstOrNull()?.searchResult
-                    ?.firstOrNull()?.metadata?.ratingKey
+            if (plexMediaType == "movie") {
+                val details = discoveryKtorService.getMovieDetails(tmdbId, "en")
+                title = details.title
+                year = details.releaseDate?.take(4)?.toIntOrNull()
+            } else {
+                val details = discoveryKtorService.getTvShowDetails(tmdbId, "en")
+                title = details.name
+                year = details.firstAirDate?.take(4)?.toIntOrNull()
             }
             
-            println("WatchlistRepository: Found Plex ratingKey $ratingKey for TMDB ID $tmdbId")
+            println("WatchlistRepository: Searching Plex for '$title' ($year)")
+            val response = plexKtorService.searchDiscover(plexToken, title, plexMediaType)
+            
+            // 2. Iterate and match
+            val allResults = response.mediaContainer.searchResults
+                .flatMap { it.searchResult }
+                .map { it.metadata } + response.mediaContainer.metadata
+
+            val match = allResults.firstOrNull { metadata ->
+                val titleMatch = metadata.title.equals(title, ignoreCase = true)
+                val yearMatch = if (year != null && metadata.year != null) metadata.year == year else true
+                titleMatch && yearMatch
+            }
+
+            val ratingKey = match?.ratingKey
+            
+            if (ratingKey != null) {
+                println("WatchlistRepository: Found Plex ratingKey $ratingKey for '$title'")
+            } else {
+                println("WatchlistRepository: No match found for '$title' ($year) in Plex results")
+            }
+            
             ratingKey
         } catch (e: Exception) {
             println("WatchlistRepository: Failed to find Plex ratingKey for TMDB ID $tmdbId: ${e.message}")
