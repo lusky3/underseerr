@@ -13,6 +13,7 @@ import app.lusk.underseerr.domain.repository.DiscoveryRepository
 import app.lusk.underseerr.domain.repository.RequestRepository
 import app.lusk.underseerr.domain.repository.ProfileRepository
 import app.lusk.underseerr.domain.model.Genre
+import app.lusk.underseerr.domain.model.SearchResult
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -58,13 +59,13 @@ class DiscoveryViewModel(
     }
     
     // Trending content
-    val trending: StateFlow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = 
+    val trending: StateFlow<PagingData<SearchResult>> = 
         discoveryRepository.getTrending()
             .cachedIn(viewModelScope)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Lazily,
-                initialValue = PagingData.empty()
+                initialValue = PagingData.empty<SearchResult>()
             )
 
     // Popular and Upcoming
@@ -74,7 +75,7 @@ class DiscoveryViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Lazily,
-                initialValue = PagingData.empty()
+                initialValue = PagingData.empty<Movie>()
             )
 
     val popularTvShows: StateFlow<PagingData<TvShow>> = 
@@ -83,7 +84,7 @@ class DiscoveryViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Lazily,
-                initialValue = PagingData.empty()
+                initialValue = PagingData.empty<TvShow>()
             )
 
     val upcomingMovies: StateFlow<PagingData<Movie>> = 
@@ -92,7 +93,7 @@ class DiscoveryViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Lazily,
-                initialValue = PagingData.empty()
+                initialValue = PagingData.empty<Movie>()
             )
 
     val upcomingTvShows: StateFlow<PagingData<TvShow>> = 
@@ -101,7 +102,7 @@ class DiscoveryViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Lazily,
-                initialValue = PagingData.empty()
+                initialValue = PagingData.empty<TvShow>()
             )
 
     // Genres
@@ -116,13 +117,10 @@ class DiscoveryViewModel(
     val isPlexUser: StateFlow<Boolean> = _isPlexUser.asStateFlow()
 
     // Watchlist
-    val watchlist: StateFlow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = watchlistRepository.getWatchlist()
+    // Watchlist
+    val watchlist: StateFlow<PagingData<SearchResult>> = watchlistRepository.getWatchlist()
         .cachedIn(viewModelScope)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Lazily,
-            initialValue = PagingData.empty()
-        )
+        .stateIn(viewModelScope, SharingStarted.Lazily, PagingData.empty<SearchResult>())
     
     // Search state
     private val _searchQuery = MutableStateFlow("")
@@ -137,7 +135,7 @@ class DiscoveryViewModel(
 
     
     // Paged Search results
-    val pagedSearchResults: Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = _searchQuery
+    val pagedSearchResults: Flow<PagingData<SearchResult>> = _searchQuery
         .debounce(SEARCH_DEBOUNCE_MS)
         .flatMapLatest { query ->
             if (query.isBlank()) {
@@ -152,7 +150,7 @@ class DiscoveryViewModel(
     private val _selectedCategory = MutableStateFlow<CategoryInfo?>(null)
     val selectedCategory: StateFlow<CategoryInfo?> = _selectedCategory.asStateFlow()
 
-    val categoryResults: Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = _selectedCategory
+    val categoryResults: Flow<PagingData<SearchResult>> = _selectedCategory
         .filterNotNull()
         .flatMapLatest { category ->
             when (category.type) {
@@ -404,10 +402,11 @@ class DiscoveryViewModel(
         }
     }
 
-    fun removeFromWatchlist(tmdbId: Int, ratingKey: String?) {
+    fun removeFromWatchlist(tmdbId: Int, mediaType: MediaType, ratingKey: String?) {
         viewModelScope.launch {
-            val result = watchlistRepository.removeFromWatchlist(tmdbId, ratingKey)
+            val result = watchlistRepository.removeFromWatchlist(tmdbId, mediaType, ratingKey)
             if (result is Result.Success) {
+                _watchlistIds.value = _watchlistIds.value - tmdbId
                 _uiEvent.emit("Removed from watchlist")
                 fetchWatchlistIds()
             } else if (result is Result.Error) {
@@ -418,8 +417,7 @@ class DiscoveryViewModel(
 
     fun addToWatchlist(tmdbId: Int, mediaType: MediaType, ratingKey: String? = null) {
         viewModelScope.launch {
-            val type = if (mediaType == MediaType.MOVIE) "movie" else "tv"
-            val result = watchlistRepository.addToWatchlist(tmdbId, type, ratingKey)
+            val result = watchlistRepository.addToWatchlist(tmdbId, mediaType, ratingKey)
             if (result is Result.Success) {
                 _uiEvent.emit("Added to watchlist")
                 fetchWatchlistIds()

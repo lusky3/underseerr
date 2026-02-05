@@ -51,11 +51,29 @@ class PlexKtorService(private val client: HttpClient) {
         }
     }
 
+    /**
+     * Add to watchlist.
+     * Use PUT for Plex Discover watchlist.
+     */
     suspend fun addToWatchlist(plexToken: String, ratingKey: String) {
-        client.post("https://discover.provider.plex.tv/library/sections/watchlist/all") {
+        client.put("https://discover.provider.plex.tv/library/sections/watchlist/all") {
             header("X-Plex-Token", plexToken)
             parameter("ratingKey", ratingKey)
         }
+    }
+
+    /**
+     * Find a Plex item by its TMDB ID.
+     */
+    suspend fun searchByTmdbId(plexToken: String, tmdbId: Int, mediaType: String): PlexWatchlistResponse {
+        val type = if (mediaType == "movie") "movie" else "show"
+        return client.get("https://discover.provider.plex.tv/library/search") {
+            header("X-Plex-Token", plexToken)
+            header("Accept", "application/json")
+            parameter("query", "tmdb://$type/$tmdbId")
+            parameter("limit", 1)
+            parameter("searchTypes", type)
+        }.body()
     }
 }
 

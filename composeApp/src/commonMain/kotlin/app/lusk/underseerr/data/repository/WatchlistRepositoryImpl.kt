@@ -12,6 +12,7 @@ import app.lusk.underseerr.data.remote.api.PlexKtorService
 import app.lusk.underseerr.data.remote.api.PlexWatchlistResponse
 import app.lusk.underseerr.data.remote.api.PlexMetadata
 import app.lusk.underseerr.data.remote.safeApiCall
+import app.lusk.underseerr.domain.model.MediaType
 import app.lusk.underseerr.domain.model.Result
 import app.lusk.underseerr.domain.model.SearchResult
 import app.lusk.underseerr.domain.repository.AuthRepository
@@ -71,7 +72,7 @@ class WatchlistRepositoryImpl(
             
             SearchResult(
                 id = finalId,
-                mediaType = if (metadata.type == "show") app.lusk.underseerr.domain.model.MediaType.TV else app.lusk.underseerr.domain.model.MediaType.MOVIE,
+                mediaType = if (metadata.type == "show") MediaType.TV else MediaType.MOVIE,
                 title = metadata.title,
                 overview = metadata.summary ?: "",
                 posterPath = metadata.thumb,
@@ -82,18 +83,20 @@ class WatchlistRepositoryImpl(
         }
     }
 
-    override suspend fun addToWatchlist(tmdbId: Int, mediaType: String, ratingKey: String?): Result<Unit> {
+    override suspend fun addToWatchlist(tmdbId: Int, mediaType: MediaType, ratingKey: String?): Result<Unit> {
         return safeApiCall {
             val isJellyseerr = authRepository.getIsJellyseerr().first()
+            val mediaTypeString = if (mediaType == MediaType.TV) "tv" else "movie"
             if (isJellyseerr) {
                 jellyseerrKtorService.addToWatchlist(
-                    JellyseerrWatchlistRequest(tmdbId = tmdbId, mediaType = mediaType)
+                    JellyseerrWatchlistRequest(tmdbId = tmdbId, mediaType = mediaTypeString)
                 )
             } else {
                 val plexToken = securityManager.retrieveSecureData("plex_token")
                     ?: throw Exception("Plex token not found - required for watchlist addition")
                 
-                val finalRatingKey = ratingKey ?: findPlexRatingKey(plexToken, tmdbId, mediaType)
+                val plexMediaType = if (mediaType == MediaType.TV) "show" else "movie"
+                val finalRatingKey = ratingKey ?: findPlexRatingKey(plexToken, tmdbId, plexMediaType)
                 
                 if (finalRatingKey != null) {
                     plexKtorService.addToWatchlist(plexToken, finalRatingKey)
@@ -104,32 +107,37 @@ class WatchlistRepositoryImpl(
         }
     }
 
-    private suspend fun findPlexRatingKey(plexToken: String, tmdbId: Int, mediaType: String): String? {
-        // This is a bit of a hack, but we can try to find the ratingKey by searching Plex Discover with tmdb id
-        // In many cases, Overseerr already provides it in SearchResult, but for some entries it might be missing.
-        // For now, let's assume we need to find it if missing.
+    private suspend fun findPlexRatingKey(plexToken: String, tmdbId: Int, plexMediaType: String): String? {
         return try {
-            val type = if (mediaType == "movie") "movie" else "show"
-            // We'd need a Plex search method. Since we don't have one yet, we might just return null 
-            // and rely on SearchResult providing it.
-            // But let's see if we can implement a basic search in PlexKtorService?
-            // Actually, keep it simple for now: if ratingKey is null, it might fail.
-            null
+            println("WatchlistRepository: Searching Plex for TMDB ID $tmdbId ($plexMediaType)")
+            val response = plexKtorService.searchByTmdbId(plexToken, tmdbId, plexMediaType)
+            val ratingKey = response.mediaContainer.metadata.firstOrNull()?.ratingKey
+            println("WatchlistRepository: Found Plex ratingKey $ratingKey for TMDB ID $tmdbId")
+            ratingKey
         } catch (e: Exception) {
+            println("WatchlistRepository: Failed to find Plex ratingKey for TMDB ID $tmdbId: ${e.message}")
             null
         }
     }
 
-    override suspend fun removeFromWatchlist(tmdbId: Int, ratingKey: String?): Result<Unit> {
+    override suspend fun removeFromWatchlist(tmdbId: Int, mediaType: MediaType, ratingKey: String?): Result<Unit> {
         return safeApiCall {
             val isJellyseerr = authRepository.getIsJellyseerr().first()
             if (isJellyseerr) {
                 jellyseerrKtorService.removeFromWatchlist(tmdbId)
             } else {
-                if (ratingKey == null) throw IllegalArgumentException("RatingKey required for Plex removal")
                 val plexToken = securityManager.retrieveSecureData("plex_token") 
                     ?: throw Exception("Plex token not found")
-                plexKtorService.removeFromWatchlist(plexToken, ratingKey)
+                
+                val plexMediaType = if (mediaType == MediaType.TV) "show" else "movie"
+                val finalRatingKey = ratingKey ?: findPlexRatingKey(plexToken, tmdbId, plexMediaType)
+                
+                if (finalRatingKey != null) {
+                    println("WatchlistRepository: Removing from Plex watchlist with ratingKey $finalRatingKey")
+                    plexKtorService.removeFromWatchlist(plexToken, finalRatingKey)
+                } else {
+                    throw Exception("Could not find Plex ratingKey for TMDB ID $tmdbId")
+                }
             }
         }
     }

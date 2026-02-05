@@ -392,7 +392,7 @@ private fun MediaDetailsContent(
                         OutlinedButton(
                             onClick = { 
                                 if (isInWatchlist) {
-                                    viewModel.removeFromWatchlist(mediaId, details.ratingKey)
+                                    viewModel.removeFromWatchlist(mediaId, mediaType, details.ratingKey)
                                 } else {
                                     viewModel.addToWatchlist(mediaId, mediaType, details.ratingKey)
                                 }
