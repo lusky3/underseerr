@@ -129,6 +129,7 @@ fun ApiMediaInfo.toMediaInfo(): MediaInfo {
         },
         requestId = requestId,
         available = available,
+        ratingKey = ratingKey ?: ratingKey4k,
         requests = requests?.map { it.toMediaRequest() } ?: emptyList()
     )
 }

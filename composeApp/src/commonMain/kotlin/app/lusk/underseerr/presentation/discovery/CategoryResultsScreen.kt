@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +33,7 @@ fun CategoryResultsScreen(
     modifier: Modifier = Modifier
 ) {
     val pagingItems = viewModel.categoryResults.collectAsLazyPagingItems()
+    val watchlistIds by viewModel.watchlistIds.collectAsState()
 
     LaunchedEffect(categoryType, categoryId) {
         val type = try {
@@ -95,6 +97,7 @@ fun CategoryResultsScreen(
                         pagingItems[index]?.let { item ->
                             CategoryMediaCard(
                                 item = item,
+                                isInWatchlist = watchlistIds.contains(item.id),
                                 onClick = { onMediaClick(item.mediaType, item.id) }
                             )
                         }
@@ -131,6 +134,7 @@ fun CategoryResultsScreen(
 @Composable
 private fun CategoryMediaCard(
     item: SearchResult,
+    isInWatchlist: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -153,6 +157,26 @@ private fun CategoryMediaCard(
                 )
             } else {
                 SimpleImagePlaceholder()
+            }
+
+            if (isInWatchlist) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 8.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Bookmark,
+                        contentDescription = "In Watchlist",
+                        tint = androidx.compose.ui.graphics.Color.White,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
             }
         }
         

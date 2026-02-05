@@ -14,5 +14,7 @@ data class ApiMediaInfo(
     val status: Int,
     val requestId: Int? = null,
     val available: Boolean = false,
+    val ratingKey: String? = null,
+    val ratingKey4k: String? = null,
     val requests: List<ApiMediaRequest>? = null
 )

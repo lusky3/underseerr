@@ -134,6 +134,10 @@ class DiscoveryViewModel(
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent = _uiEvent.asSharedFlow()
 
+    // Watchlist IDs for indicators
+    private val _watchlistIds = MutableStateFlow<Set<Int>>(emptySet())
+    val watchlistIds: StateFlow<Set<Int>> = _watchlistIds.asStateFlow()
+
     
     // Paged Search results
     val pagedSearchResults: Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> = _searchQuery
@@ -247,6 +251,16 @@ class DiscoveryViewModel(
             profileViewModel.loadProfile()
             issueViewModel.loadIssues()
             requestViewModel.refreshRequests()
+            fetchWatchlistIds()
+        }
+    }
+
+    fun fetchWatchlistIds() {
+        viewModelScope.launch {
+            val result = watchlistRepository.getWatchlistIds()
+            if (result is Result.Success) {
+                _watchlistIds.value = result.data
+            }
         }
     }
     
@@ -438,10 +452,22 @@ class DiscoveryViewModel(
             val result = watchlistRepository.removeFromWatchlist(tmdbId, ratingKey)
             if (result is Result.Success) {
                 _uiEvent.emit("Removed from watchlist")
-                // We might want to refresh the watchlist flow
-                // Since it's a StateFlow from pager, we might need to trigger a refresh on the paging data
+                fetchWatchlistIds()
             } else if (result is Result.Error) {
                 _uiEvent.emit("Failed to remove: ${result.error.message}")
+            }
+        }
+    }
+
+    fun addToWatchlist(tmdbId: Int, mediaType: MediaType, ratingKey: String? = null) {
+        viewModelScope.launch {
+            val type = if (mediaType == MediaType.MOVIE) "movie" else "tv"
+            val result = watchlistRepository.addToWatchlist(tmdbId, type, ratingKey)
+            if (result is Result.Success) {
+                _uiEvent.emit("Added to watchlist")
+                fetchWatchlistIds()
+            } else if (result is Result.Error) {
+                _uiEvent.emit("Failed to add: ${result.error.message}")
             }
         }
     }
@@ -526,6 +552,7 @@ data class MediaDetails(
     val isPartialRequestsEnabled: Boolean = false,
     val requestedSeasons: List<Int> = emptyList(),
     val mediaInfoId: Int? = null,
+    val ratingKey: String? = null,
     val cast: List<app.lusk.underseerr.domain.model.CastMember> = emptyList()
 )
 
@@ -549,6 +576,7 @@ private fun Movie.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails
     isPartiallyAvailable = false,
     isPartialRequestsEnabled = partialRequestsEnabled,
     mediaInfoId = mediaInfo?.id,
+    ratingKey = mediaInfo?.ratingKey, // Most basic models don't have it, but maybe?
     cast = cast
 )
 
@@ -577,6 +605,7 @@ private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetail
         }
     } ?: emptyList(),
     mediaInfoId = mediaInfo?.id,
+    ratingKey = mediaInfo?.ratingKey,
     cast = cast
 )
 

@@ -14,8 +14,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.AddTask
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -69,6 +69,7 @@ fun HomeScreen(
     val tvGenres by viewModel.tvGenres.collectAsState()
     val isPlexUser by viewModel.isPlexUser.collectAsState()
     val homeScreenConfig by viewModel.homeScreenConfig.collectAsState()
+    val watchlistIds by viewModel.watchlistIds.collectAsState()
     
     var isRefreshing by remember { mutableStateOf(false) }
     
@@ -180,6 +181,7 @@ fun HomeScreen(
                         MediaSection(
                             title = "Trending",
                             items = trending,
+                            watchlistIds = watchlistIds,
                             onItemClickWithType = { id, type -> 
                                 if (type == MediaType.TV) onTvShowClick(id) else onMovieClick(id)
                             },
@@ -193,6 +195,7 @@ fun HomeScreen(
                         MediaSection(
                             title = "Plex Watchlist",
                             items = watchlist,
+                            watchlistIds = watchlistIds,
                             onItemClickWithType = { id, type -> 
                                 if (type == MediaType.TV) onTvShowClick(id) else onMovieClick(id)
                             },
@@ -206,6 +209,7 @@ fun HomeScreen(
                         MediaSection(
                             title = "Popular Movies",
                             items = popularMovies,
+                            watchlistIds = watchlistIds,
                             onItemClick = { onMovieClick(it) },
                             onItemLongClick = { longPressedItem = it }
                         )
@@ -217,6 +221,7 @@ fun HomeScreen(
                         MediaSection(
                             title = "Popular TV Shows",
                             items = popularTvShows,
+                            watchlistIds = watchlistIds,
                             onItemClick = { onTvShowClick(it) },
                             onItemLongClick = { longPressedItem = it }
                         )
@@ -228,6 +233,7 @@ fun HomeScreen(
                         MediaSection(
                             title = "Upcoming Movies",
                             items = upcomingMovies,
+                            watchlistIds = watchlistIds,
                             onItemClick = { onMovieClick(it) },
                             onItemLongClick = { longPressedItem = it }
                         )
@@ -239,6 +245,7 @@ fun HomeScreen(
                         MediaSection(
                             title = "Upcoming TV Shows",
                             items = upcomingTvShows,
+                            watchlistIds = watchlistIds,
                             onItemClick = { onTvShowClick(it) },
                             onItemLongClick = { longPressedItem = it }
                         )
@@ -530,6 +537,7 @@ private fun ChipSection(
 private fun <T : Any> MediaSection(
     title: String,
     items: LazyPagingItems<T>,
+    watchlistIds: Set<Int> = emptySet(),
     onItemClick: (Int) -> Unit = {},
     onItemClickWithType: (Int, MediaType) -> Unit = { _, _ -> },
     onItemLongClick: (T) -> Unit = {},
@@ -573,8 +581,15 @@ private fun <T : Any> MediaSection(
                 ) {
                     items(items.itemCount) { index ->
                         items[index]?.let { item ->
+                            val itemId = when (item) {
+                                is Movie -> item.id
+                                is TvShow -> item.id
+                                is SearchResult -> item.id
+                                else -> 0
+                            }
                             MediaCard(
                                 item = item,
+                                isInWatchlist = watchlistIds.contains(itemId),
                                 onClick = {
                                     when (item) {
                                         is Movie -> onItemClick(item.id)
@@ -620,6 +635,7 @@ private fun <T : Any> MediaSection(
 @Composable
 private fun <T : Any> MediaCard(
     item: T,
+    isInWatchlist: Boolean = false,
     onClick: () -> Unit,
     onLongClick: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -650,6 +666,27 @@ private fun <T : Any> MediaCard(
                 )
             } else {
                 SimpleImagePlaceholder()
+            }
+
+            // Watchlist Indicator
+            if (isInWatchlist) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 8.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                            shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Bookmark,
+                        contentDescription = "In Watchlist",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
 
             // Gradient Scrim and Title

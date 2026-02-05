@@ -18,6 +18,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import app.lusk.underseerr.domain.model.MediaType
 import app.lusk.underseerr.domain.model.SearchResult
 import app.lusk.underseerr.ui.components.AsyncImage
+import androidx.compose.material.icons.filled.Bookmark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +29,7 @@ fun SearchScreen(
     modifier: Modifier = Modifier
 ) {
     val pagedResults = viewModel.pagedSearchResults.collectAsLazyPagingItems()
+    val watchlistIds by viewModel.watchlistIds.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
@@ -85,7 +87,8 @@ fun SearchScreen(
                 SearchResultsList(
                     query = searchQuery,
                     results = pagedResults,
-                    onMediaClick = onMediaClick
+                    onMediaClick = onMediaClick,
+                    watchlistIds = watchlistIds
                 )
             }
         }
@@ -135,6 +138,7 @@ private fun SearchResultsList(
     query: String,
     results: androidx.paging.compose.LazyPagingItems<SearchResult>,
     onMediaClick: (MediaType, Int) -> Unit,
+    watchlistIds: Set<Int> = emptySet(),
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -148,6 +152,7 @@ private fun SearchResultsList(
                 if (searchResult != null) {
                     SearchResultItem(
                         item = searchResult,
+                        isInWatchlist = watchlistIds.contains(searchResult.id),
                         onClick = { onMediaClick(searchResult.mediaType, searchResult.id) }
                     )
                 }
@@ -209,6 +214,7 @@ private fun SearchResultsList(
 @Composable
 private fun SearchResultItem(
     item: app.lusk.underseerr.domain.model.SearchResult,
+    isInWatchlist: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -258,14 +264,30 @@ private fun SearchResultItem(
                     }
                 }
 
-                if (item.overview.isNotEmpty()) {
-                    Text(
-                        text = item.overview,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    if (item.overview.isNotEmpty()) {
+                        Text(
+                            text = item.overview,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    
+                    if (isInWatchlist) {
+                        Icon(
+                            imageVector = Icons.Default.Bookmark,
+                            contentDescription = "In Watchlist",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp).padding(start = 8.dp)
+                        )
+                    }
                 }
             }
         }

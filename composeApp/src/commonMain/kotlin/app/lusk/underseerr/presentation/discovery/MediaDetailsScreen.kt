@@ -9,7 +9,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.*
 import androidx.compose.runtime.*
@@ -52,6 +55,7 @@ fun MediaDetailsScreen(
     val requestViewModel: RequestViewModel = koinViewModel()
     val issueRepository: IssueRepository = koinInject()
     val state by viewModel.mediaDetailsState.collectAsState()
+    val watchlistIds by viewModel.watchlistIds.collectAsState()
     var showRequestDialog by remember { mutableStateOf(false) }
     var showReportIssueDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -111,6 +115,10 @@ fun MediaDetailsScreen(
 
                     MediaDetailsContent(
                         details = detailsState.details,
+                        mediaId = mediaId,
+                        mediaType = mediaType,
+                        isInWatchlist = watchlistIds.contains(mediaId),
+                        viewModel = viewModel,
                         onRequestClick = { showRequestDialog = true },
                         onReportIssueClick = { showReportIssueDialog = true },
                         onBackClick = onBackClick
@@ -191,6 +199,10 @@ fun MediaDetailsScreen(
 @Composable
 private fun MediaDetailsContent(
     details: MediaDetails,
+    mediaId: Int,
+    mediaType: MediaType,
+    isInWatchlist: Boolean,
+    viewModel: DiscoveryViewModel,
     onRequestClick: () -> Unit,
     onReportIssueClick: () -> Unit,
     onBackClick: () -> Unit,
@@ -373,6 +385,29 @@ private fun MediaDetailsContent(
                                 },
                                 style = MaterialTheme.typography.titleMedium
                             )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        OutlinedButton(
+                            onClick = { 
+                                if (isInWatchlist) {
+                                    viewModel.removeFromWatchlist(mediaId, details.ratingKey)
+                                } else {
+                                    viewModel.addToWatchlist(mediaId, mediaType, details.ratingKey)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = if (isInWatchlist) ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error) else ButtonDefaults.outlinedButtonColors()
+                        ) {
+                            Icon(
+                                imageVector = if (isInWatchlist) Icons.Default.Delete else Icons.Default.BookmarkBorder,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (isInWatchlist) "Remove from Watchlist" else "Add to Watchlist")
                         }
                         
                         

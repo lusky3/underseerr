@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface WatchlistRepository {
     fun getWatchlist(): Flow<PagingData<SearchResult>>
+    suspend fun getWatchlistIds(): Result<Set<Int>>
     suspend fun addToWatchlist(tmdbId: Int, mediaType: String, ratingKey: String?): Result<Unit>
     suspend fun removeFromWatchlist(tmdbId: Int, ratingKey: String?): Result<Unit>
 }

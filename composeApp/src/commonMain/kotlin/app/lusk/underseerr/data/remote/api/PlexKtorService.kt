@@ -50,6 +50,13 @@ class PlexKtorService(private val client: HttpClient) {
             parameter("ratingKey", ratingKey)
         }
     }
+
+    suspend fun addToWatchlist(plexToken: String, ratingKey: String) {
+        client.post("https://discover.provider.plex.tv/library/sections/watchlist/all") {
+            header("X-Plex-Token", plexToken)
+            parameter("ratingKey", ratingKey)
+        }
+    }
 }
 
 @Serializable
