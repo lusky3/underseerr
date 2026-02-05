@@ -45,7 +45,7 @@ class PlexKtorService(private val client: HttpClient) {
     }
 
     suspend fun removeFromWatchlist(plexToken: String, ratingKey: String) {
-        client.delete("https://discover.provider.plex.tv/library/sections/watchlist/all") {
+        client.put("https://discover.provider.plex.tv/actions/removeFromWatchlist") {
             header("X-Plex-Token", plexToken)
             parameter("ratingKey", ratingKey)
         }
@@ -53,10 +53,10 @@ class PlexKtorService(private val client: HttpClient) {
 
     /**
      * Add to watchlist.
-     * Use PUT for Plex Discover watchlist.
+     * Use PUT for Plex Discover watchlist actions.
      */
     suspend fun addToWatchlist(plexToken: String, ratingKey: String) {
-        client.put("https://discover.provider.plex.tv/library/sections/watchlist/all") {
+        client.put("https://discover.provider.plex.tv/actions/addToWatchlist") {
             header("X-Plex-Token", plexToken)
             parameter("ratingKey", ratingKey)
         }
