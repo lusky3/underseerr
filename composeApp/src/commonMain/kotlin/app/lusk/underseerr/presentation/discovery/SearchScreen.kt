@@ -30,7 +30,15 @@ fun SearchScreen(
 ) {
     val pagedResults = viewModel.pagedSearchResults.collectAsLazyPagingItems()
     val watchlistIds by viewModel.watchlistIds.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
+    val initialQuery by viewModel.searchQuery.collectAsState()
+    var searchQuery by remember { mutableStateOf(initialQuery) }
+    
+    // Update local state if ViewModel query changes externally (e.g. cleared)
+    LaunchedEffect(initialQuery) {
+        if (searchQuery != initialQuery) {
+            searchQuery = initialQuery
+        }
+    }
 
     Scaffold(
         topBar = {

@@ -301,6 +301,12 @@ fun UnderseerrNavHost(
                 onBackClick = { navController.popBackStack() },
                 onModifyRequest = { mediaId ->
                      navController.navigate(Screen.MediaDetails("tv", mediaId, openRequest = true)) 
+                },
+                onViewDetails = { mediaId, mediaType ->
+                    navController.navigate(Screen.MediaDetails(
+                        mediaType = if (mediaType == MediaType.MOVIE) "movie" else "tv",
+                        mediaId = mediaId
+                    ))
                 }
             )
         }

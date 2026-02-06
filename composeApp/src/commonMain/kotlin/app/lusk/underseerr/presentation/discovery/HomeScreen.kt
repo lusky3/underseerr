@@ -120,7 +120,10 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Discover", color = gradients.onAppBar) },
                 actions = {
-                    IconButton(onClick = onSearchClick) {
+                    IconButton(onClick = {
+                        viewModel.clearSearch()
+                        onSearchClick()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
