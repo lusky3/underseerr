@@ -16,7 +16,13 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Theaters
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.foundation.clickable
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.LazyPagingItems
+import app.lusk.underseerr.domain.model.SearchResult
+import app.lusk.underseerr.ui.components.MediaSection
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.*
 import androidx.compose.runtime.*
@@ -34,6 +40,7 @@ import app.lusk.underseerr.domain.model.CastMember
 import app.lusk.underseerr.domain.model.MediaType
 import app.lusk.underseerr.domain.repository.IssueRepository
 import app.lusk.underseerr.presentation.issue.ReportIssueDialog
+import app.lusk.underseerr.domain.model.Season
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
 import app.lusk.underseerr.presentation.request.RequestDialog
@@ -57,12 +64,16 @@ fun MediaDetailsScreen(
     mediaId: Int,
     openRequest: Boolean = false,
     onBackClick: () -> Unit,
+    onPersonClick: (Int) -> Unit,
+    onMediaClick: (MediaType, Int) -> Unit,
+    onGenreClick: (Int, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val requestViewModel: RequestViewModel = koinViewModel()
     val issueRepository: IssueRepository = koinInject()
     val state by viewModel.mediaDetailsState.collectAsState()
     val watchlistIds by viewModel.watchlistIds.collectAsState()
+    val recommendations = viewModel.recommendations.collectAsLazyPagingItems()
     var showRequestDialog by remember { mutableStateOf(false) }
     var showReportIssueDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -80,7 +91,7 @@ fun MediaDetailsScreen(
     }
 
     var isRefreshing by remember { mutableStateOf(false) }
-
+    // Auto-dismiss refresh indicator when data finishes loading
     LaunchedEffect(state) {
         if (state !is MediaDetailsState.Loading && isRefreshing) {
             isRefreshing = false
@@ -99,19 +110,21 @@ fun MediaDetailsScreen(
             isRefreshing = isRefreshing,
             onRefresh = {
                 isRefreshing = true
-                viewModel.loadMediaDetails(mediaType, mediaId)
+                viewModel.loadMediaDetails(mediaType, mediaId, isRefresh = true)
+                recommendations.refresh()
             },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier = Modifier.fillMaxSize()
         ) {
             when (val detailsState = state) {
                 is MediaDetailsState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
+                    // Only show centralized spinner if NOT refreshing
+                    if (!isRefreshing) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
                     }
                 }
                 is MediaDetailsState.Success -> {
@@ -125,10 +138,14 @@ fun MediaDetailsScreen(
                         mediaId = mediaId,
                         mediaType = mediaType,
                         isInWatchlist = watchlistIds.contains(mediaId),
+                        recommendations = recommendations,
                         viewModel = viewModel,
                         onRequestClick = { showRequestDialog = true },
                         onReportIssueClick = { showReportIssueDialog = true },
-                        onBackClick = onBackClick
+                        onBackClick = onBackClick,
+                        onPersonClick = onPersonClick,
+                        onMediaClick = onMediaClick,
+                        onGenreClick = onGenreClick
                     )
                     
                     if (showRequestDialog) {
@@ -209,13 +226,19 @@ private fun MediaDetailsContent(
     mediaId: Int,
     mediaType: MediaType,
     isInWatchlist: Boolean,
+    recommendations: LazyPagingItems<SearchResult>,
     viewModel: DiscoveryViewModel,
     onRequestClick: () -> Unit,
     onReportIssueClick: () -> Unit,
     onBackClick: () -> Unit,
+    onPersonClick: (Int) -> Unit,
+    onMediaClick: (MediaType, Int) -> Unit,
+    onGenreClick: (Int, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
+        var isInfoExpanded by remember { mutableStateOf(false) }
+        
         LazyColumn(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -294,18 +317,44 @@ private fun MediaDetailsContent(
                             modifier = Modifier.padding(16.dp)
                         ) {
                         // Title and Year row
-                        Text(
-                            text = details.title,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = details.title,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                            
+                            details.status?.let { status ->
+                                StatusBadge(status = status)
+                            }
+                        }
+                        
+                        details.tagline?.let { tagline ->
+                            if (tagline.isNotBlank()) {
+                                Text(
+                                    text = tagline,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+                        }
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        // Info chips row
+                        // Info chips row - Clickable to expand
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isInfoExpanded = !isInfoExpanded }
+                                .padding(vertical = 4.dp)
                         ) {
                             details.releaseDate?.let { releaseDate ->
                                 Text(
@@ -341,6 +390,50 @@ private fun MediaDetailsContent(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                            }
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            Icon(
+                                imageVector = if (isInfoExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (isInfoExpanded) "Show Less" else "Show More",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = isInfoExpanded,
+                            enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                            exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(top = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                                
+                                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                                    val primaryLabel = if (mediaType == MediaType.MOVIE) "Theatre Release" else "First Aired"
+                                    details.releaseDate?.takeIf { it.isNotBlank() }?.let { date ->
+                                        InfoItem(label = primaryLabel, value = date, modifier = Modifier.weight(1f))
+                                    }
+                                    
+                                    details.digitalReleaseDate?.takeIf { it.isNotBlank() }?.let { date ->
+                                        InfoItem(label = "Digital Release", value = date, modifier = Modifier.weight(1f))
+                                    }
+                                }
+
+                                if (!details.physicalReleaseDate.isNullOrEmpty() || !details.lastAirDate.isNullOrEmpty()) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                                        details.physicalReleaseDate?.takeIf { it.isNotBlank() }?.let { date ->
+                                            InfoItem(label = "Physical Release", value = date, modifier = Modifier.weight(1f))
+                                        }
+                                        details.lastAirDate?.takeIf { it.isNotBlank() }?.let { date ->
+                                            InfoItem(label = "Latest Air Date", value = date, modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
                             }
                         }
                         
@@ -451,8 +544,8 @@ private fun MediaDetailsContent(
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(details.genres) { genre ->
                                 AssistChip(
-                                    onClick = { },
-                                    label = { Text(genre) }
+                                    onClick = { onGenreClick(genre.id, genre.name) },
+                                    label = { Text(genre.name) }
                                 )
                             }
                         }
@@ -479,8 +572,36 @@ private fun MediaDetailsContent(
                             CastMemberItem(
                                 name = castMember.name,
                                 role = castMember.character,
-                                profilePath = castMember.profilePath
+                                profilePath = castMember.profilePath,
+                                onClick = { onPersonClick(castMember.id) }
                             )
+                        }
+                    }
+                }
+            }
+            
+            // Seasons section
+            if (details.seasons.isNotEmpty()) {
+                item {
+                    val gradients = LocalUnderseerrGradients.current
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = "Seasons",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = gradients.onSurface,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(vertical = 4.dp)
+                        ) {
+                            items(details.seasons) { season ->
+                                SeasonCard(season = season)
+                            }
                         }
                     }
                 }
@@ -552,30 +673,25 @@ private fun MediaDetailsContent(
                 }
             }
 
-            // Runtime/Status info
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    details.status?.let { status ->
-                        InfoItem(
-                            label = "Status",
-                            value = status
+            // Recommendations section
+            if (recommendations.itemCount > 0) {
+                item {
+                    val gradients = LocalUnderseerrGradients.current
+                    Spacer(modifier = Modifier.height(24.dp))
+                    MediaSection(
+                        title = "Recommendations",
+                        items = recommendations,
+                        watchlistIds = emptySet(), // We don't have this info here easily
+                        onItemClickWithType = { id, type ->
+                            onMediaClick(type, id)
+                        },
+                        titleStyle = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = gradients.onSurface
                         )
-                    }
-                    
-                    if (details.numberOfSeasons > 0) {
-                        InfoItem(
-                            label = "Seasons",
-                            value = details.numberOfSeasons.toString()
-                        )
-                    }
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
@@ -586,10 +702,13 @@ private fun CastMemberItem(
     name: String,
     role: String?,
     profilePath: String?,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.width(72.dp),
+        modifier = modifier
+            .width(72.dp)
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Surface(
@@ -768,6 +887,106 @@ private fun VideoCard(
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun SeasonCard(
+    season: Season,
+    modifier: Modifier = Modifier
+) {
+    val gradients = LocalUnderseerrGradients.current
+    
+    Column(
+        modifier = modifier.width(100.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(2/3f),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (!season.posterPath.isNullOrEmpty()) {
+                    PosterImage(
+                        posterPath = season.posterPath,
+                        title = season.name,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Movie,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        Text(
+            text = season.name,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = gradients.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
+        
+        if (season.episodeCount > 0) {
+            Text(
+                text = "${season.episodeCount} Episodes",
+                style = MaterialTheme.typography.labelSmall,
+                color = gradients.onSurface.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * A colorful badge indicating the status of a movie or TV show.
+ */
+@Composable
+private fun StatusBadge(
+    status: String,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = when (status.lowercase()) {
+        "returning series" -> Color(0xFF4CAF50) // Green
+        "ended" -> Color(0xFFF44336) // Red
+        "canceled" -> Color(0xFF9E9E9E) // Grey
+        "released" -> Color(0xFF2196F3) // Blue
+        "in production" -> Color(0xFFFF9800) // Orange
+        "planned" -> Color(0xFF673AB7) // Purple
+        "pilot" -> Color(0xFFE91E63) // Pink
+        "post production" -> Color(0xFF00BCD4) // Cyan
+        else -> MaterialTheme.colorScheme.secondary
+    }
+
+    Surface(
+        color = backgroundColor.copy(alpha = 0.9f),
+        shape = RoundedCornerShape(4.dp),
+        modifier = modifier
+    ) {
+        Text(
+            text = status,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
     }
 }

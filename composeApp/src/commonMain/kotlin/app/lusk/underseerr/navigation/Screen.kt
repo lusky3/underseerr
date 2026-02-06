@@ -59,6 +59,9 @@ sealed class Screen {
 
     @Serializable
     data object VibrantCustomization : Screen()
+
+    @Serializable
+    data class PersonDetails(val personId: Int) : Screen()
     
     companion object {
         fun parseDeepLink(uri: String): Screen? {

@@ -22,6 +22,8 @@ data class ApiMovie(
     val genres: List<ApiGenre>? = null,
     val runtime: Int? = null,
     val tagline: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val digitalReleaseDate: String? = null,
+    val physicalReleaseDate: String? = null
 )
 

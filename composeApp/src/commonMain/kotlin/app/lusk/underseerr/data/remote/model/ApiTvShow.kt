@@ -22,6 +22,8 @@ data class ApiTvShow(
     val relatedVideos: List<ApiRelatedVideo>? = null,
     val genres: List<ApiGenre>? = null,
     val tagline: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val seasons: List<ApiSeason>? = null,
+    val lastAirDate: String? = null
 )
 

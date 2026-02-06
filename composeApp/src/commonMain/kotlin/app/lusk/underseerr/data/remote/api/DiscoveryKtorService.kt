@@ -4,6 +4,8 @@ import app.lusk.underseerr.data.remote.model.ApiMovie
 import app.lusk.underseerr.data.remote.model.ApiSearchResults
 import app.lusk.underseerr.data.remote.model.ApiTvShow
 import app.lusk.underseerr.data.remote.model.ApiGenre
+import app.lusk.underseerr.data.remote.model.ApiPerson
+import app.lusk.underseerr.data.remote.model.ApiPersonCredits
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -131,5 +133,40 @@ class DiscoveryKtorService(private val client: HttpClient) {
         return client.get("/api/v1/tv/$tvId") {
             parameter("language", language)
         }.body()
+    }
+
+    suspend fun getMovieRecommendations(movieId: Int, page: Int = 1, language: String = "en"): ApiSearchResults {
+        return client.get("/api/v1/movie/$movieId/recommendations") {
+            parameter("page", page)
+            parameter("language", language)
+        }.body()
+    }
+
+    suspend fun getTvRecommendations(tvId: Int, page: Int = 1, language: String = "en"): ApiSearchResults {
+        return client.get("/api/v1/tv/$tvId/recommendations") {
+            parameter("page", page)
+            parameter("language", language)
+        }.body()
+    }
+
+    suspend fun getPersonDetails(personId: Int, language: String = "en"): ApiPerson {
+        // Fetch basic person details
+        val person: ApiPerson = client.get("/api/v1/person/$personId") {
+            parameter("language", language)
+        }.body()
+        
+        // Fetch combined credits from separate endpoint
+        val credits = try {
+            val creditsResponse: ApiPersonCredits = client.get("/api/v1/person/$personId/combined_credits") {
+                parameter("language", language)
+            }.body()
+            creditsResponse
+        } catch (e: Exception) {
+            println("DEBUG: Failed to fetch combined credits: ${e.message}")
+            null
+        }
+        
+        // Merge credits into person object
+        return person.copy(combinedCredits = credits ?: person.combinedCredits)
     }
 }

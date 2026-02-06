@@ -17,6 +17,8 @@ data class Movie(
     val genres: List<Genre> = emptyList(),
     val runtime: Int? = null,
     val tagline: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val digitalReleaseDate: String? = null,
+    val physicalReleaseDate: String? = null
 )
 

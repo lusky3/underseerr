@@ -23,7 +23,9 @@ fun ApiMovie.toMovie(): Movie {
         genres = genres?.map { it.toGenre() } ?: emptyList(),
         runtime = runtime,
         tagline = tagline,
-        status = status
+        status = status,
+        digitalReleaseDate = digitalReleaseDate,
+        physicalReleaseDate = physicalReleaseDate
     )
 }
 
@@ -78,7 +80,21 @@ fun ApiTvShow.toTvShow(): TvShow {
         relatedVideos = relatedVideos?.mapNotNull { it.toRelatedVideo() } ?: emptyList(),
         genres = genres?.map { it.toGenre() } ?: emptyList(),
         tagline = tagline,
-        status = status
+        status = status,
+        seasons = seasons?.map { it.toSeason() } ?: emptyList(),
+        lastAirDate = lastAirDate
+    )
+}
+
+fun ApiSeason.toSeason(): Season {
+    return Season(
+        id = id,
+        seasonNumber = seasonNumber,
+        episodeCount = episodeCount ?: 0,
+        name = name ?: "Season $seasonNumber",
+        overview = overview,
+        posterPath = posterPath,
+        airDate = airDate
     )
 }
 
@@ -201,5 +217,51 @@ fun ApiGenre.toGenre(): Genre {
     return Genre(
         id = id,
         name = name
+    )
+}
+
+fun ApiPerson.toPerson(): Person {
+    val allCredits = mutableListOf<PersonCredit>()
+    val apiCredits = combinedCredits ?: credits
+    
+    println("DEBUG toPerson: combinedCredits = $combinedCredits")
+    println("DEBUG toPerson: credits = $credits")
+    println("DEBUG toPerson: apiCredits = $apiCredits")
+    println("DEBUG toPerson: cast size = ${apiCredits?.cast?.size}")
+    println("DEBUG toPerson: crew size = ${apiCredits?.crew?.size}")
+    
+    apiCredits?.cast?.map { it.toPersonCredit() }?.let { allCredits.addAll(it) }
+    apiCredits?.crew?.map { it.toPersonCredit() }?.let { allCredits.addAll(it) }
+    
+    println("DEBUG toPerson: total credits = ${allCredits.size}")
+    
+    return Person(
+        id = id,
+        name = name,
+        biography = biography,
+        birthday = birthday,
+        deathday = deathday,
+        placeOfBirth = placeOfBirth,
+        profilePath = profilePath,
+        knownForDepartment = knownForDepartment,
+        credits = allCredits
+    )
+}
+
+fun ApiPersonCredit.toPersonCredit(): PersonCredit {
+    return PersonCredit(
+        id = id,
+        mediaType = when (mediaType.lowercase()) {
+            "movie" -> MediaType.MOVIE
+            "tv" -> MediaType.TV
+            else -> MediaType.MOVIE
+        },
+        title = title ?: name ?: "",
+        overview = overview ?: "",
+        posterPath = posterPath,
+        releaseDate = releaseDate ?: firstAirDate,
+        voteAverage = voteAverage ?: 0.0,
+        character = character,
+        job = job
     )
 }

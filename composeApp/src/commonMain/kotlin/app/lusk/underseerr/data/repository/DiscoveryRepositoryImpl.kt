@@ -7,6 +7,7 @@ import app.lusk.underseerr.data.remote.model.toMovie
 import app.lusk.underseerr.data.remote.model.toSearchResults
 import app.lusk.underseerr.data.remote.model.toTvShow
 import app.lusk.underseerr.data.remote.model.toSearchResult
+import app.lusk.underseerr.data.remote.model.toPerson
 import app.lusk.underseerr.data.mapper.toEntity
 import app.lusk.underseerr.data.mapper.toDomain
 import app.lusk.underseerr.data.paging.SearchPagingSource
@@ -23,6 +24,8 @@ import app.lusk.underseerr.domain.model.Result
 import app.lusk.underseerr.domain.model.SearchResults
 import app.lusk.underseerr.domain.model.TvShow
 import app.lusk.underseerr.domain.model.Genre
+import app.lusk.underseerr.domain.model.MediaType
+import app.lusk.underseerr.domain.model.Person
 import app.lusk.underseerr.domain.repository.DiscoveryRepository
 import app.lusk.underseerr.domain.security.SecurityManager
 import kotlinx.coroutines.flow.Flow
@@ -230,4 +233,22 @@ class DiscoveryRepositoryImpl(
         ).flow
     }
 
+    override fun getRecommendations(mediaType: MediaType, mediaId: Int): Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>> {
+        val apiCall: suspend (Int) -> app.lusk.underseerr.data.remote.model.ApiSearchResults = { page ->
+            if (mediaType == MediaType.MOVIE) {
+                discoveryKtorService.getMovieRecommendations(mediaId, page)
+            } else {
+                discoveryKtorService.getTvRecommendations(mediaId, page)
+            }
+        }
+        
+        return Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PREFETCH_DISTANCE, enablePlaceholders = false),
+            pagingSourceFactory = { DiscoveryPagingSource(apiCall, { it.toSearchResult() }) }
+        ).flow
+    }
+
+    override suspend fun getPersonDetails(personId: Int): Result<Person> = safeApiCall {
+        discoveryKtorService.getPersonDetails(personId).toPerson()
+    }
 }

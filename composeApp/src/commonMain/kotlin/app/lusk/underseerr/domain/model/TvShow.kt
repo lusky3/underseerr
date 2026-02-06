@@ -17,6 +17,8 @@ data class TvShow(
     val relatedVideos: List<RelatedVideo> = emptyList(),
     val genres: List<Genre> = emptyList(),
     val tagline: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val seasons: List<Season> = emptyList(),
+    val lastAirDate: String? = null
 )
 

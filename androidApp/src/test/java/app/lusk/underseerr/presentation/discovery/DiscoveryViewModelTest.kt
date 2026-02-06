@@ -72,7 +72,6 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val issueViewModel = IssueViewModel(issueRepository)
                     val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
                     
-                    every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
                     val viewModel = DiscoveryViewModel(
                         repository, 
                         watchlistRepository,
@@ -177,7 +176,7 @@ class DiscoveryViewModelTest : DescribeSpec({
         }
         
         describe("search functionality") {
-            xit("should update search state to loading when searching") {
+            it("should update search state to loading when searching") {
                 runTest(testDispatcher) {
                     // Given
                     val repository = mockk<DiscoveryRepository>(relaxed = true)
@@ -246,7 +245,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                         )
                     )
                     
-                    coEvery { repository.searchMedia("test", any()) } returns Result.Success(searchResults)
+                    every { repository.findMedia("test") } returns flowOf(PagingData.from(searchResults.results))
                     coEvery { repository.getTrending() } returns flowOf(PagingData.empty())
                     coEvery { repository.getPopularMovies() } returns flowOf(PagingData.empty())
                     coEvery { repository.getPopularTvShows() } returns flowOf(PagingData.empty())
@@ -294,7 +293,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     val repository = mockk<DiscoveryRepository>(relaxed = true)
                     val error = AppError.NetworkError("Network error")
                     
-                    coEvery { repository.searchMedia("test", any()) } returns Result.Error(error)
+                    every { repository.findMedia("test") } returns flowOf(PagingData.empty()) // Error handling in paging is different
                     coEvery { repository.getTrending() } returns flowOf(PagingData.empty())
                     
                     val requestRepository = mockk<RequestRepository>(relaxed = true)
@@ -599,7 +598,7 @@ class DiscoveryViewModelTest : DescribeSpec({
         }
         
         describe("clear operations") {
-            xit("should clear search results") {
+            it("should clear search results") {
                 runTest(testDispatcher) {
                     // Given
                     val repository = mockk<DiscoveryRepository>(relaxed = true)

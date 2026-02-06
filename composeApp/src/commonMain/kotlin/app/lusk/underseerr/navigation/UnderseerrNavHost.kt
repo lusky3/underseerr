@@ -254,7 +254,35 @@ fun UnderseerrNavHost(
                 mediaType = mediaType,
                 openRequest = args.openRequest,
                 viewModel = viewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onPersonClick = { personId ->
+                    navController.navigate(Screen.PersonDetails(personId))
+                },
+                onMediaClick = { type, id ->
+                    navController.navigate(Screen.MediaDetails(type.name.lowercase(), id))
+                },
+                onGenreClick = { genreId, genreName ->
+                    navController.navigate(Screen.CategoryResults("genre", genreId, genreName))
+                }
+            )
+        }
+
+        composable<Screen.PersonDetails>(
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+        ) { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.PersonDetails>()
+            val viewModel: DiscoveryViewModel = koinViewModel()
+            
+            PersonDetailsScreen(
+                personId = args.personId,
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() },
+                onMediaClick = { type, id -> 
+                    navController.navigate(Screen.MediaDetails(type.name.lowercase(), id))
+                }
             )
         }
         

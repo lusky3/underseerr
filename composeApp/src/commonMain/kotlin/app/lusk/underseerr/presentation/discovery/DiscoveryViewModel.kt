@@ -14,16 +14,14 @@ import app.lusk.underseerr.domain.repository.RequestRepository
 import app.lusk.underseerr.domain.repository.ProfileRepository
 import app.lusk.underseerr.domain.model.Genre
 import app.lusk.underseerr.domain.model.SearchResult
+import app.lusk.underseerr.domain.model.Person
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * ViewModel for discovery screens.
- * Feature: underseerr
- * Validates: Requirements 2.1, 2.2, 2.4
  */
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class DiscoveryViewModel(
@@ -199,6 +197,16 @@ class DiscoveryViewModel(
     private val _mediaDetailsState = MutableStateFlow<MediaDetailsState>(MediaDetailsState.Idle)
     val mediaDetailsState: StateFlow<MediaDetailsState> = _mediaDetailsState.asStateFlow()
 
+    // Recommendations for the current media
+    private val _currentMedia = MutableStateFlow<Pair<MediaType, Int>?>(null)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val recommendations: Flow<PagingData<SearchResult>> = _currentMedia
+        .flatMapLatest { pair ->
+            if (pair == null) flowOf(PagingData.empty())
+            else discoveryRepository.getRecommendations(pair.first, pair.second)
+        }
+        .cachedIn(viewModelScope)
+
     // Partial requests setting
     private val _partialRequestsEnabled = MutableStateFlow(false)
     val partialRequestsEnabled: StateFlow<Boolean> = _partialRequestsEnabled.asStateFlow()
@@ -215,25 +223,23 @@ class DiscoveryViewModel(
         // Fetch genres
         viewModelScope.launch {
             val movieGenresResult = discoveryRepository.getMovieGenres()
-            if (movieGenresResult.isSuccess) {
-                _movieGenres.value = movieGenresResult.getOrDefault(emptyList())
+            if (movieGenresResult is Result.Success) {
+                _movieGenres.value = movieGenresResult.data
             }
             
             val tvGenresResult = discoveryRepository.getTvGenres()
-            if (tvGenresResult.isSuccess) {
-                _tvGenres.value = tvGenresResult.getOrDefault(emptyList())
+            if (tvGenresResult is Result.Success) {
+                _tvGenres.value = tvGenresResult.data
             }
         }
 
         // Fetch user profile to check if Plex user
         viewModelScope.launch {
             val profileResult = profileRepository.getUserProfile()
-            if (profileResult.isSuccess) {
-                _isPlexUser.value = profileResult.getOrNull()?.isPlexUser ?: false
+            if (profileResult is Result.Success) {
+                _isPlexUser.value = profileResult.data.isPlexUser
             }
         }
-
-        // Search is handled by pagedSearchResults flow
 
         // Background load other pages after a short delay to prioritize Home content
         viewModelScope.launch {
@@ -255,40 +261,26 @@ class DiscoveryViewModel(
         }
     }
     
-    /**
-     * Update search query.
-     * Property 5: Search Performance (with debouncing)
-     */
     fun search(query: String) {
         _searchQuery.value = query
     }
     
-    
-    /**
-     * Load media details based on type.
-     * Property 7: Media Detail Navigation
-     */
     private var lastRequestedMedia: Pair<MediaType, Int>? = null
 
-    /**
-     * Load media details based on type.
-     * Property 7: Media Detail Navigation
-     */
-    fun loadMediaDetails(mediaType: MediaType, mediaId: Int) {
+    fun loadMediaDetails(mediaType: MediaType, mediaId: Int, isRefresh: Boolean = false) {
         lastRequestedMedia = mediaType to mediaId
+        _currentMedia.value = mediaType to mediaId
         when (mediaType) {
-            MediaType.MOVIE -> loadMovieDetails(mediaId)
-            MediaType.TV -> loadTvShowDetails(mediaId)
+            MediaType.MOVIE -> loadMovieDetails(mediaId, isRefresh)
+            MediaType.TV -> loadTvShowDetails(mediaId, isRefresh)
         }
     }
     
-    /**
-     * Load movie details.
-     * Property 7: Media Detail Navigation
-     */
-    private fun loadMovieDetails(movieId: Int) {
+    private fun loadMovieDetails(movieId: Int, isRefresh: Boolean) {
         viewModelScope.launch {
-            _mediaDetailsState.value = MediaDetailsState.Loading
+            if (!isRefresh) {
+                _mediaDetailsState.value = MediaDetailsState.Loading
+            }
             
             when (val result = discoveryRepository.getMovieDetails(movieId)) {
                 is Result.Success -> {
@@ -297,22 +289,22 @@ class DiscoveryViewModel(
                     )
                 }
                 is Result.Error -> {
-                    _mediaDetailsState.value = MediaDetailsState.Error(result.error.message)
+                    _mediaDetailsState.value = MediaDetailsState.Error(result.error.message ?: "Unknown error")
                 }
                 is Result.Loading -> {
-                    _mediaDetailsState.value = MediaDetailsState.Loading
+                    if (!isRefresh) {
+                        _mediaDetailsState.value = MediaDetailsState.Loading
+                    }
                 }
             }
         }
     }
     
-    /**
-     * Load TV show details.
-     * Property 7: Media Detail Navigation
-     */
-    private fun loadTvShowDetails(tvShowId: Int) {
+    private fun loadTvShowDetails(tvShowId: Int, isRefresh: Boolean) {
         viewModelScope.launch {
-            _mediaDetailsState.value = MediaDetailsState.Loading
+            if (!isRefresh) {
+                _mediaDetailsState.value = MediaDetailsState.Loading
+            }
             
             when (val result = discoveryRepository.getTvShowDetails(tvShowId)) {
                 is Result.Success -> {
@@ -321,45 +313,32 @@ class DiscoveryViewModel(
                     )
                 }
                 is Result.Error -> {
-                    _mediaDetailsState.value = MediaDetailsState.Error(result.error.message)
+                    _mediaDetailsState.value = MediaDetailsState.Error(result.error.message ?: "Unknown error")
                 }
                 is Result.Loading -> {
-                    _mediaDetailsState.value = MediaDetailsState.Loading
+                    if (!isRefresh) {
+                        _mediaDetailsState.value = MediaDetailsState.Loading
+                    }
                 }
             }
         }
     }
     
-    /**
-     * Clear search results.
-     */
     fun clearSearch() {
         _searchQuery.value = ""
     }
     
-    /**
-     * Clear media details.
-     */
     fun clearMediaDetails() {
         _mediaDetailsState.value = MediaDetailsState.Idle
         lastRequestedMedia = null
     }
     
-    /**
-     * Retry search.
-     */
-    fun retrySearch() {
-        // Paging handles retry through LazyPagingItems.retry()
-    }
-    
-    /**
-     * Retry loading media details.
-     */
     fun retryMediaDetails() {
         lastRequestedMedia?.let { (type, id) ->
             loadMediaDetails(type, id)
         }
     }
+
     fun quickRequest(mediaId: Int, mediaType: MediaType) {
         viewModelScope.launch {
             val movieProfile = settingsRepository.getDefaultMovieQualityProfile().firstOrNull()
@@ -367,16 +346,11 @@ class DiscoveryViewModel(
             
             val result = when (mediaType) {
                 MediaType.MOVIE -> requestRepository.requestMovie(mediaId, qualityProfile = movieProfile)
-                MediaType.TV -> requestRepository.requestTvShow(mediaId, seasons = listOf(0), qualityProfile = tvProfile) // For TV, maybe we should fetch seasons first or just request all? Actually Overseerr handles 'all' if list is empty or similar? Wait, Usually it requires a list of seasons.
+                MediaType.TV -> requestRepository.requestTvShow(mediaId, seasons = listOf(0), qualityProfile = tvProfile)
             }
-            
-            // Re-evaluating TV quick request: If we don't know the seasons, we might need to fetch them.
-            // But let's check RequestRepository.requestTvShow again.
-            // If seasons is empty, what happens? 
             
             if (result is Result.Success) {
                 _uiEvent.emit("Request submitted successfully")
-                // Refresh requests to update status indicators
                 requestViewModel.refreshRequests()
             } else if (result is Result.Error) {
                 _uiEvent.emit("Failed to submit request: ${result.error.message}")
@@ -413,7 +387,6 @@ class DiscoveryViewModel(
             if (result is Result.Success) {
                 _watchlistIds.value = _watchlistIds.value - tmdbId
                 _uiEvent.emit("Removed from watchlist")
-                // Delay re-fetch to allow for Plex API consistency
                 kotlinx.coroutines.delay(2000)
                 refreshWatchlist()
                 fetchWatchlistIds()
@@ -429,7 +402,6 @@ class DiscoveryViewModel(
             if (result is Result.Success) {
                 _watchlistIds.value = _watchlistIds.value + tmdbId
                 _uiEvent.emit("Added to watchlist")
-                // Delay re-fetch to allow for Plex API consistency
                 kotlinx.coroutines.delay(2000)
                 refreshWatchlist()
                 fetchWatchlistIds()
@@ -440,26 +412,44 @@ class DiscoveryViewModel(
     }
 
     fun refresh() {
-        // Fetch genres
         viewModelScope.launch {
             val movieGenresResult = discoveryRepository.getMovieGenres()
-            if (movieGenresResult.isSuccess) {
-                _movieGenres.value = movieGenresResult.getOrDefault(emptyList())
+            if (movieGenresResult is Result.Success) {
+                _movieGenres.value = movieGenresResult.data
             }
             
             val tvGenresResult = discoveryRepository.getTvGenres()
-            if (tvGenresResult.isSuccess) {
-                _tvGenres.value = tvGenresResult.getOrDefault(emptyList())
+            if (tvGenresResult is Result.Success) {
+                _tvGenres.value = tvGenresResult.data
             }
         }
 
-        // Fetch user profile to check if Plex user
         viewModelScope.launch {
             val profileResult = profileRepository.getUserProfile()
-            if (profileResult.isSuccess) {
-                _isPlexUser.value = profileResult.getOrNull()?.isPlexUser ?: false
+            if (profileResult is Result.Success) {
+                _isPlexUser.value = profileResult.data.isPlexUser
             }
         }
+    }
+
+    // Person Details
+    private val _personDetailsState = MutableStateFlow<PersonDetailsState>(PersonDetailsState.Idle)
+    val personDetailsState: StateFlow<PersonDetailsState> = _personDetailsState.asStateFlow()
+
+    fun loadPersonDetails(personId: Int) {
+        viewModelScope.launch {
+            _personDetailsState.value = PersonDetailsState.Loading
+            val result = discoveryRepository.getPersonDetails(personId)
+            _personDetailsState.value = when (result) {
+                is Result.Success -> PersonDetailsState.Success(result.data)
+                is Result.Error -> PersonDetailsState.Error(result.error.message ?: "Failed to load person details")
+                else -> PersonDetailsState.Idle
+            }
+        }
+    }
+    
+    fun clearPersonDetails() {
+        _personDetailsState.value = PersonDetailsState.Idle
     }
 }
 
@@ -479,9 +469,12 @@ data class CategoryInfo(
     val name: String
 )
 
-/**
- * Search state.
- */
+sealed class PersonDetailsState {
+    object Idle : PersonDetailsState()
+    object Loading : PersonDetailsState()
+    data class Success(val person: Person) : PersonDetailsState()
+    data class Error(val message: String) : PersonDetailsState()
+}
 
 /**
  * Media details state.
@@ -503,7 +496,7 @@ data class MediaDetails(
     val backdropPath: String?,
     val releaseDate: String?,
     val voteAverage: Double?,
-    val genres: List<String>,
+    val genres: List<Genre>,
     val runtime: Int?,
     val status: String?,
     val isAvailable: Boolean,
@@ -516,7 +509,11 @@ data class MediaDetails(
     val ratingKey: String? = null,
     val cast: List<app.lusk.underseerr.domain.model.CastMember> = emptyList(),
     val relatedVideos: List<app.lusk.underseerr.domain.model.RelatedVideo> = emptyList(),
-    val tagline: String? = null
+    val tagline: String? = null,
+    val seasons: List<app.lusk.underseerr.domain.model.Season> = emptyList(),
+    val digitalReleaseDate: String? = null,
+    val physicalReleaseDate: String? = null,
+    val lastAirDate: String? = null
 )
 
 /**
@@ -529,7 +526,7 @@ private fun Movie.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails
     backdropPath = backdropPath,
     releaseDate = releaseDate,
     voteAverage = voteAverage,
-    genres = genres.map { it.name },
+    genres = genres,
     runtime = runtime,
     status = status ?: mediaInfo?.status?.name,
     isAvailable = mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.AVAILABLE,
@@ -542,7 +539,10 @@ private fun Movie.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails
     ratingKey = mediaInfo?.ratingKey,
     cast = cast,
     relatedVideos = relatedVideos,
-    tagline = tagline
+    tagline = tagline,
+    seasons = emptyList(),
+    digitalReleaseDate = digitalReleaseDate,
+    physicalReleaseDate = physicalReleaseDate
 )
 
 private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetails(
@@ -552,7 +552,7 @@ private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetail
     backdropPath = backdropPath,
     releaseDate = firstAirDate,
     voteAverage = voteAverage,
-    genres = genres.map { it.name },
+    genres = genres,
     runtime = null,
     status = status ?: mediaInfo?.status?.name,
     isAvailable = mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.AVAILABLE,
@@ -562,7 +562,6 @@ private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetail
     isPartiallyAvailable = mediaInfo?.status == app.lusk.underseerr.domain.model.MediaStatus.PARTIALLY_AVAILABLE,
     isPartialRequestsEnabled = partialRequestsEnabled,
     requestedSeasons = mediaInfo?.requests?.flatMap { request -> 
-        // Only include seasons from requests that are NOT declined
         if (request.status != app.lusk.underseerr.domain.model.RequestStatus.DECLINED) {
             request.seasons ?: emptyList() 
         } else {
@@ -573,7 +572,7 @@ private fun TvShow.toMediaDetails(partialRequestsEnabled: Boolean) = MediaDetail
     ratingKey = mediaInfo?.ratingKey,
     cast = cast,
     relatedVideos = relatedVideos,
-    tagline = tagline
+    tagline = tagline,
+    seasons = seasons,
+    lastAirDate = lastAirDate
 )
-
-// Custom stateIn removed in favor of standard library stateIn

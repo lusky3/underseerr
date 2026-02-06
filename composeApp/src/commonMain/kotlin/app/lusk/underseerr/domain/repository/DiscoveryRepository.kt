@@ -7,6 +7,7 @@ import app.lusk.underseerr.domain.model.Result
 import app.lusk.underseerr.domain.model.SearchResults
 import app.lusk.underseerr.domain.model.TvShow
 import app.lusk.underseerr.domain.model.Genre
+import app.lusk.underseerr.domain.model.Person
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -95,4 +96,14 @@ interface DiscoveryRepository {
      * Get TV shows by network.
      */
     fun getTvByNetwork(networkId: Int): Flow<PagingData<TvShow>>
+    
+    /**
+     * Get recommendations for a media item.
+     */
+    fun getRecommendations(mediaType: MediaType, mediaId: Int): Flow<PagingData<app.lusk.underseerr.domain.model.SearchResult>>
+
+    /**
+     * Get person details.
+     */
+    suspend fun getPersonDetails(personId: Int): Result<Person>
 }
