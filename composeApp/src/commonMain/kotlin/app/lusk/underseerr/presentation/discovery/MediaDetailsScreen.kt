@@ -295,6 +295,34 @@ private fun MediaDetailsContent(
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
+                    
+                    /* 
+                    // Watch in Plex icon
+                    if (details.isAvailable || details.isPartiallyAvailable) {
+                        IconButton(
+                            onClick = { 
+                                details.ratingKey?.let { key ->
+                                    // Use the universal HTTPS format which Android Plex app intercepts reliably
+                                    openUrl("https://app.plex.tv/desktop/#!/item/details?key=%2Flibrary%2Fmetadata%2F$key")
+                                }
+                            },
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .statusBarsPadding()
+                                .align(Alignment.TopEnd)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Watch in Plex",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                    */ 
                 }
             }
 
@@ -411,7 +439,7 @@ private fun MediaDetailsContent(
                                 modifier = Modifier.padding(top = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                                 
                                 Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                                     val primaryLabel = if (mediaType == MediaType.MOVIE) "Theatre Release" else "First Aired"
@@ -514,23 +542,6 @@ private fun MediaDetailsContent(
                             Text(if (isInWatchlist) "Remove from Watchlist" else "Add to Watchlist")
                         }
                         
-                        // Watch in Plex button (only if available)
-                        if (details.isAvailable) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
-                                onClick = { /* TODO: Open in Plex */ },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Watch in Plex")
-                            }
-                        }
                         
                         
                         // Report Issue button

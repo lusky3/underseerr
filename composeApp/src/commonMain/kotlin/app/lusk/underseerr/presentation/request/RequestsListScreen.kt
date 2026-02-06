@@ -18,6 +18,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshotFlow
@@ -198,7 +202,7 @@ fun RequestsListScreen(
                                 onReportIssue = { showReportIssueDialog = it },
                                 onRepair = { viewModel.repairRequest(it) },
                                 onAddToWatchlist = { request ->
-                                    discoveryViewModel.addToWatchlist(request.mediaId, request.mediaType, null)
+                                    discoveryViewModel.addToWatchlist(request.mediaId, request.mediaType, request.ratingKey)
                                 },
                                 error = error
                             )
@@ -521,6 +525,30 @@ private fun RequestItem(
                                             colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
                                         )
                                     }
+                                    
+                                    /*
+                                    // Watch in Plex
+                                    if (request.status == RequestStatus.AVAILABLE) {
+                                        Surface(
+                                            onClick = {
+                                                request.ratingKey?.let { key ->
+                                                    app.lusk.underseerr.util.openUrl("https://app.plex.tv/desktop/#!/item/details?key=%2Flibrary%2Fmetadata%2F$key")
+                                                }
+                                                showMenu = false
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f))
+                                        ) {
+                                            ListItem(
+                                                headlineContent = { Text("Watch in Plex", fontWeight = FontWeight.SemiBold) },
+                                                leadingContent = { Icon(Icons.Default.PlayArrow, null, tint = MaterialTheme.colorScheme.secondary) },
+                                                colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
+                                            )
+                                        }
+                                    }
+                                    */
                                     
                                     if (request.status == RequestStatus.APPROVED || request.status == RequestStatus.AVAILABLE) {
                                         // Report Issue

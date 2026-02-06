@@ -69,9 +69,29 @@ fun RequestDetailsScreen(
                     }
                 },
                 actions = {
-                    if (request?.status == RequestStatus.PENDING || request?.status == RequestStatus.DECLINED) {
-                        IconButton(onClick = { showCancelDialog = true }) {
-                            Icon(Icons.Default.Delete, "Cancel Request", tint = gradients.onAppBar)
+                    request?.let { req ->
+                        /*
+                        // Watch in Plex action
+                        if (req.status == RequestStatus.AVAILABLE) {
+                            IconButton(onClick = { 
+                                req.ratingKey?.let { key ->
+                                    app.lusk.underseerr.util.openUrl("https://app.plex.tv/desktop/#!/item/details?key=%2Flibrary%2Fmetadata%2F$key")
+                                }
+                            }) {
+                                Icon(Icons.Default.PlayArrow, "Watch in Plex", tint = gradients.onAppBar)
+                            }
+                        }
+                        */
+                        
+                        // View Full Details action
+                        IconButton(onClick = { onViewDetails(req.mediaId, req.mediaType) }) {
+                            Icon(Icons.Default.Info, "View Full Details", tint = gradients.onAppBar)
+                        }
+                        
+                        if (req.status == RequestStatus.PENDING || req.status == RequestStatus.DECLINED) {
+                            IconButton(onClick = { showCancelDialog = true }) {
+                                Icon(Icons.Default.Delete, "Cancel Request", tint = gradients.onAppBar)
+                            }
                         }
                     }
                 },
@@ -96,7 +116,7 @@ fun RequestDetailsScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
             when {
                 request == null && !isLoading -> {
@@ -119,27 +139,13 @@ fun RequestDetailsScreen(
                             modifier = Modifier.weight(1f)
                         )
                         
-                        // View Full Details button
-                        OutlinedButton(
-                            onClick = { onViewDetails(request.mediaId, request.mediaType) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("View Full Details")
-                        }
-                        
                         // Add to Watchlist button
                         OutlinedButton(
                             onClick = { 
                                 discoveryViewModel.addToWatchlist(
                                     request.mediaId, 
                                     request.mediaType, 
-                                    null
+                                    request.ratingKey
                                 )
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -151,22 +157,6 @@ fun RequestDetailsScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Add to Watchlist")
-                        }
-                        
-                        // Watch in Plex button (only if available)
-                        if (request.status == RequestStatus.AVAILABLE) {
-                            Button(
-                                onClick = { /* TODO: Open in Plex */ },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Default.PlayArrow,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Watch in Plex")
-                            }
                         }
                         
                         if (partialRequestsEnabled && request.mediaType == MediaType.TV) {

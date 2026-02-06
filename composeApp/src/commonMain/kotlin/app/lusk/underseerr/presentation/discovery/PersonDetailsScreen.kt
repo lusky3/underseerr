@@ -168,9 +168,11 @@ private fun PersonDetailsContent(
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    Box(modifier = Modifier.background(gradients.surface)) {
+                    Box(modifier = Modifier.fillMaxWidth().background(gradients.surface)) {
                         Column(
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
                         ) {
                         Text(
                             text = person.name,
@@ -250,7 +252,7 @@ private fun PersonDetailsContent(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 32.dp)
+                            .padding(bottom = 0.dp)
                             .offset(y = (-32).dp)
                     ) {
                         Text(
@@ -288,7 +290,7 @@ private fun PersonDetailsContent(
             // Interaction Spacer for bottom navigation / gesture area
             item {
                 Spacer(modifier = Modifier.navigationBarsPadding())
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(0.dp))
             }
         }
     }
