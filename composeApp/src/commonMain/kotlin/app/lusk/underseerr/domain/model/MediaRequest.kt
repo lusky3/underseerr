@@ -12,5 +12,6 @@ data class MediaRequest(
     val status: RequestStatus,
     val requestedDate: Long,
     val seasons: List<Int>?,
-    val isOfflineQueued: Boolean = false
+    val isOfflineQueued: Boolean = false,
+    val ratingKey: String? = null
 )
