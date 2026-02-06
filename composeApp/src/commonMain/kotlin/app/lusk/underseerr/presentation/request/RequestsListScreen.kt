@@ -42,12 +42,14 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.AddTask
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Bookmark
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestsListScreen(
     viewModel: RequestViewModel,
+    discoveryViewModel: app.lusk.underseerr.presentation.discovery.DiscoveryViewModel = koinViewModel(),
     onRequestClick: (Int) -> Unit,
     initialFilter: String? = null,
     modifier: Modifier = Modifier
@@ -195,6 +197,9 @@ fun RequestsListScreen(
                                 onDecline = { viewModel.declineRequest(it) },
                                 onReportIssue = { showReportIssueDialog = it },
                                 onRepair = { viewModel.repairRequest(it) },
+                                onAddToWatchlist = { request ->
+                                    discoveryViewModel.addToWatchlist(request.mediaId, request.mediaType, null)
+                                },
                                 error = error
                             )
                         } 
@@ -265,6 +270,7 @@ private fun RequestsList(
     onDecline: (Int) -> Unit = {},
     onReportIssue: (MediaRequest) -> Unit = {},
     onRepair: (MediaRequest) -> Unit = {},
+    onAddToWatchlist: (MediaRequest) -> Unit = {},
     error: String? = null
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -296,7 +302,8 @@ private fun RequestsList(
                 onApprove = onApprove,
                 onDecline = onDecline,
                 onReportIssue = onReportIssue,
-                onRepair = onRepair
+                onRepair = onRepair,
+                onAddToWatchlist = onAddToWatchlist
             )
         }
         
@@ -321,7 +328,8 @@ private fun RequestItem(
     onApprove: (Int) -> Unit = {},
     onDecline: (Int) -> Unit = {},
     onReportIssue: (MediaRequest) -> Unit = {},
-    onRepair: (MediaRequest) -> Unit = {}
+    onRepair: (MediaRequest) -> Unit = {},
+    onAddToWatchlist: (MediaRequest) -> Unit = {}
 ) {
     LaunchedEffect(request.title, request.posterPath) {
         if (request.title == "Title Unavailable" || request.posterPath == null) {
@@ -494,6 +502,24 @@ private fun RequestItem(
                                                 colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
                                             )
                                         }
+                                    }
+                                    
+                                    // Add to Watchlist
+                                    Surface(
+                                        onClick = {
+                                            onAddToWatchlist(request)
+                                            showMenu = false
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                                    ) {
+                                        ListItem(
+                                            headlineContent = { Text("Add to Watchlist", fontWeight = FontWeight.SemiBold) },
+                                            leadingContent = { Icon(androidx.compose.material.icons.Icons.Default.Bookmark, null, tint = MaterialTheme.colorScheme.primary) },
+                                            colors = ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = gradients.onSurface)
+                                        )
                                     }
                                     
                                     if (request.status == RequestStatus.APPROVED || request.status == RequestStatus.AVAILABLE) {

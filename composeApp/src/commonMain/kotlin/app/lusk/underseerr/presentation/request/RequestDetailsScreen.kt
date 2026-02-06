@@ -6,6 +6,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,8 +31,10 @@ import org.koin.compose.koinInject
 fun RequestDetailsScreen(
     requestId: Int,
     viewModel: RequestViewModel,
+    discoveryViewModel: app.lusk.underseerr.presentation.discovery.DiscoveryViewModel = org.koin.compose.viewmodel.koinViewModel(),
     onBackClick: () -> Unit,
     onModifyRequest: (Int) -> Unit = {},
+    onViewDetails: (Int, MediaType) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     issueRepository: IssueRepository = koinInject()
 ) {
@@ -114,8 +119,58 @@ fun RequestDetailsScreen(
                             modifier = Modifier.weight(1f)
                         )
                         
-                        if (partialRequestsEnabled && request.mediaType == MediaType.TV) {
+                        // View Full Details button
+                        OutlinedButton(
+                            onClick = { onViewDetails(request.mediaId, request.mediaType) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Info,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("View Full Details")
+                        }
+                        
+                        // Add to Watchlist button
+                        OutlinedButton(
+                            onClick = { 
+                                discoveryViewModel.addToWatchlist(
+                                    request.mediaId, 
+                                    request.mediaType, 
+                                    null
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Bookmark,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Add to Watchlist")
+                        }
+                        
+                        // Watch in Plex button (only if available)
+                        if (request.status == RequestStatus.AVAILABLE) {
                             Button(
+                                onClick = { /* TODO: Open in Plex */ },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Watch in Plex")
+                            }
+                        }
+                        
+                        if (partialRequestsEnabled && request.mediaType == MediaType.TV) {
+                            OutlinedButton(
                                 onClick = { onModifyRequest(request.mediaId) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {

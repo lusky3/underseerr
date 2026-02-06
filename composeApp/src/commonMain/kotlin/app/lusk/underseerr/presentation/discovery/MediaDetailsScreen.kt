@@ -514,6 +514,24 @@ private fun MediaDetailsContent(
                             Text(if (isInWatchlist) "Remove from Watchlist" else "Add to Watchlist")
                         }
                         
+                        // Watch in Plex button (only if available)
+                        if (details.isAvailable) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = { /* TODO: Open in Plex */ },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Watch in Plex")
+                            }
+                        }
+                        
                         
                         // Report Issue button
                         if (details.isAvailable || details.isRequested) {
@@ -690,8 +708,12 @@ private fun MediaDetailsContent(
                             color = gradients.onSurface
                         )
                     )
-                    Spacer(modifier = Modifier.height(32.dp))
                 }
+            }
+            
+            // Bottom spacing to match recommendations spacing
+            item {
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
