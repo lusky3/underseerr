@@ -163,7 +163,8 @@ fun ApiMediaRequest.toMediaRequest(): MediaRequest {
             else -> RequestStatus.PENDING
         },
         requestedDate = requestedDate,
-        seasons = seasons?.map { it.seasonNumber }
+        seasons = seasons?.map { it.seasonNumber },
+        ratingKey = media?.ratingKey
     )
 }
 

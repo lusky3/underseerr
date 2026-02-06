@@ -30,7 +30,8 @@ data class ApiRequestMedia(
     @SerialName("name") val name: String? = null,
     @SerialName("posterPath") val posterPath: String? = null,
     @SerialName("backdropPath") val backdropPath: String? = null,
-    @SerialName("overview") val overview: String? = null
+    @SerialName("overview") val overview: String? = null,
+    @SerialName("ratingKey") val ratingKey: String? = null
 )
 
 @Serializable
