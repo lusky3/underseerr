@@ -4,27 +4,27 @@ import io.sentry.Sentry
 
 object Metrics {
     fun trackServerSetup() {
-        Sentry.metrics().increment("server.setup")
+        Sentry.metrics().counter("server.setup", 1.0)
     }
 
     fun trackLogin(method: String) {
-        Sentry.metrics().increment("auth.login", tags = mapOf("method" to method))
+        Sentry.metrics().counter("auth.login", 1.0, null, mapOf("method" to method))
     }
 
     fun trackMediaRequest(mediaType: String) {
-        Sentry.metrics().increment("media.request", tags = mapOf("type" to mediaType))
+        Sentry.metrics().counter("media.request", 1.0, null, mapOf("type" to mediaType))
     }
 
     fun trackSearch() {
-        Sentry.metrics().increment("search.performed")
+        Sentry.metrics().counter("search.performed", 1.0)
     }
 
     fun trackIssueReported() {
-        Sentry.metrics().increment("issue.reported")
+        Sentry.metrics().counter("issue.reported", 1.0)
     }
 
     fun trackApiResponseTime(endpoint: String, durationMs: Long) {
-        Sentry.metrics().distribution("api.response_time", durationMs.toDouble(), tags = mapOf("endpoint" to endpoint))
+        Sentry.metrics().distribution("api.response_time", durationMs.toDouble(), null, mapOf("endpoint" to endpoint))
     }
 
     fun trackActiveRequests(count: Int) {
