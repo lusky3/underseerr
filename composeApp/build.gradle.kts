@@ -127,6 +127,7 @@ kotlin {
             implementation(libs.firebase.messaging)
             implementation(libs.androidx.core.ktx)
             implementation(libs.android.billing)
+            implementation("io.sentry:sentry-android:8.31.0")
         }
         
         iosMain.dependencies {
