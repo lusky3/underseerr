@@ -4,30 +4,30 @@ import io.sentry.Sentry
 
 object Metrics {
     fun trackServerSetup() {
-        Sentry.metrics().counter("server.setup", 1.0)
+        try { Sentry.metrics().increment("server.setup", 1.0) } catch (_: Exception) {}
     }
 
     fun trackLogin(method: String) {
-        Sentry.metrics().counter("auth.login", 1.0, null, mapOf("method" to method))
+        try { Sentry.metrics().increment("auth.login.$method", 1.0) } catch (_: Exception) {}
     }
 
     fun trackMediaRequest(mediaType: String) {
-        Sentry.metrics().counter("media.request", 1.0, null, mapOf("type" to mediaType))
+        try { Sentry.metrics().increment("media.request.$mediaType", 1.0) } catch (_: Exception) {}
     }
 
     fun trackSearch() {
-        Sentry.metrics().counter("search.performed", 1.0)
+        try { Sentry.metrics().increment("search.performed", 1.0) } catch (_: Exception) {}
     }
 
     fun trackIssueReported() {
-        Sentry.metrics().counter("issue.reported", 1.0)
+        try { Sentry.metrics().increment("issue.reported", 1.0) } catch (_: Exception) {}
     }
 
     fun trackApiResponseTime(endpoint: String, durationMs: Long) {
-        Sentry.metrics().distribution("api.response_time", durationMs.toDouble(), null, mapOf("endpoint" to endpoint))
+        try { Sentry.metrics().distribution("api.response_time", durationMs.toDouble()) } catch (_: Exception) {}
     }
 
     fun trackActiveRequests(count: Int) {
-        Sentry.metrics().gauge("requests.active", count.toDouble())
+        try { Sentry.metrics().gauge("requests.active", count.toDouble()) } catch (_: Exception) {}
     }
 }
