@@ -15,6 +15,7 @@ import app.lusk.underseerr.domain.repository.ProfileRepository
 import app.lusk.underseerr.domain.model.Genre
 import app.lusk.underseerr.domain.model.SearchResult
 import app.lusk.underseerr.domain.model.Person
+import app.lusk.underseerr.util.Metrics
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -144,6 +145,7 @@ class DiscoveryViewModel(
             if (query.isBlank()) {
                 emptyFlow()
             } else {
+                Metrics.trackSearch()
                 discoveryRepository.findMedia(query)
             }
         }
@@ -350,6 +352,7 @@ class DiscoveryViewModel(
             }
             
             if (result is Result.Success) {
+                Metrics.trackMediaRequest(mediaType.name.lowercase())
                 _uiEvent.emit("Request submitted successfully")
                 requestViewModel.refreshRequests()
             } else if (result is Result.Error) {

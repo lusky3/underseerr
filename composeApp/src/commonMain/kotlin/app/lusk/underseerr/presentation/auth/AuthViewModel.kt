@@ -1,6 +1,7 @@
 package app.lusk.underseerr.presentation.auth
 
 import app.lusk.underseerr.util.AppLogger
+import app.lusk.underseerr.util.Metrics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.lusk.underseerr.domain.model.Result
@@ -103,6 +104,7 @@ class AuthViewModel(
         
         when (val result = authRepository.validateServerUrl(url, allowHttp)) {
             is Result.Success -> {
+                Metrics.trackServerSetup()
                 // Check if we pre-injected an API key
                 val apiKey = securityManager.retrieveSecureData("underseerr_api_key")
                 if (apiKey != null) {
@@ -194,6 +196,7 @@ class AuthViewModel(
             
             when (val result = authRepository.authenticateWithPlex(plexToken)) {
                 is Result.Success -> {
+                    Metrics.trackLogin("plex")
                     logger.d("AuthViewModel", "Authentication successful! Navigating to Home.")
                     _authState.value = AuthState.Authenticated
                 }
@@ -217,6 +220,7 @@ class AuthViewModel(
             _authState.value = AuthState.Authenticating
             when (val result = authRepository.authenticateLocal(username, password)) {
                 is Result.Success -> {
+                    Metrics.trackLogin("local")
                     logger.d("AuthViewModel", "Local login successful!")
                     _authState.value = AuthState.Authenticated
                 }
@@ -238,6 +242,7 @@ class AuthViewModel(
             _authState.value = AuthState.Authenticating
             when (val result = authRepository.authenticateWithJellyfin(username, password, hostname)) {
                 is Result.Success -> {
+                    Metrics.trackLogin("jellyfin")
                     logger.d("AuthViewModel", "Jellyfin login successful!")
                     _authState.value = AuthState.Authenticated
                 }
