@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.lusk.underseerr",
+    "sha256_cert_fingerprints": [
+      "27:53:30:FF:44:15:C7:52:99:66:50:10:DE:D5:66:08:D3:2F:E2:81:30:44:A3:42:9A:82:41:A6:4A:21:EB:9E"
+    ]
+  }
+}]
