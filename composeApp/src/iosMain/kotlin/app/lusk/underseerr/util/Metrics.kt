@@ -1,11 +1,11 @@
 package app.lusk.underseerr.util
 
-object Metrics {
-    fun trackServerSetup() {}
-    fun trackLogin(method: String) {}
-    fun trackMediaRequest(mediaType: String) {}
-    fun trackSearch() {}
-    fun trackIssueReported() {}
-    fun trackApiResponseTime(endpoint: String, durationMs: Long) {}
-    fun trackActiveRequests(count: Int) {}
+actual object Metrics {
+    actual fun trackServerSetup() {}
+    actual fun trackLogin(method: String) {}
+    actual fun trackMediaRequest(mediaType: String) {}
+    actual fun trackSearch() {}
+    actual fun trackIssueReported() {}
+    actual fun trackApiResponseTime(endpoint: String, durationMs: Long) {}
+    actual fun trackActiveRequests(count: Int) {}
 }
