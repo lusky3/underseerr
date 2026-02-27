@@ -59,6 +59,10 @@ class PreferencesManager(
         val PREMIUM_EXPIRES_AT = longPreferencesKey("premium_expires_at")
         val WEBHOOK_SECRET = stringPreferencesKey("webhook_secret")
         val HOME_SCREEN_CONFIG = stringPreferencesKey("home_screen_config")
+        val SUCCESSFUL_REQUEST_COUNT = intPreferencesKey("successful_request_count")
+        val HAS_COMPLETED_REVIEW = booleanPreferencesKey("has_completed_review")
+        val LAST_REVIEW_PROMPT_TIME = longPreferencesKey("last_review_prompt_time")
+        val LAST_SEEN_VERSION_CODE = intPreferencesKey("last_seen_version_code")
     }
     
     /**
@@ -560,6 +564,62 @@ class PreferencesManager(
     suspend fun setHomeScreenConfig(config: app.lusk.underseerr.domain.repository.HomeScreenConfig) {
         dataStore.edit { preferences ->
             preferences[PreferenceKeys.HOME_SCREEN_CONFIG] = Json.encodeToString(config)
+        }
+    }
+
+    // In-App Review Tracking
+
+    suspend fun incrementSuccessfulRequestCount(): Int {
+        var newCount = 0
+        dataStore.edit { preferences ->
+            val current = preferences[PreferenceKeys.SUCCESSFUL_REQUEST_COUNT] ?: 0
+            newCount = current + 1
+            preferences[PreferenceKeys.SUCCESSFUL_REQUEST_COUNT] = newCount
+        }
+        return newCount
+    }
+
+    fun getSuccessfulRequestCount(): Flow<Int> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.SUCCESSFUL_REQUEST_COUNT] ?: 0
+        }
+    }
+
+    suspend fun setHasCompletedReview(completed: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.HAS_COMPLETED_REVIEW] = completed
+        }
+    }
+
+    fun getHasCompletedReview(): Flow<Boolean> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.HAS_COMPLETED_REVIEW] ?: false
+        }
+    }
+
+    suspend fun setLastReviewPromptTime(time: Long) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.LAST_REVIEW_PROMPT_TIME] = time
+        }
+    }
+
+    fun getLastReviewPromptTime(): Flow<Long> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.LAST_REVIEW_PROMPT_TIME] ?: 0L
+        }
+    }
+
+    // Changelog / Version Tracking
+
+    suspend fun setLastSeenVersionCode(versionCode: Int) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.LAST_SEEN_VERSION_CODE] = versionCode
+        }
+    }
+
+    fun getLastSeenVersionCode(): Flow<Int> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.LAST_SEEN_VERSION_CODE] ?: 0
         }
     }
 }

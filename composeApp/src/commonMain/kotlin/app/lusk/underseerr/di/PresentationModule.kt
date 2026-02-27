@@ -11,11 +11,11 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val presentationModule = module {
-    single { MainViewModel(get(), get(), get()) }
+    single { MainViewModel(get(), get(), get(), get(), get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
     viewModel { DiscoveryViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get(), get()) }
-    viewModel { RequestViewModel(get(), get()) }
+    viewModel { RequestViewModel(get(), get(), get()) }
     viewModel { IssueViewModel(get()) }
     viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }

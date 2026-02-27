@@ -31,6 +31,17 @@ actual fun platformModule(): Module = module {
             activityProvider = { app.lusk.underseerr.util.CurrentActivityHolder.get() }
         ).apply { startConnection() }
     }
+    single<app.lusk.underseerr.domain.review.AppReviewManager> {
+        app.lusk.underseerr.domain.review.AndroidAppReviewManager(
+            preferencesManager = get(),
+            activityProvider = { app.lusk.underseerr.util.CurrentActivityHolder.get() }
+        )
+    }
+    single<app.lusk.underseerr.domain.update.AppUpdateManager> {
+        app.lusk.underseerr.domain.update.AndroidAppUpdateManager(
+            activityProvider = { app.lusk.underseerr.util.CurrentActivityHolder.get() }
+        )
+    }
     // single<app.lusk.underseerr.domain.repository.FirestoreService> { 
     //     app.lusk.underseerr.data.repository.AndroidFirestoreService(get()) 
     // }

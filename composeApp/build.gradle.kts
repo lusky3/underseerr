@@ -54,6 +54,9 @@ kotlin {
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN, "DEBUG", "true")
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_PROD", getEnv("CLOUDFLARE_WORKER_ENDPOINT_PROD"))
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_STAGING", getEnv("CLOUDFLARE_WORKER_ENDPOINT_STAGING"))
+            // App version - keep in sync with androidApp/build.gradle.kts
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.INT, "VERSION_CODE", "6")
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "VERSION_NAME", "1.0.4")
         }
     }
     
@@ -128,6 +131,8 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             implementation(libs.android.billing)
             implementation("io.sentry:sentry-android:8.31.0")
+            implementation("com.google.android.play:review-ktx:2.0.2")
+            implementation("com.google.android.play:app-update-ktx:2.1.0")
         }
         
         iosMain.dependencies {

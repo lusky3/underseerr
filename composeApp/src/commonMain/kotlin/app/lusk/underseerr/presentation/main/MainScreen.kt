@@ -31,6 +31,15 @@ fun MainScreen(
     val viewModel = org.koin.compose.viewmodel.koinViewModel<MainViewModel>()
     val selectedTab by viewModel.selectedTab.collectAsState()
     
+    // Changelog dialog
+    val changelogEntries by viewModel.changelogEntries.collectAsState()
+    if (changelogEntries.isNotEmpty()) {
+        app.lusk.underseerr.ui.components.ChangelogDialog(
+            entries = changelogEntries,
+            onDismiss = { viewModel.dismissChangelog() }
+        )
+    }
+    
     androidx.compose.runtime.LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { screen: Screen ->
             // Reset back stack to Home to ensure consistent back navigation
@@ -76,6 +85,10 @@ fun MainScreen(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val layoutConfig = calculateAdaptiveLayoutConfig(maxWidth, maxHeight)
         
+        // Update badge on Profile nav item
+        val isUpdateAvailable by viewModel.isUpdateAvailable.collectAsState()
+        val navDestinations = navigationDestinationsWithBadge(isUpdateAvailable)
+        
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {
@@ -83,7 +96,7 @@ fun MainScreen(
                     AdaptiveNavigation(
                         currentScreen = currentScreen,
                         layoutConfig = layoutConfig,
-                        destinations = defaultNavigationDestinations,
+                        destinations = navDestinations,
                         onNavigate = { screen ->
                             val targetIndex = when (screen) {
                                 is Screen.Home -> 0
@@ -131,7 +144,7 @@ fun MainScreen(
                     AdaptiveNavigation(
                         currentScreen = currentScreen,
                         layoutConfig = layoutConfig,
-                        destinations = defaultNavigationDestinations,
+                        destinations = navDestinations,
                         onNavigate = { screen ->
                             val targetIndex = when (screen) {
                                 is Screen.Home -> 0

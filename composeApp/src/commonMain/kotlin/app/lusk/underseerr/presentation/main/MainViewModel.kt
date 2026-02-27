@@ -18,8 +18,56 @@ import kotlinx.coroutines.launch
 class MainViewModel(
     private val settingsRepository: SettingsRepository,
     private val notificationRepository: app.lusk.underseerr.domain.repository.NotificationRepository,
-    private val permissionManager: app.lusk.underseerr.domain.permission.PermissionManager
+    private val permissionManager: app.lusk.underseerr.domain.permission.PermissionManager,
+    private val preferencesManager: app.lusk.underseerr.data.preferences.PreferencesManager,
+    private val appUpdateManager: app.lusk.underseerr.domain.update.AppUpdateManager
 ) : ViewModel() {
+    
+    // Changelog state
+    private val _changelogEntries = kotlinx.coroutines.flow.MutableStateFlow<List<app.lusk.underseerr.domain.model.ChangelogEntry>>(emptyList())
+    val changelogEntries: StateFlow<List<app.lusk.underseerr.domain.model.ChangelogEntry>> = _changelogEntries.asStateFlow()
+
+    // Update available state
+    private val _isUpdateAvailable = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isUpdateAvailable: StateFlow<Boolean> = _isUpdateAvailable.asStateFlow()
+
+    init {
+        checkForChangelog()
+        checkForUpdate()
+    }
+
+    private fun checkForChangelog() {
+        viewModelScope.launch {
+            val lastSeenVersion = preferencesManager.getLastSeenVersionCode().firstOrNull() ?: 0
+            val currentVersion = app.lusk.underseerr.util.AppConfig.versionCode
+            
+            if (currentVersion > lastSeenVersion) {
+                val entries = app.lusk.underseerr.domain.model.AppChangelog.getEntriesSince(lastSeenVersion)
+                if (entries.isNotEmpty()) {
+                    _changelogEntries.value = entries
+                }
+            }
+        }
+    }
+
+    fun dismissChangelog() {
+        viewModelScope.launch {
+            preferencesManager.setLastSeenVersionCode(app.lusk.underseerr.util.AppConfig.versionCode)
+            _changelogEntries.value = emptyList()
+        }
+    }
+
+    private fun checkForUpdate() {
+        viewModelScope.launch {
+            _isUpdateAvailable.value = appUpdateManager.isUpdateAvailable()
+        }
+    }
+
+    fun startAppUpdate() {
+        viewModelScope.launch {
+            appUpdateManager.startUpdate()
+        }
+    }
     
     fun registerPushToken(token: String) {
         viewModelScope.launch {

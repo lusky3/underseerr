@@ -34,4 +34,19 @@ actual fun platformModule(): Module = module {
             override val purchaseDetails: kotlinx.coroutines.flow.SharedFlow<app.lusk.underseerr.domain.billing.PurchaseDetails> = kotlinx.coroutines.flow.MutableSharedFlow()
         }
     }
+    single<app.lusk.underseerr.domain.review.AppReviewManager> {
+        object : app.lusk.underseerr.domain.review.AppReviewManager {
+            private val prefs: app.lusk.underseerr.data.preferences.PreferencesManager = get()
+            override suspend fun shouldPromptForReview(): Boolean = false
+            override suspend fun launchReviewFlow(): Boolean = false
+            override suspend fun recordSuccessfulRequest(): Int = prefs.incrementSuccessfulRequestCount()
+            override suspend fun markReviewCompleted() {}
+        }
+    }
+    single<app.lusk.underseerr.domain.update.AppUpdateManager> {
+        object : app.lusk.underseerr.domain.update.AppUpdateManager {
+            override suspend fun isUpdateAvailable(): Boolean = false
+            override suspend fun startUpdate() {}
+        }
+    }
 }

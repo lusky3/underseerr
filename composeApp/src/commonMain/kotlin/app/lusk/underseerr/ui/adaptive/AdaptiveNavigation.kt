@@ -32,7 +32,8 @@ import app.lusk.underseerr.navigation.Screen
 data class NavigationDestination(
     val screen: Screen,
     val icon: ImageVector,
-    val label: String
+    val label: String,
+    val showBadge: Boolean = false
 )
 
 /**
@@ -60,6 +61,19 @@ val defaultNavigationDestinations = listOf(
         label = "Profile"
     )
 )
+
+/**
+ * Returns navigation destinations with update badge applied to Profile.
+ */
+fun navigationDestinationsWithBadge(isUpdateAvailable: Boolean): List<NavigationDestination> {
+    return defaultNavigationDestinations.map { dest ->
+        if (dest.screen == Screen.Profile && isUpdateAvailable) {
+            dest.copy(showBadge = true)
+        } else {
+            dest
+        }
+    }
+}
 
 /**
  * Adaptive navigation that switches between bottom bar and navigation rail.
@@ -123,11 +137,27 @@ fun AdaptiveNavigation(
                         selected = currentScreen == destination.screen,
                         onClick = { onNavigate(destination.screen) },
                         icon = {
-                            Icon(
-                                imageVector = destination.icon,
-                                contentDescription = destination.label,
-                                tint = if (currentScreen == destination.screen) MaterialTheme.colorScheme.primary else gradients.onNavBar.copy(alpha = 0.6f)
-                            )
+                            if (destination.showBadge) {
+                                BadgedBox(
+                                    badge = {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = destination.icon,
+                                        contentDescription = destination.label,
+                                        tint = if (currentScreen == destination.screen) MaterialTheme.colorScheme.primary else gradients.onNavBar.copy(alpha = 0.6f)
+                                    )
+                                }
+                            } else {
+                                Icon(
+                                    imageVector = destination.icon,
+                                    contentDescription = destination.label,
+                                    tint = if (currentScreen == destination.screen) MaterialTheme.colorScheme.primary else gradients.onNavBar.copy(alpha = 0.6f)
+                                )
+                            }
                         },
                         label = if (layoutConfig.showNavigationLabels) {
                             { 

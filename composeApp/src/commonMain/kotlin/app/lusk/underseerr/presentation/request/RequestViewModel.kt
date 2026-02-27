@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
 
 class RequestViewModel(
     private val requestRepository: RequestRepository,
-    private val settingsRepository: app.lusk.underseerr.domain.repository.SettingsRepository
+    private val settingsRepository: app.lusk.underseerr.domain.repository.SettingsRepository,
+    private val appReviewManager: app.lusk.underseerr.domain.review.AppReviewManager
 ) : ViewModel() {
     
     private val _userRequests = MutableStateFlow<List<MediaRequest>>(emptyList())
@@ -70,7 +71,10 @@ class RequestViewModel(
             _requestState.value = RequestState.Loading
             _error.value = null
             when (val result = requestRepository.requestMovie(movieId, qualityProfile, rootFolder)) {
-                is Result.Success -> _requestState.value = RequestState.Success(result.data)
+                is Result.Success -> {
+                    _requestState.value = RequestState.Success(result.data)
+                    checkForReviewPrompt()
+                }
                 is Result.Error -> {
                     _requestState.value = RequestState.Error(result.error.message)
                     _error.value = result.error.message
@@ -85,12 +89,41 @@ class RequestViewModel(
             _requestState.value = RequestState.Loading
             _error.value = null
             when (val result = requestRepository.requestTvShow(tvShowId, seasons, qualityProfile, rootFolder)) {
-                is Result.Success -> _requestState.value = RequestState.Success(result.data)
+                is Result.Success -> {
+                    _requestState.value = RequestState.Success(result.data)
+                    checkForReviewPrompt()
+                }
                 is Result.Error -> {
                     _requestState.value = RequestState.Error(result.error.message)
                     _error.value = result.error.message
                 }
                 is Result.Loading -> _requestState.value = RequestState.Loading
+            }
+        }
+    }
+    
+    /**
+     * Records the successful request and checks if we should prompt for an in-app review.
+     * If conditions are met, launches the review flow directly from the ViewModel
+     * with a brief delay to let the request dialog dismiss first.
+     */
+    private fun checkForReviewPrompt() {
+        viewModelScope.launch {
+            val count = appReviewManager.recordSuccessfulRequest()
+            println("AppReview: Successful request recorded. Total count: $count")
+            val shouldPrompt = appReviewManager.shouldPromptForReview()
+            println("AppReview: shouldPromptForReview() = $shouldPrompt")
+            if (shouldPrompt) {
+                // Brief delay to let the request dialog dismiss gracefully
+                // before showing the review dialog
+                kotlinx.coroutines.delay(1500L)
+                println("AppReview: Launching review flow...")
+                val launched = appReviewManager.launchReviewFlow()
+                println("AppReview: Review flow result: launched=$launched")
+                if (launched) {
+                    appReviewManager.markReviewCompleted()
+                    println("AppReview: Marked review as completed")
+                }
             }
         }
     }

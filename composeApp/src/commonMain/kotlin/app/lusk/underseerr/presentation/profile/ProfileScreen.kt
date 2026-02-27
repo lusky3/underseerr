@@ -277,6 +277,17 @@ fun ProfileScreen(
                         .align(Alignment.TopCenter)
                         .padding(top = paddingValues.calculateTopPadding())
                 )
+
+                // Floating Update Notice
+                val mainViewModel = org.koin.compose.viewmodel.koinViewModel<app.lusk.underseerr.presentation.main.MainViewModel>()
+                val isUpdateAvailable by mainViewModel.isUpdateAvailable.collectAsState()
+                app.lusk.underseerr.ui.components.FloatingUpdateNotice(
+                    isUpdateAvailable = isUpdateAvailable,
+                    onUpdateClick = { mainViewModel.startAppUpdate() },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 16.dp, bottom = 16.dp)
+                )
             }
         }
     
