@@ -19,6 +19,14 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import app.lusk.underseerr.util.nowMillis
 
+/** Type of trial prompt to show to the user. */
+sealed class TrialPromptType {
+    /** User has never started a trial — offer to activate it. */
+    object Activate : TrialPromptType()
+    /** User's trial has expired — offer to reset it. */
+    object Reset : TrialPromptType()
+}
+
 
 /**
  * ViewModel for settings screen.
@@ -97,8 +105,13 @@ class SettingsViewModel(
     private val _uiEvent = MutableSharedFlow<String>()
     val uiEvent: SharedFlow<String> = _uiEvent
 
-    private val _showTrialExpirationPopup = MutableStateFlow(false)
-    val showTrialExpirationPopup: StateFlow<Boolean> = _showTrialExpirationPopup.asStateFlow()
+    /** Non-null when a trial prompt should be shown; null when dismissed or not applicable. */
+    private val _showTrialPrompt = MutableStateFlow<TrialPromptType?>(null)
+    val showTrialPrompt: StateFlow<TrialPromptType?> = _showTrialPrompt.asStateFlow()
+
+    /** Days remaining in the active trial, or null if not on a trial. */
+    private val _trialDaysRemaining = MutableStateFlow<Int?>(null)
+    val trialDaysRemaining: StateFlow<Int?> = _trialDaysRemaining.asStateFlow()
     
     init {
         loadSettings()
@@ -123,27 +136,47 @@ class SettingsViewModel(
             }
         }
 
-        // Trial Expiration Logic
+        // Single authoritative subscription + trial lifecycle collector.
         viewModelScope.launch {
-            val currentType = settingsRepository.getNotificationServerType().first()
-            val trialStart = settingsRepository.getTrialStartDate().first()
-            if (currentType == "HOSTED" && trialStart == null && !subscriptionStatus.value.isPremium) {
-                settingsRepository.setTrialStartDate(app.lusk.underseerr.util.nowMillis())
-            }
-
             subscriptionRepository.getSubscriptionStatus().collect { status ->
                 _subscriptionStatus.value = status
-                val currentType = settingsRepository.getNotificationServerType().first()
-                
-                if (status.tier == app.lusk.underseerr.domain.model.SubscriptionTier.FREE && status.expiresAt == null) {
-                    // Trial might have expired or not started
-                    val trialStart = settingsRepository.getTrialStartDate().first()
-                    if (trialStart != null) {
-                         // Trial was started but is now FREE tier -> Expired
-                         if (currentType == "HOSTED") {
-                             settingsRepository.setNotificationServerType("NONE")
-                             _showTrialExpirationPopup.value = true
-                         }
+
+                when (status.tier) {
+                    app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> {
+                        // Compute and expose days remaining
+                        val remaining = status.expiresAt?.let { exp ->
+                            val ms = exp - nowMillis()
+                            if (ms > 0) ((ms / (1000L * 60 * 60 * 24)) + 1).toInt() else 0
+                        }
+                        _trialDaysRemaining.value = remaining
+                        // Clear any lingering prompt — trial is active
+                        if (_showTrialPrompt.value is TrialPromptType.Activate) {
+                            _showTrialPrompt.value = null
+                        }
+                    }
+                    app.lusk.underseerr.domain.model.SubscriptionTier.FREE -> {
+                        _trialDaysRemaining.value = null
+                        val trialStart = settingsRepository.getTrialStartDate().first()
+                        if (trialStart != null) {
+                            // Trial was started but is now FREE -> it expired
+                            val currentType = settingsRepository.getNotificationServerType().first()
+                            if (currentType == "HOSTED") {
+                                settingsRepository.setNotificationServerType("NONE")
+                            }
+                            // Only show reset prompt if not already showing something
+                            if (_showTrialPrompt.value == null) {
+                                _showTrialPrompt.value = TrialPromptType.Reset
+                            }
+                        } else {
+                            // Completely new user — offer trial activation
+                            if (_showTrialPrompt.value == null && !status.isPremium) {
+                                _showTrialPrompt.value = TrialPromptType.Activate
+                            }
+                        }
+                    }
+                    app.lusk.underseerr.domain.model.SubscriptionTier.PREMIUM -> {
+                        _trialDaysRemaining.value = null
+                        _showTrialPrompt.value = null
                     }
                 }
             }
@@ -209,11 +242,7 @@ class SettingsViewModel(
             }
         }
 
-        viewModelScope.launch {
-            subscriptionRepository.getSubscriptionStatus().collect {
-                _subscriptionStatus.value = it
-            }
-        }
+        // Note: subscription status is collected once in init{} — do not add a second collector here.
 
         viewModelScope.launch {
             settingsRepository.getVibrantThemeColors().collect {
@@ -418,18 +447,43 @@ class SettingsViewModel(
 
     fun setNotificationServerType(type: String) {
         viewModelScope.launch {
-            if (type == "HOSTED") {
-                val trialStart = settingsRepository.getTrialStartDate().first()
-                if (trialStart == null) {
-                    settingsRepository.setTrialStartDate(app.lusk.underseerr.util.nowMillis())
-                }
-            }
             settingsRepository.setNotificationServerType(type)
         }
     }
 
-    fun dismissTrialPopup() {
-        _showTrialExpirationPopup.value = false
+    /**
+     * Explicitly starts (or resets) the 30-day notification trial.
+     * Writes the local timestamp AND registers the trial on the server so
+     * notifications are actually delivered during the trial period.
+     */
+    fun startTrial() {
+        viewModelScope.launch {
+            // 1. Set local start date for immediate UI reactivity
+            settingsRepository.setTrialStartDate(nowMillis())
+            // 2. Activate hosted server so notifications work immediately
+            val currentType = settingsRepository.getNotificationServerType().first()
+            if (currentType != "HOSTED") {
+                settingsRepository.setNotificationServerType("HOSTED")
+            }
+            _showTrialPrompt.value = null
+            // 3. Register trial on the backend — required for notification delivery gating
+            val serverResult = subscriptionRepository.startTrialOnServer()
+            if (serverResult.isFailure) {
+                // Local trial still active; server will retry on next subscription refresh.
+                _uiEvent.emit("Trial started! Note: server sync failed — notifications may be delayed until connectivity is restored.")
+            }
+        }
+    }
+
+    fun dismissTrialPrompt() {
+        _showTrialPrompt.value = null
+    }
+
+    /** Launches the Google Play trial offer purchase flow. */
+    fun purchasePremiumWithTrial() {
+        viewModelScope.launch {
+            subscriptionRepository.purchasePremiumWithTrial()
+        }
     }
 
     fun unlockWithSerialKey(key: String) {

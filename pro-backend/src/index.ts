@@ -84,16 +84,45 @@ async function hashEmail(email: string): Promise<string> {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function checkLicense(userId: string, db: D1Database): Promise<{ isPremium: boolean, expiresAt: number | null }> {
-    // Check if user has an active license in D1
+const TRIAL_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+interface AccessStatus {
+    isPremium: boolean;
+    isTrial: boolean;
+    expiresAt: number | null;
+    trialExpiresAt: number | null;
+}
+
+/** Checks both paid licenses and active trials. Returns the most permissive active access. */
+async function checkAccess(userId: string, db: D1Database): Promise<AccessStatus> {
+    const now = Date.now();
+
+    // 1. Check paid license
     const license = await db.prepare(
         "SELECT expires_at FROM licenses WHERE user_id = ? AND status = 'active' AND expires_at > ?"
-    ).bind(userId, Date.now()).first();
+    ).bind(userId, now).first();
 
     if (license) {
-        return { isPremium: true, expiresAt: license.expires_at as number };
+        return { isPremium: true, isTrial: false, expiresAt: license.expires_at as number, trialExpiresAt: null };
     }
-    return { isPremium: false, expiresAt: null };
+
+    // 2. Check active trial
+    const trial = await db.prepare(
+        "SELECT trial_end FROM trials WHERE user_id = ? AND trial_end > ?"
+    ).bind(userId, now).first();
+
+    if (trial) {
+        return { isPremium: false, isTrial: true, expiresAt: trial.trial_end as number, trialExpiresAt: trial.trial_end as number };
+    }
+
+    return { isPremium: false, isTrial: false, expiresAt: null, trialExpiresAt: null };
+}
+
+/** Legacy alias used by webhook gating — returns hasAccess for both premium and trial. */
+async function checkLicense(userId: string, db: D1Database): Promise<{ isPremium: boolean, expiresAt: number | null }> {
+    const access = await checkAccess(userId, db);
+    // Grant access if premium OR in active trial
+    return { isPremium: access.isPremium || access.isTrial, expiresAt: access.expiresAt };
 }
 
 export default {
@@ -134,8 +163,36 @@ export default {
                 const userId = url.searchParams.get("userId");
                 if (!userId) return new Response("Missing userId", { status: 400 });
 
-                const status = await checkLicense(userId, env.DB);
-                return new Response(JSON.stringify(status));
+                const access = await checkAccess(userId, env.DB);
+                return new Response(JSON.stringify({
+                    isPremium: access.isPremium,
+                    isTrial: access.isTrial,
+                    expiresAt: access.expiresAt,
+                    trialExpiresAt: access.trialExpiresAt,
+                }), { headers: { 'Content-Type': 'application/json' } });
+            }
+
+            // POST /start-trial — Upsert a 30-day trial for the user.
+            // Idempotent: resets the clock on each call (allows re-trials).
+            if (request.method === 'POST' && url.pathname === '/start-trial') {
+                const { userId } = await request.json() as { userId: string };
+                if (!userId) return new Response("Missing userId", { status: 400 });
+
+                const now = Date.now();
+                const trialEnd = now + TRIAL_DURATION_MS;
+
+                // Upsert: insert or reset the trial end date
+                await env.DB.prepare(
+                    "INSERT INTO trials (user_id, trial_start, trial_end) VALUES (?, ?, ?) " +
+                    "ON CONFLICT(user_id) DO UPDATE SET trial_start = excluded.trial_start, trial_end = excluded.trial_end"
+                ).bind(userId, now, trialEnd).run();
+
+                return new Response(JSON.stringify({
+                    isTrial: true,
+                    trialExpiresAt: trialEnd,
+                    expiresAt: trialEnd,
+                    isPremium: false,
+                }), { headers: { 'Content-Type': 'application/json' } });
             }
 
             if (request.method === 'POST' && url.pathname === '/verify-purchase') {

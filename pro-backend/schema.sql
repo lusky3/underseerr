@@ -20,3 +20,11 @@ CREATE TABLE IF NOT EXISTS email_mapping (
     webhook_secret TEXT,
     updated_at INTEGER
 );
+
+-- Trials table for server-authoritative free trial tracking.
+-- One row per user_id (upserted on each trial start/reset).
+CREATE TABLE IF NOT EXISTS trials (
+    user_id TEXT PRIMARY KEY,
+    trial_start INTEGER NOT NULL,
+    trial_end INTEGER NOT NULL
+);

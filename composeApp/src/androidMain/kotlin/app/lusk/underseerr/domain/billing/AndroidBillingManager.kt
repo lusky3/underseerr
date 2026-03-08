@@ -53,7 +53,7 @@ class AndroidBillingManager(
         })
     }
 
-    override suspend fun purchaseProduct(productId: String, basePlanId: String?): Result<Unit> = withContext(Dispatchers.Main) {
+    override suspend fun purchaseProduct(productId: String, basePlanId: String?, offerId: String?): Result<Unit> = withContext(Dispatchers.Main) {
         val activity = activityProvider() ?: return@withContext Result.failure(Exception("No active activity found"))
 
         if (!billingClient.isReady) {
@@ -80,13 +80,18 @@ class AndroidBillingManager(
         }
 
         val productDetails = productDetailsResult.productDetailsList!![0]
-        
-        // 2. Launch Billing Flow - Find the specific base plan or take the first one
-        val offer = if (basePlanId != null) {
-            productDetails.subscriptionOfferDetails?.find { it.basePlanId == basePlanId }
-                ?: productDetails.subscriptionOfferDetails?.firstOrNull()
-        } else {
-            productDetails.subscriptionOfferDetails?.firstOrNull()
+        val allOffers = productDetails.subscriptionOfferDetails ?: emptyList()
+
+        // 2. Select offer: prefer offerId tag match, then basePlanId match, then first available
+        val offer = when {
+            offerId != null -> {
+                // Match by offer tag (set in Play Console for the trial offer)
+                allOffers.find { it.offerTags.contains(offerId) && (basePlanId == null || it.basePlanId == basePlanId) }
+                    ?: allOffers.find { it.basePlanId == basePlanId }
+                    ?: allOffers.firstOrNull()
+            }
+            basePlanId != null -> allOffers.find { it.basePlanId == basePlanId } ?: allOffers.firstOrNull()
+            else -> allOffers.firstOrNull()
         }
 
         val offerToken = offer?.offerToken ?: ""

@@ -83,7 +83,7 @@ class SubscriptionRepositoryImpl(
             // In a production app, we could double check against SecurityManager here,
             // but for reactive Flow, DataStore is sufficient for UI.
             val now = nowMillis()
-            val trialDuration = 7L * 24 * 60 * 60 * 1000 // 7 days in ms
+            val trialDuration = 30L * 24 * 60 * 60 * 1000 // 30 days in ms
             
             when {
                 isPremium -> SubscriptionStatus(
@@ -165,5 +165,38 @@ class SubscriptionRepositoryImpl(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun startTrialOnServer(): Result<Unit> {
+        return try {
+            val userResult = authRepository.getCurrentUser()
+            if (userResult is app.lusk.underseerr.domain.model.Result.Success) {
+                val userId = userResult.data.id.toString()
+                val response = subscriptionKtorService.startTrial(userId)
+                // Sync local trial start from server response so the Flow updates immediately.
+                // trialExpiresAt - 30 days gives us the start time from the server's perspective.
+                val trialStartMs = response.trialExpiresAt?.let {
+                    it - (30L * 24 * 60 * 60 * 1000)
+                } ?: app.lusk.underseerr.util.nowMillis()
+                preferencesManager.setTrialStartDate(trialStartMs)
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Not logged in"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun purchasePremiumWithTrial(): Result<Unit> {
+        // "trial-offer" is the offer tag to set on the trial offer in Play Console.
+        // If the user is ineligible (already used a trial), Play will automatically
+        // fall back to the standard offer — our code falls back too via the offerId
+        // matching logic in AndroidBillingManager.
+        return billingManager.purchaseProduct(
+            productId = "premium_subscription",
+            basePlanId = "premium-monthly",
+            offerId = "trial-offer"
+        )
     }
 }

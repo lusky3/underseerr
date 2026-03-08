@@ -25,6 +25,18 @@ data class ChangelogEntry(
 object AppChangelog {
     val entries: List<ChangelogEntry> = listOf(
         ChangelogEntry(
+            versionCode = 7,
+            versionName = "1.0.5",
+            title = "30-Day Notification Trial",
+            changes = listOf(
+                "🔔 Extended trial from 7 days to 30 days",
+                "✨ New users now get an explicit trial activation prompt",
+                "🔄 Expired trial users can reset their trial from Settings",
+                "⏱️ Live countdown shows days remaining in your trial",
+                "🐛 Bug fixes and performance improvements"
+            )
+        ),
+        ChangelogEntry(
             versionCode = 6,
             versionName = "1.0.4",
             title = "In-App Review & Polish",

@@ -12,8 +12,13 @@ data class SerialKeyRequest(val key: String, val userId: String)
 @Serializable
 data class SubscriptionResponse(
     val isPremium: Boolean,
-    val expiresAt: Long? = null
+    val isTrial: Boolean = false,
+    val expiresAt: Long? = null,
+    val trialExpiresAt: Long? = null
 )
+
+@Serializable
+data class StartTrialRequest(val userId: String)
 
 /**
  * Service for interacting with the Underseerr Subscription/Validation backend.
@@ -32,6 +37,13 @@ class SubscriptionKtorService(
     suspend fun checkSubscriptionStatus(userId: String): SubscriptionResponse {
         return client.get("$baseUrl/subscription-status") {
             parameter("userId", userId)
+        }.body()
+    }
+
+    suspend fun startTrial(userId: String): SubscriptionResponse {
+        return client.post("$baseUrl/start-trial") {
+            contentType(ContentType.Application.Json)
+            setBody(StartTrialRequest(userId))
         }.body()
     }
 

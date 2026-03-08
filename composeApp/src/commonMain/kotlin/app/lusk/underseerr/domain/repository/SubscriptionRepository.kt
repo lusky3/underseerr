@@ -36,4 +36,16 @@ interface SubscriptionRepository {
      * Triggers a check of stored purchases on the device.
      */
     suspend fun restorePurchases(): Result<Unit>
+
+    /**
+     * Registers a server-side 30-day trial for the current user.
+     * Returns the updated SubscriptionStatus reflecting the trial tier.
+     */
+    suspend fun startTrialOnServer(): Result<Unit>
+
+    /**
+     * Launches the Google Play billing flow targeting the free trial offer.
+     * Falls back to standard purchase if no trial offer is available.
+     */
+    suspend fun purchasePremiumWithTrial(): Result<Unit>
 }

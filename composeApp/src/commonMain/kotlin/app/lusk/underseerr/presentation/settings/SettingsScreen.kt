@@ -39,7 +39,8 @@ fun SettingsScreen(
     val subscriptionStatus by viewModel.subscriptionStatus.collectAsState()
     
     val notificationServerType by viewModel.notificationServerType.collectAsState()
-    val showTrialExpirationPopup by viewModel.showTrialExpirationPopup.collectAsState()
+    val showTrialPrompt by viewModel.showTrialPrompt.collectAsState()
+    val trialDaysRemaining by viewModel.trialDaysRemaining.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) {
@@ -337,7 +338,11 @@ fun SettingsScreen(
                 title = "Subscription Status",
                 subtitle = when (subscriptionStatus.tier) {
                     app.lusk.underseerr.domain.model.SubscriptionTier.PREMIUM -> "Premium Active"
-                    app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> "Trial Active (7 Days)"
+                    app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> {
+                        val days = trialDaysRemaining
+                        if (days != null) "Trial Active (— $days day${if (days == 1) "" else "s"} remaining)"
+                        else "Trial Active (30 Days)"
+                    }
                     app.lusk.underseerr.domain.model.SubscriptionTier.FREE -> "Free Version"
                 },
                 onClick = { viewModel.restorePurchases() }
@@ -590,6 +595,10 @@ fun SettingsScreen(
                 viewModel.purchasePremium(isYearly)
                 showPaywallDialog = null
             },
+            onTrialPurchase = {
+                viewModel.purchasePremiumWithTrial()
+                showPaywallDialog = null
+            },
             onUnlock = { key ->
                 viewModel.unlockWithSerialKey(key)
                 showPaywallDialog = null
@@ -598,28 +607,85 @@ fun SettingsScreen(
         )
     }
 
-    // Trial Expiration Dialog
-    if (showTrialExpirationPopup) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissTrialPopup() },
-            title = { Text("Trial Expired") },
-            text = {
-                Text("Your 7-day trial for the hosted notification server has expired. Please subscribe to continue using push notifications or host your own server.")
-            },
-            confirmButton = {
-                Button(onClick = { 
-                    viewModel.dismissTrialPopup()
-                    showPaywallDialog = "Maintain your push notifications with Premium."
-                }) {
-                    Text("View Options")
+    // Trial Prompt Dialogs
+    when (val prompt = showTrialPrompt) {
+        is TrialPromptType.Activate -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissTrialPrompt() },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                title = { Text("Try Push Notifications Free") },
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Get instant push notifications when your requests are approved or become available.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        // Primary: Play trial (requires payment method, most trustworthy)
+                        Button(
+                            onClick = {
+                                viewModel.purchasePremiumWithTrial()
+                                viewModel.dismissTrialPrompt()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Start Free Trial via Google Play")
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        // Secondary: No-card local trial
+                        OutlinedButton(
+                            onClick = { viewModel.startTrial() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Try Without a Card (30 Days)")
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissTrialPrompt() }) { Text("Not Now") }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissTrialPopup() }) {
-                    Text("Dismiss")
+            )
+        }
+        is TrialPromptType.Reset -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissTrialPrompt() },
+                title = { Text("Trial Expired") },
+                text = {
+                    Column {
+                        Text(
+                            "Your 30-day trial for the hosted notification server has ended. " +
+                            "Subscribe to Premium to restore push notifications, or reset your trial to continue for another 30 days.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.dismissTrialPrompt()
+                        showPaywallDialog = "Keep your push notifications running with Premium."
+                    }) {
+                        Text("View Premium")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        viewModel.startTrial()
+                    }) {
+                        Text("Reset Trial")
+                    }
                 }
-            }
-        )
+            )
+        }
+        null -> { /* no dialog */ }
     }
     
     // Movie Profile Dialog
@@ -998,6 +1064,7 @@ private fun HomeScreenSwitchItem(
 private fun SubscriptionPaywallDialog(
     message: String,
     onPurchase: (isYearly: Boolean) -> Unit,
+    onTrialPurchase: () -> Unit,
     onUnlock: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1031,7 +1098,20 @@ private fun SubscriptionPaywallDialog(
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Free Trial via Play (primary for new users)
+                    OutlinedButton(
+                        onClick = {
+                            onTrialPurchase()
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Start Free Trial via Google Play")
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                     
                     // Monthly Button
                     Button(

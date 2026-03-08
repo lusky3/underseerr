@@ -22,8 +22,11 @@ interface BillingManager {
      * Purchase a premium product.
      * @param productId The ID of the product to purchase.
      * @param basePlanId Optional ID of the specific base plan (e.g., monthly vs yearly).
+     * @param offerId Optional offer ID to target a specific offer (e.g., "trial-offer" for the
+     *                free trial offer tag configured in Play Console). Falls back to first available
+     *                offer matching the basePlanId if not found.
      */
-    suspend fun purchaseProduct(productId: String, basePlanId: String? = null): Result<Unit>
+    suspend fun purchaseProduct(productId: String, basePlanId: String? = null, offerId: String? = null): Result<Unit>
 
     /**
      * Check if the user has an active subscription.
