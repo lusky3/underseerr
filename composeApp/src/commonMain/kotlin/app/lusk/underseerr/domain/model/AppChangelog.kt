@@ -27,12 +27,13 @@ object AppChangelog {
         ChangelogEntry(
             versionCode = 7,
             versionName = "1.0.5",
-            title = "30-Day Notification Trial",
+            title = "Push Notification Trial & Security",
             changes = listOf(
                 "🔔 Extended trial from 7 days to 30 days",
                 "✨ New users now get an explicit trial activation prompt",
                 "🔄 Expired trial users can reset their trial from Settings",
                 "⏱️ Live countdown shows days remaining in your trial",
+                "📦 Updated dependencies",
                 "🐛 Bug fixes and performance improvements"
             )
         ),
