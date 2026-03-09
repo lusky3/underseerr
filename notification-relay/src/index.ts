@@ -6,6 +6,14 @@ export interface Env {
     WEBHOOK_SECRET?: string;
 }
 
+// Validate project_id to prevent path traversal in FCM URL
+function validateProjectId(projectId: string): string {
+    if (!projectId || !/^[a-z0-9][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)) {
+        throw new Error(`Invalid project_id in service account: ${projectId}`);
+    }
+    return projectId;
+}
+
 // Minimal JWT signing for Google Auth (FCM)
 async function getAccessToken(serviceAccountJson: string): Promise<string> {
     const serviceAccount = JSON.parse(serviceAccountJson);
@@ -65,8 +73,18 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
 
     const jwt = `${encodedHeader}.${encodedClaim}.${encodedSignature}`;
 
+    // Validate token_uri to prevent SSRF — only allow known Google OAuth endpoints
+    const ALLOWED_TOKEN_URIS = [
+        'https://oauth2.googleapis.com/token',
+        'https://accounts.google.com/o/oauth2/token',
+    ];
+    const tokenUri = serviceAccount.token_uri;
+    if (!tokenUri || !ALLOWED_TOKEN_URIS.includes(tokenUri)) {
+        throw new Error(`Invalid token_uri in service account: ${tokenUri}`);
+    }
+
     // Exchanging JWT for Access Token
-    const response = await fetch(serviceAccount.token_uri, {
+    const response = await fetch(tokenUri, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -173,7 +191,7 @@ export default {
                 const accessToken = await getAccessToken(serviceAccountJson);
 
                 // Construct FCM Message (HTTP v1 API)
-                const projectId = JSON.parse(serviceAccountJson).project_id;
+                const projectId = validateProjectId(JSON.parse(serviceAccountJson).project_id);
                 const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
                 // Sanitize Payload: Only pass necessary strings
@@ -246,7 +264,7 @@ export default {
                     try { serviceAccountJson = atob(serviceAccountJson); } catch (e) { }
                 }
                 const accessToken = await getAccessToken(serviceAccountJson);
-                const projectId = JSON.parse(serviceAccountJson).project_id;
+                const projectId = validateProjectId(JSON.parse(serviceAccountJson).project_id);
                 const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
                 // Forward the RAW payload (encrypted) and headers
