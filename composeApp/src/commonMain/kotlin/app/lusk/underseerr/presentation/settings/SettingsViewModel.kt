@@ -107,11 +107,14 @@ class SettingsViewModel(
 
     /** Non-null when a trial prompt should be shown; null when dismissed or not applicable. */
     private val _showTrialPrompt = MutableStateFlow<TrialPromptType?>(null)
-    val showTrialPrompt: StateFlow<TrialPromptType?> = _showTrialPrompt.asStateFlow()
+    val showTrialPrompt: StateFlow<TrialPromptType?> = _showTrialPrompt
 
     /** Days remaining in the active trial, or null if not on a trial. */
     private val _trialDaysRemaining = MutableStateFlow<Int?>(null)
-    val trialDaysRemaining: StateFlow<Int?> = _trialDaysRemaining.asStateFlow()
+    val trialDaysRemaining: StateFlow<Int?> = _trialDaysRemaining
+
+    // Suppresses the Reset prompt briefly after startTrial() to prevent race condition
+    private var _trialJustStarted = false
     
     init {
         loadSettings()
@@ -143,6 +146,8 @@ class SettingsViewModel(
 
                 when (status.tier) {
                     app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> {
+                        // Race guard complete — trial tier is confirmed
+                        _trialJustStarted = false
                         // Compute and expose days remaining
                         val remaining = status.expiresAt?.let { exp ->
                             val ms = exp - nowMillis()
@@ -156,6 +161,11 @@ class SettingsViewModel(
                     }
                     app.lusk.underseerr.domain.model.SubscriptionTier.FREE -> {
                         _trialDaysRemaining.value = null
+                        // Skip prompt logic if we just started a trial (race: flow
+                        // may emit FREE multiple times before settling on TRIAL)
+                        if (_trialJustStarted) {
+                            return@collect
+                        }
                         val trialStart = settingsRepository.getTrialStartDate().first()
                         if (trialStart != null) {
                             // Trial was started but is now FREE -> it expired
@@ -458,7 +468,9 @@ class SettingsViewModel(
      */
     fun startTrial() {
         viewModelScope.launch {
-            // 1. Set local start date for immediate UI reactivity
+            // 1. Suppress race condition: collector may briefly see FREE before TRIAL
+            _trialJustStarted = true
+            // 2. Set local start date for immediate UI reactivity
             settingsRepository.setTrialStartDate(nowMillis())
             // 2. Activate hosted server so notifications work immediately
             val currentType = settingsRepository.getNotificationServerType().first()

@@ -25,8 +25,10 @@ data class StartTrialRequest(val userId: String)
  */
 class SubscriptionKtorService(
     private val client: HttpClient,
-    private val baseUrl: String
+    baseUrl: String
 ) {
+    // Strip trailing slash to avoid double-slash in URL concatenation
+    private val baseUrl: String = baseUrl.trimEnd('/')
     suspend fun validateSerialKey(key: String, userId: String): SubscriptionResponse {
         return client.post("$baseUrl/validate-key") {
             contentType(ContentType.Application.Json)

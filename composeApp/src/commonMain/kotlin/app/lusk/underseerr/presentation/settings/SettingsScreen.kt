@@ -345,7 +345,19 @@ fun SettingsScreen(
                     }
                     app.lusk.underseerr.domain.model.SubscriptionTier.FREE -> "Free Version"
                 },
-                onClick = { viewModel.restorePurchases() }
+                onClick = {
+                    when (subscriptionStatus.tier) {
+                        app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> {
+                            // Trial is active — no Play subscription to restore
+                        }
+                        app.lusk.underseerr.domain.model.SubscriptionTier.PREMIUM -> {
+                            // Already premium, nothing to do
+                        }
+                        app.lusk.underseerr.domain.model.SubscriptionTier.FREE -> {
+                            viewModel.restorePurchases()
+                        }
+                    }
+                }
             )
 
             HorizontalDivider()

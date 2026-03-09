@@ -169,21 +169,29 @@ class SubscriptionRepositoryImpl(
 
     override suspend fun startTrialOnServer(): Result<Unit> {
         return try {
+            println("[TrialDebug] startTrialOnServer called")
             val userResult = authRepository.getCurrentUser()
+            println("[TrialDebug] getCurrentUser result: $userResult")
             if (userResult is app.lusk.underseerr.domain.model.Result.Success) {
                 val userId = userResult.data.id.toString()
+                println("[TrialDebug] Calling backend /start-trial with userId=$userId")
                 val response = subscriptionKtorService.startTrial(userId)
+                println("[TrialDebug] Backend response: isPremium=${response.isPremium}, isTrial=${response.isTrial}, trialExpiresAt=${response.trialExpiresAt}")
                 // Sync local trial start from server response so the Flow updates immediately.
                 // trialExpiresAt - 30 days gives us the start time from the server's perspective.
                 val trialStartMs = response.trialExpiresAt?.let {
                     it - (30L * 24 * 60 * 60 * 1000)
                 } ?: app.lusk.underseerr.util.nowMillis()
                 preferencesManager.setTrialStartDate(trialStartMs)
+                println("[TrialDebug] Trial synced successfully, trialStartMs=$trialStartMs")
                 Result.success(Unit)
             } else {
+                println("[TrialDebug] getCurrentUser failed: $userResult")
                 Result.failure(Exception("Not logged in"))
             }
         } catch (e: Exception) {
+            println("[TrialDebug] Exception in startTrialOnServer: ${e::class.simpleName}: ${e.message}")
+            e.printStackTrace()
             Result.failure(e)
         }
     }

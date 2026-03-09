@@ -70,7 +70,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
                     
                     val viewModel = DiscoveryViewModel(
                         repository, 
@@ -148,7 +148,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
                     
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
                     val viewModel = DiscoveryViewModel(
@@ -192,7 +192,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
@@ -262,7 +262,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
@@ -306,7 +306,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
@@ -360,7 +360,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
@@ -416,7 +416,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
@@ -463,7 +463,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
@@ -522,7 +522,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
@@ -575,7 +575,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
@@ -622,7 +622,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
                     
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
                     val viewModel = DiscoveryViewModel(
@@ -661,7 +661,7 @@ class DiscoveryViewModelTest : DescribeSpec({
                     
                     val profileViewModel = ProfileViewModel(profileRepository, requestRepository)
                     val issueViewModel = IssueViewModel(issueRepository)
-                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository)
+                    val requestViewModel = RequestViewModel(requestRepository, settingsRepository, mockk(relaxed = true))
 
                     val watchlistRepository = mockk<WatchlistRepository>(relaxed = true)
                     every { settingsRepository.getHomeScreenConfig() } returns flowOf(HomeScreenConfig())
