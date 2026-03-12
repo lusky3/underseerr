@@ -168,8 +168,8 @@ dependencies {
     implementation(libs.firebase.analytics)
 
     // Sentry - Error monitoring (optional, only active if DSN is configured)
-    implementation("io.sentry:sentry-android:8.31.0")
-    implementation("io.sentry:sentry-compose-android:8.31.0")
+    implementation("io.sentry:sentry-android:8.34.1")
+    implementation("io.sentry:sentry-compose-android:8.34.1")
 
     // Testing
     testImplementation(libs.junit)
