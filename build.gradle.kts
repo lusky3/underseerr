@@ -71,7 +71,7 @@ subprojects {
             force("org.bitbucket.b_c:jose4j:0.9.6")
             
             // Commons Lang3 uncontrolled recursion
-            force("org.apache.commons:commons-lang3:3.17.0")
+            force("org.apache.commons:commons-lang3:3.20.0")
 
             // Play Services Basement - MAID vulnerability (CVE-2022-2390)
             force("com.google.android.gms:play-services-basement:18.10.0")
