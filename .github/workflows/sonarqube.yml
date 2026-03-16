@@ -1,23 +1,29 @@
+# PAUSED: SonarQube Gradle plugin 7.2.x is incompatible with AGP 9.x
+# Error: "Extension of type 'AppExtension' does not exist"
+# Waiting for SonarScanner for Gradle 7.3 (expected April 2026)
+# See: https://community.sonarsource.com/t/working-towards-the-support-of-android-gradle-plugin-9/177015
+
 name: SonarQube
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - 'website/**'
-      - 'docs/**'
-      - 'LICENSE'
-      - 'SECURITY.md'
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths-ignore:
-      - '**.md'
-      - 'website/**'
-      - 'docs/**'
-      - 'LICENSE'
-      - 'SECURITY.md'
+  workflow_dispatch:  # Manual trigger only until AGP 9 support is released
+  # push:
+  #   branches:
+  #     - main
+  #   paths-ignore:
+  #     - '**.md'
+  #     - 'website/**'
+  #     - 'docs/**'
+  #     - 'LICENSE'
+  #     - 'SECURITY.md'
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  #   paths-ignore:
+  #     - '**.md'
+  #     - 'website/**'
+  #     - 'docs/**'
+  #     - 'LICENSE'
+  #     - 'SECURITY.md'
 
 permissions:
   contents: read
