@@ -184,4 +184,18 @@ class SettingsRepositoryImpl(
     override suspend fun updateHomeScreenConfig(config: app.lusk.underseerr.domain.repository.HomeScreenConfig) {
         preferencesManager.setHomeScreenConfig(config)
     }
+
+    override fun getTrialPromptDismissedAt(): Flow<Long> =
+        preferencesManager.getTrialPromptDismissedAt()
+
+    override suspend fun setTrialPromptDismissedAt(timestamp: Long) {
+        preferencesManager.setTrialPromptDismissedAt(timestamp)
+    }
+
+    override fun getHasUsedTrial(): Flow<Boolean> =
+        preferencesManager.getHasUsedTrial()
+
+    override suspend fun setHasUsedTrial(hasUsed: Boolean) {
+        preferencesManager.setHasUsedTrial(hasUsed)
+    }
 }

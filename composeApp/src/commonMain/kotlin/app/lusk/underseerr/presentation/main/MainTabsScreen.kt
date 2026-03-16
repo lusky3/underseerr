@@ -12,6 +12,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -208,6 +209,40 @@ fun MainTabsScreen(
                     dismissButton = {
                         TextButton(onClick = { settingsViewModel.dismissTrialPrompt() }) {
                             Text("Dismiss")
+                        }
+                    }
+                )
+            }
+            is TrialPromptType.PremiumExpired -> {
+                AlertDialog(
+                    onDismissRequest = { settingsViewModel.dismissTrialPrompt() },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    title = { Text("Subscription Expired") },
+                    text = {
+                        Text(
+                            "Your Premium subscription has expired. Renew to restore push notifications.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = {
+                            settingsViewModel.dismissTrialPrompt()
+                            onNavigateToSettings(true) // Navigate to settings with paywall
+                        }) {
+                            Text("Renew Premium")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { settingsViewModel.dismissTrialPrompt() }) {
+                            Text("Not Now")
                         }
                     }
                 )

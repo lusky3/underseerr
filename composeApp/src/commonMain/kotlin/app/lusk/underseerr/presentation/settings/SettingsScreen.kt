@@ -697,6 +697,41 @@ fun SettingsScreen(
                 }
             )
         }
+        is TrialPromptType.PremiumExpired -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissTrialPrompt() },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                title = { Text("Subscription Expired") },
+                text = {
+                    Column {
+                        Text(
+                            "Your Premium subscription has expired. Renew to restore push notifications and other premium features.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.dismissTrialPrompt()
+                        showPaywallDialog = "Renew your subscription to restore push notifications."
+                    }) {
+                        Text("Renew Premium")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissTrialPrompt() }) {
+                        Text("Not Now")
+                    }
+                }
+            )
+        }
         null -> { /* no dialog */ }
     }
     

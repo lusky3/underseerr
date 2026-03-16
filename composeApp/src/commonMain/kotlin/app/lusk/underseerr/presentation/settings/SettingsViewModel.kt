@@ -23,8 +23,10 @@ import app.lusk.underseerr.util.nowMillis
 sealed class TrialPromptType {
     /** User has never started a trial — offer to activate it. */
     object Activate : TrialPromptType()
-    /** User's trial has expired — offer to reset it. */
+    /** User's trial has expired — offer to reset it (only shown if they haven't had premium). */
     object Reset : TrialPromptType()
+    /** User's premium subscription expired — offer to renew (no trial reset option). */
+    object PremiumExpired : TrialPromptType()
 }
 
 
@@ -166,8 +168,33 @@ class SettingsViewModel(
                         if (_trialJustStarted) {
                             return@collect
                         }
+                        
+                        // Check if prompt was recently dismissed (within 7 days)
+                        val dismissedAt = settingsRepository.getTrialPromptDismissedAt().first()
+                        val daysSinceDismissal = (nowMillis() - dismissedAt) / (1000L * 60 * 60 * 24)
+                        if (dismissedAt > 0 && daysSinceDismissal < 7) {
+                            // User dismissed within last 7 days — don't show again
+                            return@collect
+                        }
+                        
                         val trialStart = settingsRepository.getTrialStartDate().first()
-                        if (trialStart != null) {
+                        val hasUsedTrial = settingsRepository.getHasUsedTrial().first()
+                        val premiumExpiresAt = status.expiresAt
+                        
+                        // Check if this is an expired premium subscription (had premium that expired)
+                        // We detect this by checking if premiumExpiresAt is set and in the past
+                        val hadPremiumThatExpired = premiumExpiresAt != null && premiumExpiresAt < nowMillis()
+                        
+                        if (hadPremiumThatExpired) {
+                            // User had premium that expired — show PremiumExpired prompt
+                            val currentType = settingsRepository.getNotificationServerType().first()
+                            if (currentType == "HOSTED") {
+                                settingsRepository.setNotificationServerType("NONE")
+                            }
+                            if (_showTrialPrompt.value == null) {
+                                _showTrialPrompt.value = TrialPromptType.PremiumExpired
+                            }
+                        } else if (trialStart != null || hasUsedTrial) {
                             // Trial was started but is now FREE -> it expired
                             val currentType = settingsRepository.getNotificationServerType().first()
                             if (currentType == "HOSTED") {
@@ -178,7 +205,7 @@ class SettingsViewModel(
                                 _showTrialPrompt.value = TrialPromptType.Reset
                             }
                         } else {
-                            // Completely new user — offer trial activation
+                            // Completely new user who has never used a trial — offer trial activation
                             if (_showTrialPrompt.value == null && !status.isPremium) {
                                 _showTrialPrompt.value = TrialPromptType.Activate
                             }
@@ -472,13 +499,15 @@ class SettingsViewModel(
             _trialJustStarted = true
             // 2. Set local start date for immediate UI reactivity
             settingsRepository.setTrialStartDate(nowMillis())
-            // 2. Activate hosted server so notifications work immediately
+            // 2b. Mark that user has used a trial (persists even if trialStartDate is cleared)
+            settingsRepository.setHasUsedTrial(true)
+            // 3. Activate hosted server so notifications work immediately
             val currentType = settingsRepository.getNotificationServerType().first()
             if (currentType != "HOSTED") {
                 settingsRepository.setNotificationServerType("HOSTED")
             }
             _showTrialPrompt.value = null
-            // 3. Register trial on the backend — required for notification delivery gating
+            // 4. Register trial on the backend — required for notification delivery gating
             val serverResult = subscriptionRepository.startTrialOnServer()
             if (serverResult.isFailure) {
                 // Local trial still active; server will retry on next subscription refresh.
@@ -489,6 +518,10 @@ class SettingsViewModel(
 
     fun dismissTrialPrompt() {
         _showTrialPrompt.value = null
+        // Persist dismissal so prompt doesn't reappear for 7 days
+        viewModelScope.launch {
+            settingsRepository.setTrialPromptDismissedAt(nowMillis())
+        }
     }
 
     /** Launches the Google Play trial offer purchase flow. */

@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
+import app.lusk.underseerr.shared.BuildKonfig
 import app.lusk.underseerr.ui.components.AsyncImage
 import app.lusk.underseerr.util.getAppIcon
 
@@ -110,7 +111,7 @@ fun AboutScreen(
             
             // Version
             Text(
-                text = "Version 1.0.0",
+                text = "Version ${BuildKonfig.VERSION_NAME}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

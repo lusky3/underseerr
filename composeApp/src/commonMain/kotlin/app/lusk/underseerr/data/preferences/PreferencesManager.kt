@@ -63,6 +63,8 @@ class PreferencesManager(
         val HAS_COMPLETED_REVIEW = booleanPreferencesKey("has_completed_review")
         val LAST_REVIEW_PROMPT_TIME = longPreferencesKey("last_review_prompt_time")
         val LAST_SEEN_VERSION_CODE = intPreferencesKey("last_seen_version_code")
+        val TRIAL_PROMPT_DISMISSED_AT = longPreferencesKey("trial_prompt_dismissed_at")
+        val HAS_USED_TRIAL = booleanPreferencesKey("has_used_trial")
     }
     
     /**
@@ -620,6 +622,32 @@ class PreferencesManager(
     fun getLastSeenVersionCode(): Flow<Int> {
         return dataStore.data.map { preferences ->
             preferences[PreferenceKeys.LAST_SEEN_VERSION_CODE] ?: 0
+        }
+    }
+
+    // Trial Prompt Dismissal Tracking
+
+    suspend fun setTrialPromptDismissedAt(timestamp: Long) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.TRIAL_PROMPT_DISMISSED_AT] = timestamp
+        }
+    }
+
+    fun getTrialPromptDismissedAt(): Flow<Long> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.TRIAL_PROMPT_DISMISSED_AT] ?: 0L
+        }
+    }
+
+    suspend fun setHasUsedTrial(hasUsed: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.HAS_USED_TRIAL] = hasUsed
+        }
+    }
+
+    fun getHasUsedTrial(): Flow<Boolean> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.HAS_USED_TRIAL] ?: false
         }
     }
 }

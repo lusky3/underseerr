@@ -187,6 +187,26 @@ interface SettingsRepository {
      * Update home screen configuration.
      */
     suspend fun updateHomeScreenConfig(config: HomeScreenConfig)
+
+    /**
+     * Get the timestamp when the trial prompt was last dismissed.
+     */
+    fun getTrialPromptDismissedAt(): Flow<Long>
+
+    /**
+     * Set the timestamp when the trial prompt was dismissed.
+     */
+    suspend fun setTrialPromptDismissedAt(timestamp: Long)
+
+    /**
+     * Check if the user has ever used a trial.
+     */
+    fun getHasUsedTrial(): Flow<Boolean>
+
+    /**
+     * Mark that the user has used a trial.
+     */
+    suspend fun setHasUsedTrial(hasUsed: Boolean)
 }
 
 /**

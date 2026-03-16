@@ -55,8 +55,8 @@ kotlin {
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_PROD", getEnv("CLOUDFLARE_WORKER_ENDPOINT_PROD"))
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_STAGING", getEnv("CLOUDFLARE_WORKER_ENDPOINT_STAGING"))
             // App version - keep in sync with androidApp/build.gradle.kts
-            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.INT, "VERSION_CODE", "7")
-            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "VERSION_NAME", "1.0.5")
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.INT, "VERSION_CODE", "8")
+            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "VERSION_NAME", "1.0.6")
         }
     }
     
