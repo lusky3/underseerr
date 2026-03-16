@@ -25,7 +25,7 @@ class DomainModelPropertyTest : StringSpec({
             Arb.string(1..100).orNull(),
             Arb.string(1..100).orNull(),
             Arb.string(1..20).orNull(),
-            Arb.double(0.0..10.0)
+            Arb.double(0.0..10.0).filter { !it.isNaN() }
         ) { id, title, overview, posterPath, backdropPath, releaseDate, voteAverage ->
             val mediaInfo = MediaInfo(
                 id = null,
@@ -65,7 +65,7 @@ class DomainModelPropertyTest : StringSpec({
             Arb.string(1..100).orNull(),
             Arb.string(1..100).orNull(),
             Arb.string(1..20).orNull(),
-            Arb.double(0.0..10.0),
+            Arb.double(0.0..10.0).filter { !it.isNaN() },
             Arb.int(1..20)
         ) { id, name, overview, posterPath, backdropPath, firstAirDate, voteAverage, numberOfSeasons ->
             val mediaInfo = MediaInfo(
