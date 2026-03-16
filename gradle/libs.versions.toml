@@ -8,7 +8,7 @@ targetSdk = "35"
 
 # Core
 agp = "9.1.0"
-kotlin = "2.3.10"
+kotlin = "2.3.20"
 ksp = "2.3.4"
 coreKtx = "1.18.0"
 coreBundle = "1.1.0-alpha03"
