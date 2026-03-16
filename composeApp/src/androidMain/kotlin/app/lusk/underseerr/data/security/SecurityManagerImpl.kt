@@ -1,13 +1,16 @@
 package app.lusk.underseerr.data.security
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import app.lusk.underseerr.domain.security.SecurityManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.security.KeyStore
 import java.util.Base64
 import javax.crypto.Cipher
@@ -30,15 +33,11 @@ class SecurityManagerImpl(
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
 
-    private val encryptedPrefs = EncryptedSharedPreferences.create(
-        context,
-        "secure_prefs",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val encryptedPrefs: SharedPreferences = createEncryptedPrefs()
 
     private companion object {
+        const val TAG = "SecurityManagerImpl"
+        const val PREFS_FILE_NAME = "secure_prefs"
         const val KEY_ALIAS = "underseerr_encryption_key"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val GCM_TAG_LENGTH = 128
@@ -115,5 +114,41 @@ class SecurityManagerImpl(
         
         keyGenerator.init(keyGenParameterSpec)
         return keyGenerator.generateKey()
+    }
+
+    /**
+     * Creates EncryptedSharedPreferences with graceful recovery from corrupted data.
+     * If decryption fails (e.g., after app reinstall with different signing key),
+     * the corrupted preferences file is deleted and recreated.
+     */
+    private fun createEncryptedPrefs(): SharedPreferences {
+        return try {
+            EncryptedSharedPreferences.create(
+                context,
+                PREFS_FILE_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            // Handle AEADBadTagException and other crypto errors
+            // This can happen when the app is reinstalled with a different signing key
+            Log.w(TAG, "Failed to decrypt secure preferences, resetting: ${e.message}")
+            
+            // Delete the corrupted preferences file
+            val prefsFile = File(context.filesDir.parent, "shared_prefs/$PREFS_FILE_NAME.xml")
+            if (prefsFile.exists()) {
+                prefsFile.delete()
+            }
+            
+            // Recreate fresh encrypted preferences
+            EncryptedSharedPreferences.create(
+                context,
+                PREFS_FILE_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        }
     }
 }
