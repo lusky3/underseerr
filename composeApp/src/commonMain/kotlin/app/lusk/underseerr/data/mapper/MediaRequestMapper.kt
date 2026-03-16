@@ -5,8 +5,8 @@ import app.lusk.underseerr.data.remote.model.ApiMediaRequest
 import app.lusk.underseerr.domain.model.MediaRequest
 import app.lusk.underseerr.domain.model.MediaType
 import app.lusk.underseerr.domain.model.RequestStatus
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Maps API media request model to domain media request model.

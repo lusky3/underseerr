@@ -1,8 +1,8 @@
 package app.lusk.underseerr.data.remote.model
 
 import app.lusk.underseerr.domain.model.*
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Mapper functions to convert API models to domain models.

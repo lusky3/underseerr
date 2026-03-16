@@ -9,7 +9,7 @@ import app.lusk.underseerr.domain.model.TvShow
 import app.lusk.underseerr.domain.repository.CacheRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Clock as KClock
+import kotlin.time.Clock as KClock
 
 /**
  * Implementation of CacheRepository for managing cached media data.

@@ -105,7 +105,7 @@ fun ReportIssueDialog(
                                 onValueChange = {},
                                 readOnly = true,
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSeasonDropdownExpanded) },
-                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
                                 label = { Text("Season") }
                             )
                             

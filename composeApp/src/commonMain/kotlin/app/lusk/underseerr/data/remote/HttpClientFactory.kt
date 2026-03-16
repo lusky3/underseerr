@@ -148,7 +148,7 @@ class HttpClientFactory(
                         context.url.port = newBase.port
                     
                         // Handle sub-paths in the base URL (e.g. https://domain.com/overseerr)
-                        val baseSegments = newBase.pathSegments.filter { it.isNotEmpty() }
+                        val baseSegments = newBase.segments.filter { it.isNotEmpty() }
                         if (baseSegments.isNotEmpty()) {
                             val originalSegments = context.url.pathSegments.filter { it.isNotEmpty() }
                             context.url.pathSegments = baseSegments + originalSegments

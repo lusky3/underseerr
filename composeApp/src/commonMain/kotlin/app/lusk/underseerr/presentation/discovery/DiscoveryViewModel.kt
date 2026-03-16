@@ -291,7 +291,7 @@ class DiscoveryViewModel(
                     )
                 }
                 is Result.Error -> {
-                    _mediaDetailsState.value = MediaDetailsState.Error(result.error.message ?: "Unknown error")
+                    _mediaDetailsState.value = MediaDetailsState.Error(result.error.message)
                 }
                 is Result.Loading -> {
                     if (!isRefresh) {
@@ -315,7 +315,7 @@ class DiscoveryViewModel(
                     )
                 }
                 is Result.Error -> {
-                    _mediaDetailsState.value = MediaDetailsState.Error(result.error.message ?: "Unknown error")
+                    _mediaDetailsState.value = MediaDetailsState.Error(result.error.message)
                 }
                 is Result.Loading -> {
                     if (!isRefresh) {
@@ -445,7 +445,7 @@ class DiscoveryViewModel(
             val result = discoveryRepository.getPersonDetails(personId)
             _personDetailsState.value = when (result) {
                 is Result.Success -> PersonDetailsState.Success(result.data)
-                is Result.Error -> PersonDetailsState.Error(result.error.message ?: "Failed to load person details")
+                is Result.Error -> PersonDetailsState.Error(result.error.message)
                 else -> PersonDetailsState.Idle
             }
         }

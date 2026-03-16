@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -134,10 +133,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation(libs.androidx.navigation.compose)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
-
     // Koin
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
@@ -168,8 +163,8 @@ dependencies {
     implementation(libs.firebase.analytics)
 
     // Sentry - Error monitoring (optional, only active if DSN is configured)
-    implementation("io.sentry:sentry-android:8.31.0")
-    implementation("io.sentry:sentry-compose-android:8.31.0")
+    implementation(libs.sentry.android)
+    implementation(libs.sentry.compose.android)
 
     // Testing
     testImplementation(libs.junit)

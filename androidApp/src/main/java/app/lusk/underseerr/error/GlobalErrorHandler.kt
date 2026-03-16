@@ -96,7 +96,7 @@ class GlobalErrorHandler(
             appendLine()
             appendLine("=== THREAD INFO ===")
             appendLine("Thread: ${thread.name}")
-            appendLine("Thread ID: ${thread.id}")
+            appendLine("Thread ID: ${thread.threadId()}")
             appendLine()
             appendLine("=== EXCEPTION ===")
             appendLine("Type: ${throwable.javaClass.name}")

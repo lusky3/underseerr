@@ -2,22 +2,22 @@
 
 
 # SDK Versions
-compileSdk = "35"
+compileSdk = "36"
 minSdk = "26"
 targetSdk = "35"
 
 # Core
-agp = "8.13.2"
-kotlin = "2.3.0"
+agp = "9.1.0"
+kotlin = "2.3.10"
 ksp = "2.3.4"
-coreKtx = "1.15.0"
+coreKtx = "1.18.0"
 coreBundle = "1.1.0-alpha03"
 
 # Compose
-composeBom = "2026.02.01"
+composeBom = "2026.03.00"
 composeCompiler = "1.5.15"
-activityCompose = "1.9.3"
-navigationCompose = "2.9.1"
+activityCompose = "1.13.0"
+navigationCompose = "2.9.2"
 
 # Lifecycle
 lifecycle = "2.10.0"
@@ -28,24 +28,24 @@ hiltNavigationCompose = "1.3.0"
 
 # Networking
 retrofit = "3.0.0"
-okhttp = "4.12.0"
+okhttp = "5.3.2"
 firebaseMessaging = "25.0.1"
 kotlinxSerialization = "1.10.0"
 
 # Database
 room = "2.8.4"
-sqlite = "2.5.0-alpha11"
-datastore = "1.2.0"
+sqlite = "2.6.2"
+datastore = "1.2.1"
 workmanager = "2.11.1"
 
 # CMP & KMP
-compose-multiplatform = "1.10.1"
+compose-multiplatform = "1.7.3"
 ktor = "3.4.1"
 koin = "4.1.1"
 buildkonfig = "0.17.1"
 
 # Image Loading
-coil = "3.3.0"
+coil = "3.4.0"
 
 # Security
 biometric = "1.4.0-alpha02"
@@ -53,22 +53,25 @@ security = "1.1.0"
 
 # Coroutines
 coroutines = "1.10.2"
-datetime = "0.6.0"
+datetime = "0.7.1"
 
 # Testing
 junit = "4.13.2"
 junitExt = "1.3.0"
 espresso = "3.7.0"
-kotest = "5.9.1"
-mockk = "1.13.14"
+kotest = "6.1.5"
+mockk = "1.14.9"
 turbine = "1.2.1"
 robolectric = "4.16.1"
 mockwebserver = "5.3.2"
 
 # Other
 splashscreen = "1.2.0"
-paging = "3.4.1"
+paging = "3.4.2"
 billing = "8.3.0"
+
+# Sentry
+sentry = "8.34.1"
 
 [libraries]
 # Core
@@ -93,6 +96,15 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+
+# Compose Multiplatform
+compose-runtime = { group = "org.jetbrains.compose.runtime", name = "runtime", version.ref = "compose-multiplatform" }
+compose-foundation = { group = "org.jetbrains.compose.foundation", name = "foundation", version.ref = "compose-multiplatform" }
+compose-material3 = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "compose-multiplatform" }
+compose-ui = { group = "org.jetbrains.compose.ui", name = "ui", version.ref = "compose-multiplatform" }
+compose-components-resources = { group = "org.jetbrains.compose.components", name = "components-resources", version.ref = "compose-multiplatform" }
+compose-components-uiToolingPreview = { group = "org.jetbrains.compose.components", name = "components-ui-tooling-preview", version.ref = "compose-multiplatform" }
+compose-materialIconsExtended = { group = "org.jetbrains.compose.material", name = "material-icons-extended", version.ref = "compose-multiplatform" }
 
 # Hilt
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
@@ -170,6 +182,10 @@ koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = 
 koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
 koin-androidx-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager", version.ref = "koin" }
+
+# Sentry
+sentry-android = { group = "io.sentry", name = "sentry-android", version.ref = "sentry" }
+sentry-compose-android = { group = "io.sentry", name = "sentry-compose-android", version.ref = "sentry" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
