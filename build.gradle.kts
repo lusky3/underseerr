@@ -84,6 +84,10 @@ subprojects {
 
             // Guava - Insecure use of temporary directory (CVE-2023-2976)
             force("com.google.guava:guava:33.0.0-android")
+
+            // AndroidX Concurrent - resolve conflict between runtime (1.1.0) and test deps (1.2.0)
+            force("androidx.concurrent:concurrent-futures:1.2.0")
+            force("androidx.concurrent:concurrent-futures-ktx:1.2.0")
         }
     }
 }
