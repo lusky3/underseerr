@@ -53,7 +53,7 @@ jobs:
 
     - name: Setup Gradle
       if: steps.check_changes.outputs.skip != 'true'
-      uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@v6
 
     - name: Write Google Services JSON (Release)
       if: steps.check_changes.outputs.skip != 'true'
