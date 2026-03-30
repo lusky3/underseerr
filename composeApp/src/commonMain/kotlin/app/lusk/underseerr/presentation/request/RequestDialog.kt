@@ -159,15 +159,15 @@ fun RequestDialog(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .selectable(
-                                                    selected = selectedRootFolder == folder.id,
-                                                    onClick = { selectedRootFolder = folder.id }
+                                                    selected = selectedRootFolder == folder.path,
+                                                    onClick = { selectedRootFolder = folder.path }
                                                 )
                                                 .padding(vertical = 4.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             RadioButton(
-                                                selected = selectedRootFolder == folder.id,
-                                                onClick = { selectedRootFolder = folder.id }
+                                                selected = selectedRootFolder == folder.path,
+                                                onClick = { selectedRootFolder = folder.path }
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(

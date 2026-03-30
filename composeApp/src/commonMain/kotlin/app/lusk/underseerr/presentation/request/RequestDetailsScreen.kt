@@ -170,7 +170,8 @@ fun RequestDetailsScreen(
                         
                         // Show Report Issue button for approved or available requests
                         if (request.status == RequestStatus.APPROVED || 
-                            request.status == RequestStatus.AVAILABLE) {
+                            request.status == RequestStatus.AVAILABLE ||
+                            request.status == RequestStatus.FAILED) {
                             OutlinedButton(
                                 onClick = { showReportIssueDialog = true },
                                 modifier = Modifier.fillMaxWidth()
@@ -372,6 +373,12 @@ private fun RequestDetailsContent(
                         message = "Your request was declined by an administrator."
                     )
                 }
+                RequestStatus.FAILED -> {
+                    InfoCard(
+                        title = "Failed",
+                        message = "There was an issue processing your request."
+                    )
+                }
             }
         }
     }
@@ -441,6 +448,7 @@ private fun StatusChip(
         RequestStatus.APPROVED -> MaterialTheme.colorScheme.primary to "Approved"
         RequestStatus.AVAILABLE -> MaterialTheme.colorScheme.secondary to "Available"
         RequestStatus.DECLINED -> MaterialTheme.colorScheme.error to "Declined"
+        RequestStatus.FAILED -> MaterialTheme.colorScheme.error to "Failed"
     }
     
     Surface(

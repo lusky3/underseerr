@@ -109,6 +109,14 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("io.netty:netty-codec-http:4.2.12.Final")
+        force("org.apache.commons:commons-lang3:3.20.0")
+        force("org.apache.httpcomponents:httpclient:4.5.13")
+    }
+}
+
 dependencies {
     implementation(project(":composeApp"))
     implementation(libs.kotlinx.serialization.json)

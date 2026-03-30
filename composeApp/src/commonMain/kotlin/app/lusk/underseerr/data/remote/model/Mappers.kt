@@ -159,7 +159,7 @@ fun ApiMediaRequest.toMediaRequest(): MediaRequest {
             status == 1 -> RequestStatus.PENDING
             status == 2 -> RequestStatus.APPROVED
             status == 3 -> RequestStatus.DECLINED
-            status == 4 -> RequestStatus.AVAILABLE
+            status == 4 -> RequestStatus.FAILED
             else -> RequestStatus.PENDING
         },
         requestedDate = requestedDate,

@@ -67,7 +67,7 @@ fun RequestsListScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    val filters = listOf("All", "Pending", "Approved", "Available", "Declined")
+    val filters = listOf("All", "Pending", "Approved", "Available", "Declined", "Failed")
     // Case-insensitive matching for initial filter
     var selectedFilter by remember(initialFilter) { 
         mutableStateOf(filters.find { it.equals(initialFilter, ignoreCase = true) } ?: "All") 
@@ -161,6 +161,7 @@ fun RequestsListScreen(
                     "Approved" -> userRequests.distinctBy { it.id }.filter { it.status == RequestStatus.APPROVED }
                     "Available" -> userRequests.distinctBy { it.id }.filter { it.status == RequestStatus.AVAILABLE }
                     "Declined" -> userRequests.distinctBy { it.id }.filter { it.status == RequestStatus.DECLINED }
+                    "Failed" -> userRequests.distinctBy { it.id }.filter { it.status == RequestStatus.FAILED }
                     else -> userRequests.distinctBy { it.id }
                 }
                 
@@ -431,7 +432,7 @@ private fun RequestItem(
             }
             
             // Quick Actions Menu
-            if (canManageRequests || request.status == RequestStatus.APPROVED || request.status == RequestStatus.AVAILABLE) {
+            if (canManageRequests || request.status == RequestStatus.APPROVED || request.status == RequestStatus.AVAILABLE || request.status == RequestStatus.FAILED) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -589,6 +590,7 @@ private fun StatusBadge(
         RequestStatus.APPROVED -> Triple(Color(0xFF2196F3), Color.White, "Processing")
         RequestStatus.AVAILABLE -> Triple(Color(0xFF4CAF50), Color.White, "Available")
         RequestStatus.DECLINED -> Triple(Color(0xFFF44336), Color.White, "Declined")
+        RequestStatus.FAILED -> Triple(Color(0xFFE53935), Color.White, "Failed")
     }
     
     val gradients = LocalUnderseerrGradients.current

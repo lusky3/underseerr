@@ -58,7 +58,8 @@ fun MediaRequest.toEntity(cachedAt: Long = app.lusk.underseerr.util.nowMillis())
             RequestStatus.PENDING -> 1
             RequestStatus.APPROVED -> 2
             RequestStatus.DECLINED -> 3
-            RequestStatus.AVAILABLE -> 4
+            RequestStatus.AVAILABLE -> 5
+            RequestStatus.FAILED -> 4
         },
         requestedDate = requestedDate,
         seasons = seasons,
@@ -86,8 +87,8 @@ private fun Int.toRequestStatus(): RequestStatus {
         1 -> RequestStatus.PENDING
         2 -> RequestStatus.APPROVED
         3 -> RequestStatus.DECLINED
-        4 -> RequestStatus.AVAILABLE
-        5 -> RequestStatus.AVAILABLE // Also map 5 (media status available) to AVAILABLE
+        4 -> RequestStatus.FAILED
+        5 -> RequestStatus.AVAILABLE // Map 5 to AVAILABLE
         else -> RequestStatus.PENDING
     }
 }

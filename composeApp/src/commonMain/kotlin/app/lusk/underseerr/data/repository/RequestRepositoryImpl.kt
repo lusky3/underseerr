@@ -215,7 +215,8 @@ class RequestRepositoryImpl(
             RequestStatus.PENDING -> 1
             RequestStatus.APPROVED -> 2
             RequestStatus.DECLINED -> 3
-            RequestStatus.AVAILABLE -> 4
+            RequestStatus.AVAILABLE -> 5
+            RequestStatus.FAILED -> 4
         }
         return mediaRequestDao.getRequestsByStatus(statusCode)
             .map { entities -> entities.map { it.toDomain() } }

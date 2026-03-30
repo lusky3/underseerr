@@ -7,5 +7,6 @@ enum class RequestStatus {
     PENDING,
     APPROVED,
     DECLINED,
-    AVAILABLE
+    AVAILABLE,
+    FAILED
 }
