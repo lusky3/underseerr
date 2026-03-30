@@ -25,6 +25,26 @@ data class ChangelogEntry(
 object AppChangelog {
     val entries: List<ChangelogEntry> = listOf(
         ChangelogEntry(
+            versionCode = 9,
+            versionName = "1.0.7",
+            title = "Bug Fixes & Security Updates",
+            changes = listOf(
+                "🐛 Fixed advanced request root folder path bug",
+                "🐛 Fixed issue where failed requests incorrectly appeared as Available",
+                "🛡️ Resolved multiple internal security vulnerabilities via Snyk",
+                "📦 Maintained and updated overall project dependencies"
+            )
+        ),
+        ChangelogEntry(
+            versionCode = 8,
+            versionName = "1.0.6",
+            title = "Performance Improvements",
+            changes = listOf(
+                "✨ Minor app refinements and optimizations",
+                "🐛 Bug fixes and performance improvements"
+            )
+        ),
+        ChangelogEntry(
             versionCode = 7,
             versionName = "1.0.5",
             title = "Push Notification Trial & Security",
