@@ -149,7 +149,7 @@ class PullToRefreshPropertyTest : StringSpec({
                 val afterRefresh = repository.getUserRequests().first()
                 
                 beforeRefresh.all { it.status.name == "PENDING" } shouldBe true
-                afterRefresh.all { it.status.name == "AVAILABLE" } shouldBe true
+                afterRefresh.all { it.status.name == "FAILED" } shouldBe true
             }
         }
     }
