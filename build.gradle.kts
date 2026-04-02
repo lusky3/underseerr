@@ -12,7 +12,7 @@ plugins {
     alias(libs.plugins.room) apply false
     alias(libs.plugins.buildkonfig) apply false
     alias(libs.plugins.google.services) apply false
-    id("org.sonarqube") version "7.2.2.6593"
+    id("org.sonarqube") version "7.2.3.7755"
 
     id("io.sentry.android.gradle") version "6.0.0" apply false
 }
