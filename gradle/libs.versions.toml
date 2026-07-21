@@ -4,7 +4,7 @@
 # SDK Versions
 compileSdk = "36"
 minSdk = "26"
-targetSdk = "35"
+targetSdk = "36"
 
 # Core
 agp = "9.1.0"
