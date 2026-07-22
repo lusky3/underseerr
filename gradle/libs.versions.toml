@@ -68,7 +68,7 @@ mockwebserver = "5.3.2"
 # Other
 splashscreen = "1.2.0"
 paging = "3.4.2"
-billing = "8.3.0"
+billing = "9.1.0"
 
 # Sentry
 sentry = "8.35.0"
