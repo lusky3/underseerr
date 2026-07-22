@@ -1,6 +1,13 @@
 [versions]
 
 
+# App Version - single source of truth for versionCode/versionName.
+# Bump these two here only; androidApp and composeApp both read from them,
+# and `verifyAppVersion` fails the release build if AppChangelog.kt's top
+# entry doesn't match.
+appVersionCode = "9"
+appVersionName = "1.0.7"
+
 # SDK Versions
 compileSdk = "36"
 minSdk = "26"

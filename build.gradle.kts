@@ -45,6 +45,45 @@ buildscript {
     }
 }
 
+// Fails the build if AppChangelog.kt's top entry doesn't match the single
+// source of truth version in gradle/libs.versions.toml. androidApp's
+// assembleRelease/bundleRelease depend on this, so a release can't ship
+// with a stale in-app changelog entry.
+tasks.register("verifyAppVersion") {
+    group = "verification"
+    description = "Checks AppChangelog.kt's top entry against libs.versions.toml's appVersionCode/appVersionName."
+
+    val expectedCode = libs.versions.appVersionCode.get()
+    val expectedName = libs.versions.appVersionName.get()
+    val changelogFile = file("composeApp/src/commonMain/kotlin/app/lusk/underseerr/domain/model/AppChangelog.kt")
+
+    inputs.file(changelogFile)
+    inputs.property("expectedCode", expectedCode)
+    inputs.property("expectedName", expectedName)
+
+    doLast {
+        val text = changelogFile.readText()
+        val actualCode = Regex("""versionCode\s*=\s*(\d+)""").find(text)?.groupValues?.get(1)
+        val actualName = Regex("""versionName\s*=\s*"([^"]+)"""").find(text)?.groupValues?.get(1)
+
+        val problems = mutableListOf<String>()
+        if (actualCode != expectedCode) {
+            problems += "top entry's versionCode is $actualCode, expected $expectedCode"
+        }
+        if (actualName != expectedName) {
+            problems += "top entry's versionName is $actualName, expected $expectedName"
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException(
+                "AppChangelog.kt is out of sync with gradle/libs.versions.toml " +
+                    "(appVersionCode=$expectedCode, appVersionName=$expectedName): " +
+                    "${problems.joinToString("; ")}. " +
+                    "Add a new top entry to AppChangelog.kt matching the bumped version."
+            )
+        }
+    }
+}
+
 // Force upgrade vulnerable transitive dependencies across all subprojects
 subprojects {
     configurations.configureEach {

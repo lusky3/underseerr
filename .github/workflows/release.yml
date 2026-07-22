@@ -82,6 +82,10 @@ jobs:
           echo "VERSION=${VERSION_NAME}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
         fi
 
+    - name: Verify app version consistency
+      if: steps.check_changes.outputs.skip != 'true'
+      run: ./gradlew verifyAppVersion
+
     - name: Build Release APK
       if: steps.check_changes.outputs.skip != 'true'
       env:
