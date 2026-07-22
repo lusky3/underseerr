@@ -15,7 +15,7 @@
     },
     "main": "lib/index.js",
     "dependencies": {
-        "fast-xml-parser": "5.5.7",
+        "fast-xml-parser": "5.7.0",
         "firebase-admin": "^13.6.0",
         "firebase-functions": "^7.0.5"
     },
@@ -29,14 +29,22 @@
         "firebase-functions-test": "^3.4.1"
     },
     "overrides": {
-        "fast-xml-parser": "5.5.7",
+        "fast-xml-parser": "5.7.0",
         "minimatch@<4": "3.1.5",
         "minimatch@>=9": "9.0.9",
         "@tootallnate/once": "3.0.1",
         "node-forge": "1.4.0",
         "brace-expansion": "1.1.13",
         "path-to-regexp": "0.1.13",
-        "flatted": "3.4.2"
+        "flatted": "3.4.2",
+        "picomatch@<3": "2.3.2",
+        "lodash": "4.18.1",
+        "@protobufjs/utf8": "1.1.1",
+        "qs": "6.15.2",
+        "express": "4.22.2",
+        "protobufjs": "7.6.1",
+        "@grpc/grpc-js": "1.14.4",
+        "form-data": "2.5.6"
     },
     "private": true
 }
