@@ -16,8 +16,8 @@ android {
         applicationId = "app.lusk.underseerr"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 9
-        versionName = "1.0.7"
+        versionCode = libs.versions.appVersionCode.get().toInt()
+        versionName = libs.versions.appVersionName.get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -272,4 +272,9 @@ tasks.configureEach {
     if (name.contains("uploadSentryProguardMappings") || name.contains("uploadSentryNativeSymbols")) {
         enabled = !System.getenv("SENTRY_AUTH_TOKEN").isNullOrBlank()
     }
+}
+
+// A release build must not ship with a stale AppChangelog.kt entry.
+tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }.configureEach {
+    dependsOn(rootProject.tasks.named("verifyAppVersion"))
 }

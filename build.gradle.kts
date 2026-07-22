@@ -45,6 +45,13 @@ buildscript {
     }
 }
 
+// Type-safe version catalog accessors (libs.versions.x) aren't available in
+// scripts loaded via apply(from = ...), so pass the expected values through
+// as extra properties instead.
+extra["expectedAppVersionCode"] = libs.versions.appVersionCode.get()
+extra["expectedAppVersionName"] = libs.versions.appVersionName.get()
+apply(from = "gradle/verify-app-version.gradle.kts")
+
 // Force upgrade vulnerable transitive dependencies across all subprojects
 subprojects {
     configurations.configureEach {
