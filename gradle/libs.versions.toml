@@ -78,7 +78,7 @@ paging = "3.4.2"
 billing = "9.1.0"
 
 # Sentry
-sentry = "8.37.1"
+sentry = "8.50.0"
 
 [libraries]
 # Core
