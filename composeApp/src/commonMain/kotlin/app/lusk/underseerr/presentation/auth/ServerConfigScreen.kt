@@ -12,8 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.lusk.underseerr.data.auth.SessionExpiryNotifier
+import app.lusk.underseerr.data.auth.userMessage
 import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import kotlinx.coroutines.flow.first
 
@@ -35,6 +39,14 @@ fun ServerConfigScreen(
 ) {
     val authState by viewModel.authState.collectAsState()
     val serverValidationState by viewModel.serverValidationState.collectAsState()
+    // An expiry that fires while the user is on Splash is swallowed by the nav host's
+    // guard (Splash is a sign-in destination, and `reason` is conflated so it never
+    // re-emits). Splash then routes here — not to PlexAuth — because the invalidation
+    // cleared the credentials. Without this card the user is silently dumped at server
+    // configuration with no explanation, which is the exact failure the feature exists
+    // to prevent. Rendering it here rather than re-triggering navigation avoids any
+    // chance of a redirect loop between the two pre-auth screens.
+    val sessionExpiryReason by koinInject<SessionExpiryNotifier>().reason.collectAsState()
     var serverUrl by remember { mutableStateOf(prefillServerUrl ?: "") }
     var allowHttp by remember { mutableStateOf(false) }
     
@@ -85,6 +97,27 @@ fun ServerConfigScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            sessionExpiryReason?.let { reason ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                ) {
+                    Text(
+                        text = reason.userMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    )
+                }
+            }
+
             Text(
                 text = "Welcome to Underseerr",
                 style = MaterialTheme.typography.headlineMedium,

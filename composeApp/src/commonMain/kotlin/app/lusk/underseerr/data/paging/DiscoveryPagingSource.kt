@@ -1,6 +1,7 @@
 package app.lusk.underseerr.data.paging
 
 import androidx.paging.PagingSource
+import app.lusk.underseerr.util.AppConfig
 import androidx.paging.PagingState
 import app.lusk.underseerr.data.remote.model.ApiSearchResults
 import app.lusk.underseerr.data.remote.model.ApiSearchResult
@@ -18,9 +19,9 @@ class DiscoveryPagingSource<T : Any>(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, T> {
         val page = params.key ?: 1
         return try {
-            println("DiscoveryPagingSource: Loading page $page")
+            debugLog("DiscoveryPagingSource: Loading page $page")
             val response = fetcher(page)
-            println("DiscoveryPagingSource: Fetched ${response.results.size} items for page $page")
+            debugLog("DiscoveryPagingSource: Fetched ${response.results.size} items for page $page")
             val data = response.results.map { mapper(it) }
 
             // Cache page 1 results
@@ -29,7 +30,7 @@ class DiscoveryPagingSource<T : Any>(
                     val json = kotlinx.serialization.json.Json.encodeToString(ApiSearchResults.serializer(), response)
                     discoveryDao.insert(app.lusk.underseerr.data.local.entity.DiscoveryCacheEntity(cacheKey, json))
                 } catch (e: Exception) {
-                    println("DiscoveryPagingSource: Failed to cache results: ${e.message}")
+                    debugLog("DiscoveryPagingSource: Failed to cache results: ${e.message}")
                 }
             }
 
@@ -39,10 +40,16 @@ class DiscoveryPagingSource<T : Any>(
                 nextKey = if (page < response.totalPages) page + 1 else null
             )
         } catch (e: Exception) {
-            println("DiscoveryPagingSource: Error loading page: ${e.message}")
-            
+            debugLog("DiscoveryPagingSource: Error loading page: ${e.message}")
+
+            // An expired session must surface, not hide behind cached content.
+            // Serving the cache here is what made the app look healthy while every
+            // request was being rejected. Overseerr uses 403 for "not logged in".
+            val status = (e as? io.ktor.client.plugins.ResponseException)?.response?.status?.value
+            val isAuthFailure = status == 401 || status == 403
+
             // Fallback to cache for page 1
-            if (page == 1 && discoveryDao != null && cacheKey != null) {
+            if (!isAuthFailure && page == 1 && discoveryDao != null && cacheKey != null) {
                 val cached = discoveryDao.getCache(cacheKey)
                 if (cached != null) {
                     try {
@@ -54,7 +61,7 @@ class DiscoveryPagingSource<T : Any>(
                             nextKey = null // Don't allow pagination when in offline cache mode for now
                         )
                     } catch (decodeError: Exception) {
-                        println("DiscoveryPagingSource: Failed to decode cache: ${decodeError.message}")
+                        debugLog("DiscoveryPagingSource: Failed to decode cache: ${decodeError.message}")
                     }
                 }
             }
@@ -69,4 +76,12 @@ class DiscoveryPagingSource<T : Any>(
             anchorPage?.prevKey?.plus(1) ?: anchorPage?.nextKey?.minus(1)
         }
     }
+}
+
+/**
+ * Release builds must not log request URLs or response bodies. A Ktor
+ * ClientRequestException's message contains the full URL plus the response text.
+ */
+private inline fun debugLog(message: String) {
+    if (AppConfig.isDebug) println(message)
 }

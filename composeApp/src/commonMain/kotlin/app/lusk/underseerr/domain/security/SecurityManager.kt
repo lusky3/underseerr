@@ -25,6 +25,14 @@ interface SecurityManager {
     suspend fun retrieveSecureData(key: String): String?
 
     /**
+     * Removes a single securely stored value.
+     *
+     * Needed to drop one dead credential (e.g. a revoked Plex token) without
+     * tearing down the whole session.
+     */
+    suspend fun removeSecureData(key: String)
+
+    /**
      * Clears all securely stored data.
      */
     suspend fun clearSecureData()

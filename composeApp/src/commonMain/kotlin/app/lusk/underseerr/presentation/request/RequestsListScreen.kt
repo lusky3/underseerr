@@ -66,8 +66,17 @@ fun RequestsListScreen(
     var showReportIssueDialog by remember { mutableStateOf<MediaRequest?>(null) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    val filters = listOf("All", "Pending", "Approved", "Available", "Declined", "Failed")
+
+    // Watchlist results (e.g. "Reconnect your Plex account…") are emitted on this
+    // screen's own DiscoveryViewModel instance, which has no other subscriber —
+    // without this collector the emit is dropped and the tap looks like a no-op.
+    LaunchedEffect(discoveryViewModel) {
+        discoveryViewModel.uiEvent.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+        val filters = listOf("All", "Pending", "Approved", "Available", "Declined", "Failed")
     // Case-insensitive matching for initial filter
     var selectedFilter by remember(initialFilter) { 
         mutableStateOf(filters.find { it.equals(initialFilter, ignoreCase = true) } ?: "All") 

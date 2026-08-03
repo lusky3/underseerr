@@ -394,7 +394,7 @@ class DiscoveryViewModel(
                 refreshWatchlist()
                 fetchWatchlistIds()
             } else if (result is Result.Error) {
-                _uiEvent.emit("Failed to remove: ${result.error.message}")
+                _uiEvent.emit(watchlistFailureMessage("remove", result.error))
             }
         }
     }
@@ -409,10 +409,28 @@ class DiscoveryViewModel(
                 refreshWatchlist()
                 fetchWatchlistIds()
             } else if (result is Result.Error) {
-                _uiEvent.emit("Failed to add: ${result.error.message}")
+                _uiEvent.emit(watchlistFailureMessage("add", result.error))
             }
         }
     }
+
+    /**
+     * Snackbar text for a failed watchlist mutation.
+     *
+     * Uses [AppError.getUserMessage] rather than [AppError.message]: the latter is the
+     * internal string ("Client error: 500", "Could not find Plex ratingKey for…") and
+     * leaks implementation detail straight to the user.
+     *
+     * [AppError.PlexReauthRequired] is already a complete, actionable sentence aimed at
+     * the user, so it is shown verbatim — "Failed to add: Reconnect your Plex account…"
+     * reads like a developer note stapled to a real message.
+     */
+    private fun watchlistFailureMessage(verb: String, error: app.lusk.underseerr.domain.model.AppError): String =
+        if (error is app.lusk.underseerr.domain.model.AppError.PlexReauthRequired) {
+            error.getUserMessage()
+        } else {
+            "Failed to $verb: ${error.getUserMessage()}"
+        }
 
     fun refresh() {
         viewModelScope.launch {

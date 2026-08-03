@@ -4,21 +4,22 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.toRoute
-import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import app.lusk.underseerr.data.auth.SessionExpiryNotifier
+import app.lusk.underseerr.data.auth.SessionExpiryReason
+import kotlin.reflect.KClass
 import app.lusk.underseerr.domain.model.MediaType
 import app.lusk.underseerr.presentation.auth.AuthViewModel
 import app.lusk.underseerr.presentation.auth.PlexAuthScreen
@@ -30,6 +31,39 @@ import app.lusk.underseerr.presentation.auth.*
 import app.lusk.underseerr.presentation.settings.*
 import app.lusk.underseerr.presentation.main.*
 
+/**
+ * Destinations that already *are* the sign-in flow. An involuntary sign-out that
+ * arrives while the user is sitting on one of these must not re-navigate: doing so
+ * would wipe the back stack out from under a sign-in attempt already in progress
+ * (worst case, bouncing a user out of the Plex callback mid-exchange).
+ *
+ * Add any new pre-authentication destination here, or an expiry firing on it will
+ * kick the user back to [Screen.PlexAuth].
+ */
+val SIGN_IN_DESTINATIONS: List<KClass<out Screen>> = listOf(
+    Screen.PlexAuth::class,
+    Screen.PlexAuthCallback::class,
+    Screen.ServerConfig::class,
+    Screen.Splash::class
+)
+
+/** True when [destination] is part of the sign-in flow (see [SIGN_IN_DESTINATIONS]). */
+fun isSignInDestination(destination: NavDestination?): Boolean =
+    destination != null && SIGN_IN_DESTINATIONS.any { destination.hasRoute(it) }
+
+/**
+ * The nav host's involuntary-sign-out guard, extracted so it can be tested without
+ * a Compose runtime.
+ *
+ * A null [reason] means nothing expired. A null [currentDestination] means the graph
+ * has not resolved a destination yet, which is treated as "not on sign-in" so a very
+ * early expiry still routes rather than being swallowed.
+ */
+fun shouldRouteToSignIn(
+    reason: SessionExpiryReason?,
+    currentDestination: NavDestination?
+): Boolean = reason != null && !isSignInDestination(currentDestination)
+
 @Composable
 fun UnderseerrNavHost(
     navController: NavHostController,
@@ -37,8 +71,24 @@ fun UnderseerrNavHost(
     modifier: Modifier = Modifier,
     startDestination: Screen = Screen.Splash
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    // An expired or revoked sign-in clears credentials from under the UI. Without
+    // this the user would be left on a screen whose every request now fails; route
+    // them to sign-in instead (PlexAuthScreen explains why).
+    val expiryNotifier: SessionExpiryNotifier = koinInject()
+    LaunchedEffect(Unit) {
+        expiryNotifier.reason.collect { reason ->
+            if (!shouldRouteToSignIn(reason, navController.currentDestination)) return@collect
+            navController.navigate(Screen.PlexAuth) {
+                // popUpTo(0) — id 0 is the root graph entry, which is always on the
+                // queue. The start destination (Splash) is NOT: it pops itself off on
+                // its first navigation, and popBackStackInternal silently no-ops when
+                // the target id is absent, leaving the signed-out screen reachable via
+                // Back with every request 403ing and no second expiry emission to
+                // rescue the user (reason is a conflated StateFlow).
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -99,6 +149,7 @@ fun UnderseerrNavHost(
                     navController.navigate(Screen.PlexAuth)
                 },
                 onAuthenticated = {
+                   expiryNotifier.consume()
                    // Logic for already authenticated
                    navController.navigate(Screen.MainTabs) {
                         popUpTo<Screen.ServerConfig> { inclusive = true }
@@ -110,18 +161,26 @@ fun UnderseerrNavHost(
         composable<Screen.PlexAuth> {
             val viewModel: AuthViewModel = koinViewModel()
             PlexAuthScreen(
-                onBackClick = { navController.popBackStack() },
+                // A forced sign-out clears the back stack, so this can be the only
+                // destination — popping it would leave a blank NavHost.
+                onBackClick = { if (navController.previousBackStackEntry != null) navController.popBackStack() },
                 viewModel = viewModel,
                 onAuthSuccess = {
+                    expiryNotifier.consume()
+                    // ServerConfig is frequently *not* on the stack here (an expiry
+                    // routes straight to PlexAuth, and Splash -> MainTabs skips it
+                    // entirely), and popUpTo no-ops on an absent id. Clearing from the
+                    // root instead guarantees a single post-sign-in entry rather than a
+                    // duplicate MainTabs plus a stale PlexAuth whose ViewModel still
+                    // holds AuthState.Authenticated and re-fires this callback on Back.
                     navController.navigate(Screen.Home) {
-                        popUpTo<Screen.ServerConfig> { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
-                onAuthError = { error ->
-                    scope.launch {
-                        snackbarHostState.showSnackbar(error)
-                    }
-                }
+                // PlexAuthScreen renders AuthState.Error inline (error Surface in its own
+                // Scaffold body), so there is nothing for the host to display. Do not add a
+                // snackbar here: it would duplicate the message the screen already shows.
+                onAuthError = { }
             )
         }
 
@@ -138,21 +197,22 @@ fun UnderseerrNavHost(
             }
             
             PlexAuthScreen(
-                onBackClick = { navController.popBackStack() },
+                // A forced sign-out clears the back stack, so this can be the only
+                // destination — popping it would leave a blank NavHost.
+                onBackClick = { if (navController.previousBackStackEntry != null) navController.popBackStack() },
                 viewModel = viewModel,
                 onAuthSuccess = {
+                    expiryNotifier.consume()
+                    // See Screen.PlexAuth above for why this pops from the root.
                     navController.navigate(Screen.Home) {
-                        popUpTo<Screen.ServerConfig> { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
-                onAuthError = { error ->
-                    scope.launch {
-                        snackbarHostState.showSnackbar(error)
-                    }
-                }
+                // See Screen.PlexAuth above: the error is already rendered by PlexAuthScreen.
+                onAuthError = { }
             )
         }
-        
+
         composable<Screen.MainTabs> {
             MainTabsScreen(
                 onNavigateToMediaDetails = { type, id -> navController.navigate(Screen.MediaDetails(type, id)) },

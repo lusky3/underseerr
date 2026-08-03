@@ -455,11 +455,7 @@ class SettingsViewModel(
             val currentUrl = _notificationServerUrl.value
             
             // Determine default logic
-            val defaultEndpoint = if (app.lusk.underseerr.shared.BuildKonfig.DEBUG) {
-                 app.lusk.underseerr.shared.BuildKonfig.WORKER_ENDPOINT_STAGING
-            } else {
-                 app.lusk.underseerr.shared.BuildKonfig.WORKER_ENDPOINT_PROD
-            }
+            val defaultEndpoint = app.lusk.underseerr.util.defaultWorkerEndpoint
             
             val baseUrl = if (currentUrl.isNullOrBlank()) defaultEndpoint else currentUrl
             val sanitizedBase = baseUrl.trimEnd('/')

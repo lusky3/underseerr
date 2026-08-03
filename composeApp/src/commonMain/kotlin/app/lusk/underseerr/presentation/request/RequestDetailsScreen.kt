@@ -48,8 +48,17 @@ fun RequestDetailsScreen(
     var showReportIssueDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    var pullRefreshing by remember { mutableStateOf(false) }
+
+    // Watchlist results (e.g. "Reconnect your Plex account…") are emitted on this
+    // screen's own DiscoveryViewModel instance, which has no other subscriber —
+    // without this collector the emit is dropped and the tap looks like a no-op.
+    LaunchedEffect(discoveryViewModel) {
+        discoveryViewModel.uiEvent.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+        var pullRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLoading) {
         if (!isLoading && pullRefreshing) {
