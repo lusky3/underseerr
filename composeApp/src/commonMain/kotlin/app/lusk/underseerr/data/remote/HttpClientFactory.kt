@@ -7,6 +7,7 @@ import app.lusk.underseerr.domain.security.SecurityManager
 import app.lusk.underseerr.util.AppConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpSend
+import io.ktor.client.statement.discardRemaining
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -297,6 +298,9 @@ class HttpClientFactory(
             request.headers.remove(HttpHeaders.Cookie)
             request.headers.append(HttpHeaders.Cookie, freshCookie)
             debugLog { "HttpClient: Session refreshed after $status, retrying ${request.url.buildString()}" }
+            // Drain the rejected response so its connection can be reused by the retry
+            // instead of being held open by unread bytes.
+            call.response.discardRemaining()
             execute(request)
         }
     }

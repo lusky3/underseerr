@@ -29,7 +29,7 @@ object AppChangelog {
             versionName = "1.0.8",
             title = "Sign-In Reliability & Security",
             changes = listOf(
-                "🔐 Expired Plex sessions now renew automatically instead of failing when you open an item",
+                "🔐 An expired Overseerr session now renews automatically instead of failing when you open an item",
                 "🚪 If your Plex sign-in is no longer valid, the app explains why and takes you back to sign-in",
                 "📺 Watchlist still loads when Plex access is revoked, and asks you to reconnect Plex before adding or removing titles",
                 "🛡️ Account credentials are no longer written to device logs",

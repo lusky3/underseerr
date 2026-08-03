@@ -47,7 +47,7 @@ import org.junit.jupiter.api.Test
  */
 class AuthSessionTest {
 
-    private val stored = mutableMapOf<String, String>()
+    private val stored = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     private val securityManager = mockk<SecurityManager>(relaxed = true).also { sm ->
         coEvery { sm.retrieveSecureData(any()) } answers { stored[firstArg()] }
@@ -73,11 +73,11 @@ class AuthSessionTest {
 
     // Room is not on this source set's classpath, so the account-scoped cache is
     // stood in for by the same seam production wires Room into.
-    private var cacheClears = 0
-    private var cacheClearDelayMs = 0L
+    private val cacheClears = java.util.concurrent.atomic.AtomicInteger(0)
+    @Volatile private var cacheClearDelayMs = 0L
     private val cacheCleaner = LocalCacheCleaner {
         delay(cacheClearDelayMs)
-        cacheClears++
+        cacheClears.incrementAndGet()
     }
     private val logger = mockk<AppLogger>(relaxed = true)
     private val sessionCleaner =
@@ -147,12 +147,12 @@ class AuthSessionTest {
 
         assertTrue(stored.isEmpty(), "the stale placeholder must be dropped: $stored")
         assertNull(preferencesManager.getUserId().first())
-        assertEquals(1, cacheClears, "the previous account's cached rows must go too")
+        assertEquals(1, cacheClears.get(), "the previous account's cached rows must go too")
 
         // Collected again by another screen: nothing left to do, and nothing done.
         repository.isAuthenticated().first()
         repository.getStoredSession().first()
-        assertEquals(1, cacheClears, "cleanup must not repeat per collector")
+        assertEquals(1, cacheClears.get(), "cleanup must not repeat per collector")
     }
 
     @Test
@@ -166,7 +166,7 @@ class AuthSessionTest {
             (1..5).map { async { repository.getStoredSession().first() } }.map { it.await() }
         }
 
-        assertEquals(1, cacheClears, "one migration, however many collectors")
+        assertEquals(1, cacheClears.get(), "one migration, however many collectors")
     }
 
     @Test
@@ -182,7 +182,7 @@ class AuthSessionTest {
         }
 
         assertTrue(repository.isAuthenticated().first())
-        assertEquals(0, cacheClears, "reading the session must never wipe the cache")
+        assertEquals(0, cacheClears.get(), "reading the session must never wipe the cache")
         assertEquals(SESSION_MARKER, stored[API_KEY])
     }
 
@@ -191,7 +191,7 @@ class AuthSessionTest {
         preferencesManager.setServerUrl(SERVER_URL)
 
         assertNull(repository.getStoredSession().first())
-        assertEquals(0, cacheClears)
+        assertEquals(0, cacheClears.get())
     }
 
     @Test
@@ -200,7 +200,7 @@ class AuthSessionTest {
         preferencesManager.setUserId(1)
 
         assertNull(repository.getStoredSession().first())
-        assertEquals(0, cacheClears)
+        assertEquals(0, cacheClears.get())
         assertEquals("real-api-key", stored[API_KEY], "an unrelated read must not touch credentials")
     }
 
