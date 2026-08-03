@@ -125,6 +125,17 @@ class HttpClientFactory(
         val client = if (engine != null) HttpClient(engine, config) else HttpClient(config)
 
         // Intercept requests to inject headers asynchronously
+        // Split out of create() so each concern reads on its own. Order is
+        // load-bearing: the base URL and credentials must be applied before the
+        // send phase can inspect a response or retry a request.
+        installRequestDecoration(client)
+        installSessionRefresh(client)
+
+        return client
+    }
+
+    /** Resolves the configured base URL onto relative requests and attaches credentials. */
+    private fun installRequestDecoration(client: HttpClient) {
         client.requestPipeline.intercept(io.ktor.client.request.HttpRequestPipeline.State) {
             // 1. Initial resolution
             var baseUrl = try {
@@ -246,10 +257,14 @@ class HttpClientFactory(
                 // This prevents bleeding API keys or Overseerr cookies to external sites
             }
         }
+    }
 
-        // Recover from an expired Overseerr session instead of surfacing a bare 403.
-        // Overseerr answers protected endpoints with 403 (not 401) once the session
-        // cookie lapses, so both codes are treated as an auth failure here.
+    /**
+     * Recovers from an expired Overseerr session instead of surfacing a bare 403.
+     * Overseerr answers protected endpoints with 403 (not 401) once the session
+     * cookie lapses, so both codes are treated as a possible auth failure here.
+     */
+    private fun installSessionRefresh(client: HttpClient) {
         client.plugin(HttpSend).intercept { request ->
             val call = execute(request)
 
@@ -284,7 +299,5 @@ class HttpClientFactory(
             debugLog { "HttpClient: Session refreshed after $status, retrying ${request.url.buildString()}" }
             execute(request)
         }
-
-        return client
     }
 }

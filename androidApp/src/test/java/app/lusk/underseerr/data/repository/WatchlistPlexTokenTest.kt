@@ -68,8 +68,8 @@ class WatchlistPlexTokenTest {
 
         val error = assertInstanceOf(Result.Error::class.java, result).error
         assertInstanceOf(AppError.PlexReauthRequired::class.java, error)
-        assertEquals("Reconnect your Plex account to manage your watchlist.", error.message)
-        assertEquals("Reconnect your Plex account to manage your watchlist.", error.getUserMessage())
+        assertEquals(REAUTH_MESSAGE, error.message)
+        assertEquals(REAUTH_MESSAGE, error.getUserMessage())
         assertFalse(error.isRetryable())
 
         // Nothing should have been sent anywhere without a token.
@@ -84,8 +84,8 @@ class WatchlistPlexTokenTest {
 
         val error = assertInstanceOf(Result.Error::class.java, result).error
         assertInstanceOf(AppError.PlexReauthRequired::class.java, error)
-        assertEquals("Reconnect your Plex account to manage your watchlist.", error.message)
-        assertEquals("Reconnect your Plex account to manage your watchlist.", error.getUserMessage())
+        assertEquals(REAUTH_MESSAGE, error.message)
+        assertEquals(REAUTH_MESSAGE, error.getUserMessage())
 
         coVerify(exactly = 0) { plexKtorService.removeFromWatchlist(any(), any()) }
         coVerify(exactly = 0) { jellyseerrKtorService.removeFromWatchlist(any()) }
@@ -100,7 +100,7 @@ class WatchlistPlexTokenTest {
         ).map { (it as Result.Error).error.getUserMessage() }
 
         messages.forEach { message ->
-            assertFalse(message.contains("plex_token"), "leaked storage key: $message")
+            assertFalse(message.contains(PLEX_TOKEN_KEY), "leaked storage key: $message")
             assertFalse(message.contains("token not found", ignoreCase = true), "developer wording: $message")
             assertFalse(message.contains("unexpected error", ignoreCase = true), "unhelpful wording: $message")
         }
@@ -119,7 +119,7 @@ class WatchlistPlexTokenTest {
 
     @Test
     fun `Plex writes still work when the token is present`() = runBlocking {
-        stored["plex_token"] = "a-live-token"
+        stored[PLEX_TOKEN_KEY] = "a-live-token"
         val repo = repository(isJellyseerr = false)
 
         assertTrue(repo.addToWatchlist(603, MediaType.MOVIE, "5d77").isSuccess)
@@ -144,19 +144,19 @@ class WatchlistPlexTokenTest {
 
     @Test
     fun `a 401 from plex on add asks the user to reconnect, not for a raw HTTP error`() = runBlocking {
-        stored["plex_token"] = "a-revoked-token"
+        stored[PLEX_TOKEN_KEY] = "a-revoked-token"
         coEvery { plexKtorService.addToWatchlist(any(), any()) } throws unauthorized()
 
         val result = repository(isJellyseerr = false).addToWatchlist(603, MediaType.MOVIE, "5d77")
 
         val error = assertInstanceOf(Result.Error::class.java, result).error
         assertInstanceOf(AppError.PlexReauthRequired::class.java, error)
-        assertEquals("Reconnect your Plex account to manage your watchlist.", error.getUserMessage())
+        assertEquals(REAUTH_MESSAGE, error.getUserMessage())
     }
 
     @Test
     fun `a 401 from plex on remove asks the user to reconnect`() = runBlocking {
-        stored["plex_token"] = "a-revoked-token"
+        stored[PLEX_TOKEN_KEY] = "a-revoked-token"
         coEvery { plexKtorService.removeFromWatchlist(any(), any()) } throws unauthorized()
 
         val result = repository(isJellyseerr = false).removeFromWatchlist(1399, MediaType.TV, "5d9c")
@@ -173,7 +173,7 @@ class WatchlistPlexTokenTest {
      */
     @Test
     fun `a 401 while looking up the ratingKey is not flattened into a not-found error`() = runBlocking {
-        stored["plex_token"] = "a-revoked-token"
+        stored[PLEX_TOKEN_KEY] = "a-revoked-token"
         coEvery { plexKtorService.searchDiscover(any(), any(), any()) } throws unauthorized()
 
         val result = repository(isJellyseerr = false).addToWatchlist(603, MediaType.MOVIE, ratingKey = null)
@@ -190,7 +190,7 @@ class WatchlistPlexTokenTest {
      */
     @Test
     fun `a non-401 plex failure is not reported as a Plex re-link`() = runBlocking {
-        stored["plex_token"] = "a-live-token"
+        stored[PLEX_TOKEN_KEY] = "a-live-token"
         coEvery { plexKtorService.addToWatchlist(any(), any()) } throws RuntimeException("boom")
 
         val result = repository(isJellyseerr = false).addToWatchlist(603, MediaType.MOVIE, "5d77")
@@ -206,7 +206,7 @@ class WatchlistPlexTokenTest {
 
     @Test
     fun `an empty stored token is treated as absent`() = runBlocking {
-        stored["plex_token"] = ""
+        stored[PLEX_TOKEN_KEY] = ""
         val repo = repository(isJellyseerr = false)
 
         assertInstanceOf(
@@ -220,5 +220,10 @@ class WatchlistPlexTokenTest {
 
         coVerify(exactly = 0) { plexKtorService.addToWatchlist(any(), any()) }
         coVerify(exactly = 0) { plexKtorService.removeFromWatchlist(any(), any()) }
+    }
+
+    private companion object {
+        const val PLEX_TOKEN_KEY = "plex_token"
+        const val REAUTH_MESSAGE = "Reconnect your Plex account to manage your watchlist."
     }
 }

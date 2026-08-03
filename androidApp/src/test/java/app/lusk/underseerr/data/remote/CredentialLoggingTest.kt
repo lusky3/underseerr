@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
+import kotlin.random.Random
 
 /**
  * The Ktor client logged at [io.ktor.client.plugins.logging.LogLevel.ALL], which
@@ -176,10 +177,20 @@ class CredentialLoggingTest {
     }
 
     private companion object {
-        const val SESSION_SECRET = "s%3AsessionSecretValue123.signature"
-        const val ROTATED_SECRET = "s%3ArotatedSecretValue456.signature"
-        const val PLEX_SECRET = "plexTokenSecretValue789"
-        const val API_KEY_SECRET = "overseerrApiKeySecretValue321"
-        const val PASSWORD_SECRET = "hunter2SuperSecretPassword"
+        /**
+         * Generated at runtime rather than written as literals. Credential-shaped
+         * string literals trip secret scanners (Snyk Code flagged the previous ones
+         * as hardcoded secrets/passwords), and these values only need to be unique,
+         * greppable markers that must not appear in captured log output.
+         */
+        private fun marker(label: String): String =
+            "DUMMY-" + label + "-" + Random.nextLong(1_000_000_000L, 9_999_999_999L)
+
+        // `s%3A` mirrors express-session's encoding so the cookie shape stays realistic.
+        val SESSION_SECRET = "s%3A" + marker("session")
+        val ROTATED_SECRET = "s%3A" + marker("rotated")
+        val PLEX_SECRET = marker("plex")
+        val API_KEY_SECRET = marker("apikey")
+        val PASSWORD_SECRET = marker("passphrase")
     }
 }

@@ -214,7 +214,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { cookie -> if (cookie == FRESH) ok() else forbidden() } }
 
         // Opening a media item — the exact action that produced the 403.
-        val response: HttpResponse = client.get("/api/v1/movie/42")
+        val response: HttpResponse = client.get(PROTECTED_PATH)
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals(listOf(STALE, FRESH), sentCookies, "stale attempt then fresh retry")
@@ -234,7 +234,7 @@ class SessionRefreshTest {
             }
         }
 
-        assertEquals(HttpStatusCode.OK, client.get("/api/v1/movie/42").status)
+        assertEquals(HttpStatusCode.OK, client.get(PROTECTED_PATH).status)
         assertEquals(1, reauthAttempts.get())
     }
 
@@ -247,7 +247,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/movie/42") }
+            runBlocking { client.get(PROTECTED_PATH) }
         }
 
         assertTrue(stored.isEmpty(), "secure credentials must be dropped: $stored")
@@ -268,7 +268,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/movie/42") }
+            runBlocking { client.get(PROTECTED_PATH) }
         }
 
         // The explicit logout has always cleared Room; being forced out must not
@@ -286,7 +286,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/movie/42") }
+            runBlocking { client.get(PROTECTED_PATH) }
         }
 
         // Half a sign-out is worse than none: the app would keep believing it is
@@ -328,7 +328,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/movie/42") }
+            runBlocking { client.get(PROTECTED_PATH) }
         }
 
         assertEquals(1, reauthAttempts.get(), "re-auth must be attempted exactly once")
@@ -347,7 +347,7 @@ class SessionRefreshTest {
         }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/movie/42") }
+            runBlocking { client.get(PROTECTED_PATH) }
         }
 
         assertEquals(GOOD_TOKEN, stored[SessionRefresher.PLEX_TOKEN_KEY], "token must survive a network blip")
@@ -364,7 +364,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/movie/42") }
+            runBlocking { client.get(PROTECTED_PATH) }
         }
 
         assertEquals(0, reauthAttempts.get(), "nothing to refresh with, so no call")
@@ -383,7 +383,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/movie/42") }
+            runBlocking { client.get(PROTECTED_PATH) }
         }
 
         assertEquals(0, reauthAttempts.get(), "must not re-auth an API-key user")
@@ -470,7 +470,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/settings/main") }
+            runBlocking { client.get(ADMIN_GATED_PATH) }
         }
 
         assertEquals(1, probeAttempts.get(), "the session must be checked, not assumed dead")
@@ -493,7 +493,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/settings/main") }
+            runBlocking { client.get(ADMIN_GATED_PATH) }
         }
 
         assertEquals(0, reauthAttempts.get())
@@ -513,7 +513,7 @@ class SessionRefreshTest {
 
         repeat(3) {
             assertThrows(ClientRequestException::class.java) {
-                runBlocking { client.get("/api/v1/settings/main") }
+                runBlocking { client.get(ADMIN_GATED_PATH) }
             }
         }
 
@@ -530,7 +530,7 @@ class SessionRefreshTest {
         val client = buildClient { engine { forbidden() } }
 
         assertThrows(ClientRequestException::class.java) {
-            runBlocking { client.get("/api/v1/movie/42") }
+            runBlocking { client.get(PROTECTED_PATH) }
         }
 
         assertEquals(0, reauthAttempts.get(), "an unanswered probe proves nothing")
@@ -580,7 +580,7 @@ class SessionRefreshTest {
 
         val client = buildClient { engine { cookie -> if (cookie == FRESH) ok() else forbidden() } }
 
-        assertEquals(HttpStatusCode.OK, client.get("/api/v1/movie/42").status)
+        assertEquals(HttpStatusCode.OK, client.get(PROTECTED_PATH).status)
         assertEquals(
             FRESH,
             stored[SessionRefresher.COOKIE_KEY],
@@ -596,11 +596,13 @@ class SessionRefreshTest {
 
         val client = buildClient { engine { cookie -> if (cookie == RENAMED) ok() else forbidden() } }
 
-        assertEquals(HttpStatusCode.OK, client.get("/api/v1/movie/42").status)
+        assertEquals(HttpStatusCode.OK, client.get(PROTECTED_PATH).status)
         assertEquals(RENAMED, stored[SessionRefresher.COOKIE_KEY])
     }
 
     private companion object {
+        const val PROTECTED_PATH = "/api/v1/movie/42"
+        const val ADMIN_GATED_PATH = "/api/v1/settings/main"
         const val SERVER_URL = "https://overseerr.example.com"
         const val REAUTH_PATH = "/api/v1/auth/plex"
         const val PROBE_PATH = "/api/v1/auth/me"
