@@ -111,7 +111,7 @@ android {
 
 configurations.all {
     resolutionStrategy {
-        force("io.netty:netty-codec-http:4.2.13.Final")
+        force("io.netty:netty-codec-http:4.2.16.Final")
         force("org.apache.commons:commons-lang3:3.20.0")
         force("org.apache.httpcomponents:httpclient:4.5.14")
     }
