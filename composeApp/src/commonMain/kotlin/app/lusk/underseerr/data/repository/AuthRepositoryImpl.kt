@@ -44,7 +44,7 @@ class AuthRepositoryImpl(
          * Placeholder written by builds that predate session-cookie storage.
          * It is not a credential: a device carrying it has to sign in again.
          */
-        const val LEGACY_NO_API_KEY_MARKER = "no_api_key"
+        const val LEGACY_NO_API_KEY_MARKER = SessionRefresher.LEGACY_NO_API_KEY_MARKER
     }
 
     /** Guards the one-shot legacy cleanup below. */

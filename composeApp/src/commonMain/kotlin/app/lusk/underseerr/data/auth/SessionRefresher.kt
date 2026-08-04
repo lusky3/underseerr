@@ -273,6 +273,9 @@ class SessionRefresher(
         const val COOKIE_KEY = "cookie_auth_token"
         const val PLEX_TOKEN_KEY = "plex_token"
         const val API_KEY_STORAGE_KEY = "underseerr_api_key"
+
+        /** Pre-1.0 placeholder written where no real key existed. Not a usable session. */
+        const val LEGACY_NO_API_KEY_MARKER = "no_api_key"
         const val SESSION_MARKER = "SESSION_COOKIE"
 
         /** Where the session probe goes. Reachable by any signed-in user. */

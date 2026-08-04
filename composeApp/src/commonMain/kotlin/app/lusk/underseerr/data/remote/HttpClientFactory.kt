@@ -185,17 +185,17 @@ class HttpClientFactory(
         val isOverseerrRequest = !builder.url.host.contains("plex.tv") && baseUrl.isNotEmpty() && builder.url.host == io.ktor.http.Url(baseUrl).host
         
         if (isOverseerrRequest) {
-            val apiKey = securityManager.retrieveSecureData("underseerr_api_key")
+            val apiKey = securityManager.retrieveSecureData(SessionRefresher.API_KEY_STORAGE_KEY)
             
             if (!apiKey.isNullOrEmpty() && 
                 apiKey != "SESSION_COOKIE" && 
-                apiKey != "no_api_key" && 
+                apiKey != SessionRefresher.LEGACY_NO_API_KEY_MARKER && 
                 !apiKey.contains("@")
             ) {
                 builder.headers["X-Api-Key"] = apiKey
             } else {
                 // If no API key, check for session cookie from SecurityManager
-                val cookie = securityManager.retrieveSecureData("cookie_auth_token")
+                val cookie = securityManager.retrieveSecureData(SessionRefresher.COOKIE_KEY)
                 if (!cookie.isNullOrEmpty()) {
                      builder.headers["Cookie"] = cookie
                 }
@@ -216,9 +216,9 @@ class HttpClientFactory(
         if (baseUrl.isNotEmpty() || !isApiRequest) return baseUrl
 
             // 3. Identify if we have ANY authentication data (API key or Session Cookie)
-            val existingApiKey = securityManager.retrieveSecureData("underseerr_api_key")
-            val existingCookie = securityManager.retrieveSecureData("cookie_auth_token")
-            val hasAuthData = (!existingApiKey.isNullOrEmpty() && existingApiKey != "no_api_key") || 
+            val existingApiKey = securityManager.retrieveSecureData(SessionRefresher.API_KEY_STORAGE_KEY)
+            val existingCookie = securityManager.retrieveSecureData(SessionRefresher.COOKIE_KEY)
+            val hasAuthData = (!existingApiKey.isNullOrEmpty() && existingApiKey != SessionRefresher.LEGACY_NO_API_KEY_MARKER) || 
                               !existingCookie.isNullOrEmpty()
 
             // 4. Retry Loop: ALWAYS wait for URL if making an API request and URL is empty
@@ -243,9 +243,9 @@ class HttpClientFactory(
                     
                     // C. Also check if auth data appeared (might help with timing)
                     if (baseUrl.isEmpty() && retries % 5 == 0) {
-                        val newApiKey = securityManager.retrieveSecureData("underseerr_api_key")
-                        val newCookie = securityManager.retrieveSecureData("cookie_auth_token")
-                        if ((!newApiKey.isNullOrEmpty() && newApiKey != "no_api_key") || !newCookie.isNullOrEmpty()) {
+                        val newApiKey = securityManager.retrieveSecureData(SessionRefresher.API_KEY_STORAGE_KEY)
+                        val newCookie = securityManager.retrieveSecureData(SessionRefresher.COOKIE_KEY)
+                        if ((!newApiKey.isNullOrEmpty() && newApiKey != SessionRefresher.LEGACY_NO_API_KEY_MARKER) || !newCookie.isNullOrEmpty()) {
                             debugLog { "HttpClient: Auth data appeared at retry $retries, continuing to wait for URL..." }
                         }
                     }
