@@ -82,6 +82,12 @@ class SecurityManagerImpl(
         encryptedPrefs.getString(key, null)
     }
 
+    override suspend fun removeSecureData(key: String) {
+        withContext(Dispatchers.IO) {
+            encryptedPrefs.edit().remove(key).apply()
+        }
+    }
+
     override suspend fun clearSecureData() {
         withContext(Dispatchers.IO) {
             encryptedPrefs.edit().clear().apply()

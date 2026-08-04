@@ -78,7 +78,18 @@ fun MediaDetailsScreen(
     var showReportIssueDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
+    // This screen owns its own DiscoveryViewModel instance (per NavBackStackEntry),
+    // and uiEvent is a zero-replay SharedFlow: without a collector here every message
+    // the watchlist/request actions on this page emit is dropped on the floor, so a
+    // failed "Add to Watchlist" would look like nothing happened at all.
+    LaunchedEffect(viewModel) {
+        viewModel.uiEvent.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+
     // Auto-open request dialog if requested
     LaunchedEffect(openRequest) {
         if (openRequest) {

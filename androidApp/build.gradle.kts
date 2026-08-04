@@ -176,6 +176,10 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
+    // kotest 6 no longer drags in the Jupiter engine, and without it every plain
+    // @Test class compiles but is silently never executed by the JUnit Platform.
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.property)
@@ -183,7 +187,16 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.robolectric)
+    // Robolectric pins bcprov 1.81, which carries a critical GOST-28147 CVE.
+    // Robolectric hard-requires the library (excluding it fails class loading),
+    // so pull the patched release onto the test classpath instead.
+    testImplementation(libs.bouncycastle.bcprov)
     testImplementation(libs.mockwebserver)
+    testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.androidx.datastore)
+    testImplementation(libs.ktor.client.core)
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.serialization.kotlinx.json)
     testImplementation(libs.retrofit)
     testImplementation(libs.retrofit.kotlinx.serialization)
     testImplementation(libs.okhttp.logging)

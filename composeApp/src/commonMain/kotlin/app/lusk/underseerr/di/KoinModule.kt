@@ -15,12 +15,32 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
 fun sharedModule(context: PlatformContext) = module {
+    // Resolve platform config before anything reads AppConfig.isDebug.
+    app.lusk.underseerr.util.initAppConfig(context)
+
     // Preferences
     single<androidx.datastore.core.DataStore<androidx.datastore.preferences.core.Preferences>> { createDataStore(context) }
     single { PreferencesManager(get()) }
     
     // Network
-    single<io.ktor.client.HttpClient> { HttpClientFactory(get(), get()).create() }
+    // SessionRefresher resolves the HttpClient lazily to break the construction
+    // cycle (HttpClient -> SessionRefresher -> HttpClient).
+    single { app.lusk.underseerr.data.auth.SessionExpiryNotifier() }
+    // One sign-out routine for both the explicit logout and the involuntary one.
+    // Depends on the database (resolved lazily below) but never on the HttpClient,
+    // so it adds no construction cycle.
+    single {
+        app.lusk.underseerr.data.auth.SessionCleaner(
+            get(), get(), get(),
+            app.lusk.underseerr.data.auth.RoomCacheCleaner(get<UnderseerrDatabase>())
+        )
+    }
+    single {
+        app.lusk.underseerr.data.auth.SessionRefresher(get(), get(), get(), get(), get()) {
+            get<io.ktor.client.HttpClient>()
+        }
+    }
+    single<io.ktor.client.HttpClient> { HttpClientFactory(get(), get(), get()).create() }
     single { AuthKtorService(get()) }
     single { DiscoveryKtorService(get()) }
     single { UserKtorService(get()) }
@@ -30,14 +50,7 @@ fun sharedModule(context: PlatformContext) = module {
     single<IssueService> { IssueKtorService(get()) }
     single { SettingsKtorService(get()) }
     single { NotificationServerService(get()) }
-    single { 
-        val baseUrl = if (app.lusk.underseerr.shared.BuildKonfig.DEBUG) {
-            app.lusk.underseerr.shared.BuildKonfig.WORKER_ENDPOINT_STAGING
-        } else {
-            app.lusk.underseerr.shared.BuildKonfig.WORKER_ENDPOINT_PROD
-        }
-        SubscriptionKtorService(get(), baseUrl)
-    }
+    single { SubscriptionKtorService(get(), app.lusk.underseerr.util.defaultWorkerEndpoint) }
     
     // Database
     single { 

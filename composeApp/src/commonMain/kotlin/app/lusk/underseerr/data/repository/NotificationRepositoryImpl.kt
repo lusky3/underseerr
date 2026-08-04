@@ -7,7 +7,6 @@ import app.lusk.underseerr.data.remote.api.SettingsKtorService
 import app.lusk.underseerr.data.remote.api.UserKtorService
 import app.lusk.underseerr.data.remote.model.*
 import app.lusk.underseerr.data.remote.safeApiCall
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import app.lusk.underseerr.domain.model.Notification
 import app.lusk.underseerr.domain.repository.NotificationSettings
@@ -19,7 +18,6 @@ import app.lusk.underseerr.domain.security.WebPushKeyManager
 import app.lusk.underseerr.util.AppLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import app.lusk.underseerr.shared.BuildKonfig
 import kotlinx.coroutines.flow.map
 
 /**
@@ -48,7 +46,7 @@ class NotificationRepositoryImpl(
         // Determine Notification Server URL (Worker Proxy)
         val customServerUrl = settingsRepository.getNotificationServerUrl().first()
         val serverUrl = if (customServerUrl.isNullOrBlank()) {
-             if (BuildKonfig.DEBUG) BuildKonfig.WORKER_ENDPOINT_STAGING else BuildKonfig.WORKER_ENDPOINT_PROD
+             app.lusk.underseerr.util.defaultWorkerEndpoint
         } else {
              customServerUrl
         }
@@ -57,7 +55,9 @@ class NotificationRepositoryImpl(
         // Endpoint points to the Worker, which will proxy to FCM.
         val endpoint = "$cleanUrl/push/$token"
         
-        logger.d(TAG, "Registering for Web Push Proxy: endpoint=$endpoint")
+        // $endpoint embeds the FCM registration token and is a capability URL:
+        // anyone who reads it can push arbitrary notifications to this device.
+        logger.d(TAG, "Registering for Web Push Proxy at $cleanUrl")
         
         // Register token with our Notification Worker/Proxy for subscription gating
         val userResult = authRepository.getCurrentUser()
@@ -88,7 +88,9 @@ class NotificationRepositoryImpl(
                 ),
                 userAgent = "Mozilla/5.0 (Linux; Android 13; Underseerr) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36"
             )
-            println("NotificationRepository: Registering subscription: $subscription")
+            // Never log the payload: ApiPushKeys.auth is the Web Push shared secret,
+            // and the endpoint is a capability URL that can push to this device.
+            logger.d(TAG, "Registering push subscription with the notification server")
             userKtorService.registerPushSubscription(subscription)
         }
     }

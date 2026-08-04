@@ -75,6 +75,19 @@ sealed class AppError {
     ) : AppError()
     
     /**
+     * The stored Plex token is gone or was revoked, and the action cannot be
+     * completed without one.
+     *
+     * Overseerr exposes no watchlist write endpoint — its `/discover/watchlist`
+     * is a read-only mirror of Plex Discover — so watchlist reads can fall back
+     * to Overseerr but adds and removes cannot. The user has to re-link Plex.
+     */
+    data class PlexReauthRequired(
+        override val message: String = "Reconnect your Plex account to manage your watchlist.",
+        override val cause: Throwable? = null
+    ) : AppError()
+
+    /**
      * Timeout errors.
      */
     data class TimeoutError(
@@ -111,6 +124,7 @@ sealed class AppError {
             is ValidationError -> message
             is NotFoundError -> "The requested item was not found."
             is PermissionError -> "You don't have permission to perform this action."
+            is PlexReauthRequired -> message
             is TimeoutError -> "Request timed out. Please check your connection and try again."
             is UnknownError -> "An unexpected error occurred. Please try again."
         }

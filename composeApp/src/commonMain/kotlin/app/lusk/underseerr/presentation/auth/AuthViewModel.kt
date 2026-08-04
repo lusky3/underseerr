@@ -146,7 +146,8 @@ class AuthViewModel(
             when (val result = authRepository.initiatePlexLogin()) {
                 is Result.Success -> {
                     val (pinId, authUrl) = result.data
-                    logger.d("AuthViewModel", "Plex PIN obtained: $pinId, URL: $authUrl")
+                    // The auth URL embeds the single-use PIN code — log the id only.
+                    logger.d("AuthViewModel", "Plex PIN obtained: $pinId")
                     _authState.value = AuthState.WaitingForPlex(pinId, authUrl)
                 }
                 is Result.Error -> {

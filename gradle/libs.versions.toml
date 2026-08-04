@@ -5,8 +5,8 @@
 # Bump these two here only; androidApp and composeApp both read from them,
 # and `verifyAppVersion` fails the release build if AppChangelog.kt's top
 # entry doesn't match.
-appVersionCode = "9"
-appVersionName = "1.0.7"
+appVersionCode = "10"
+appVersionName = "1.0.8"
 
 # SDK Versions
 compileSdk = "36"
@@ -64,6 +64,8 @@ datetime = "0.7.1"
 
 # Testing
 junit = "4.13.2"
+junitJupiter = "5.13.4"
+bouncycastle = "1.85"
 junitExt = "1.3.0"
 espresso = "3.7.0"
 kotest = "6.1.5"
@@ -163,6 +165,9 @@ android-billing = { group = "com.android.billingclient", name = "billing-ktx", v
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junitJupiter" }
+junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "junitJupiter" }
+bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
@@ -181,6 +186,7 @@ ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.r
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+ktor-client-mock = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
 
 # Koin
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }

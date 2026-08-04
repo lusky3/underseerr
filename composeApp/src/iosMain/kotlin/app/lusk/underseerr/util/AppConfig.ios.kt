@@ -9,3 +9,6 @@ actual object AppConfig {
     actual val versionCode: Int = BuildKonfig.VERSION_CODE
     actual val versionName: String = BuildKonfig.VERSION_NAME
 }
+
+/** No-op: `Platform.isDebugBinary` already reflects the binary being run. */
+actual fun initAppConfig(context: PlatformContext) = Unit

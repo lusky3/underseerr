@@ -15,6 +15,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
+import org.koin.compose.koinInject
+import app.lusk.underseerr.data.auth.SessionExpiryNotifier
+import app.lusk.underseerr.data.auth.userMessage
 
 /**
  * Plex authentication screen with OAuth flow.
@@ -31,6 +34,7 @@ fun PlexAuthScreen(
     viewModel: AuthViewModel = koinViewModel()
 ) {
     val authState by viewModel.authState.collectAsState()
+    val sessionExpiryReason by koinInject<SessionExpiryNotifier>().reason.collectAsState()
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     
@@ -107,6 +111,29 @@ fun PlexAuthScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Explain an involuntary sign-out (expired session, revoked Plex token)
+            // so landing here doesn't look like the app randomly logged them out.
+            sessionExpiryReason?.let { reason ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                ) {
+                    Text(
+                        text = reason.userMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    )
+                }
+            }
+
             when (authState) {
                 is AuthState.AuthenticatingWithPlex -> {
                     CircularProgressIndicator(

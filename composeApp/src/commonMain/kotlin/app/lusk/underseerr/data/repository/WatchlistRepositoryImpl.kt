@@ -12,12 +12,14 @@ import app.lusk.underseerr.data.remote.api.PlexKtorService
 import app.lusk.underseerr.data.remote.api.PlexWatchlistResponse
 import app.lusk.underseerr.data.remote.api.PlexMetadata
 import app.lusk.underseerr.data.remote.safeApiCall
+import app.lusk.underseerr.domain.model.AppError
 import app.lusk.underseerr.domain.model.MediaType
 import app.lusk.underseerr.domain.model.Result
 import app.lusk.underseerr.domain.model.SearchResult
 import app.lusk.underseerr.domain.repository.AuthRepository
 import app.lusk.underseerr.domain.repository.WatchlistRepository
 import app.lusk.underseerr.domain.security.SecurityManager
+import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
@@ -46,8 +48,8 @@ class WatchlistRepositoryImpl(
 
     override suspend fun getWatchlistIds(): Result<Set<Int>> {
         return safeApiCall {
-            val plexToken = securityManager.retrieveSecureData("plex_token")
-            val results = if (plexToken != null) {
+            val plexToken = securityManager.retrieveSecureData(PLEX_TOKEN_KEY)
+            val results = if (!plexToken.isNullOrEmpty()) {
                 // Fetch first page of Plex watchlist (max 50 for quick check)
                 val response = plexKtorService.getWatchlist(plexToken, 1)
                 mapPlexWatchlist(response).map { it.id }
@@ -83,28 +85,92 @@ class WatchlistRepositoryImpl(
         }
     }
 
+    /**
+     * Runs a watchlist mutation against whichever backend owns the watchlist.
+     *
+     * Jellyseerr has its own watchlist endpoints. Overseerr does not — its
+     * `/discover/watchlist` is a read-only mirror of Plex Discover — so an
+     * Overseerr install can only be written to via Plex. When the Plex token has
+     * been dropped (revoked upstream, see HttpClientFactory) reads still fall
+     * back to Overseerr, but writes are impossible until the user re-links Plex.
+     * Report that as a typed, actionable error rather than a raw exception.
+     *
+     * The *first* write after a revocation does not see an absent token: the token
+     * is still in storage, plex.tv answers 401, and only then does the HTTP client
+     * delete it. Without [plexCall] that first attempt would surface a raw HTTP
+     * error and only a second attempt would get the friendly message, so a 401 from
+     * plex.tv is mapped to the same [AppError.PlexReauthRequired].
+     */
+    private suspend fun runWatchlistWrite(
+        onJellyseerr: suspend () -> Unit,
+        onPlex: suspend (plexToken: String) -> Unit
+    ): Result<Unit> {
+        val outcome = safeApiCall {
+            if (authRepository.getIsJellyseerr().first()) {
+                onJellyseerr()
+                true
+            } else {
+                val plexToken = securityManager.retrieveSecureData(PLEX_TOKEN_KEY)
+                // isNullOrEmpty, not == null: an empty string is not a usable token,
+                // and SessionRefresher already treats the two the same for this key.
+                if (plexToken.isNullOrEmpty()) {
+                    false
+                } else {
+                    plexCall { onPlex(plexToken) }
+                    true
+                }
+            }
+        }
+
+        return when (outcome) {
+            is Result.Success ->
+                if (outcome.data) Result.success(Unit)
+                else Result.error(AppError.PlexReauthRequired())
+            is Result.Error -> {
+                val rejection = outcome.error.cause as? PlexTokenRejected
+                if (rejection != null) Result.error(AppError.PlexReauthRequired(cause = rejection.cause))
+                else Result.error(outcome.error)
+            }
+            is Result.Loading -> Result.loading()
+        }
+    }
+
+    /**
+     * Runs a plex.tv call, tagging a 401 so [runWatchlistWrite] can report it as
+     * "re-link Plex" instead of letting `safeApiCall` turn it into a bare
+     * `AppError.AuthError` ("Authentication required") that points the user at the
+     * wrong account.
+     */
+    private suspend fun <T> plexCall(block: suspend () -> T): T =
+        try {
+            block()
+        } catch (e: ResponseException) {
+            if (e.response.status.value == 401) throw PlexTokenRejected(e) else throw e
+        }
+
+    /** Internal marker; never surfaced to the UI. See [plexCall]. */
+    private class PlexTokenRejected(cause: Throwable) :
+        Exception("Plex rejected the stored token", cause)
+
     override suspend fun addToWatchlist(tmdbId: Int, mediaType: MediaType, ratingKey: String?): Result<Unit> {
-        return safeApiCall {
-            val isJellyseerr = authRepository.getIsJellyseerr().first()
-            val mediaTypeString = if (mediaType == MediaType.TV) "tv" else "movie"
-            if (isJellyseerr) {
+        return runWatchlistWrite(
+            onJellyseerr = {
+                val mediaTypeString = if (mediaType == MediaType.TV) "tv" else "movie"
                 jellyseerrKtorService.addToWatchlist(
                     JellyseerrWatchlistRequest(tmdbId = tmdbId, mediaType = mediaTypeString)
                 )
-            } else {
-                val plexToken = securityManager.retrieveSecureData("plex_token")
-                    ?: throw Exception("Plex token not found - required for watchlist addition")
-                
+            },
+            onPlex = { plexToken ->
                 val plexMediaType = if (mediaType == MediaType.TV) "show" else "movie"
                 val finalRatingKey = ratingKey ?: findPlexRatingKey(plexToken, tmdbId, plexMediaType)
-                
+
                 if (finalRatingKey != null) {
                     plexKtorService.addToWatchlist(plexToken, finalRatingKey)
                 } else {
                     throw Exception("Could not find Plex ratingKey for TMDB ID $tmdbId")
                 }
             }
-        }
+        )
     }
 
     private suspend fun findPlexRatingKey(plexToken: String, tmdbId: Int, plexMediaType: String): String? {
@@ -126,7 +192,9 @@ class WatchlistRepositoryImpl(
             }
             
             println("WatchlistRepository: Searching Plex for '$title' ($year)")
-            val response = plexKtorService.searchDiscover(plexToken, title, plexMediaType)
+            // Only the Plex leg is tagged: a 401 from the Overseerr detail lookups
+            // above is an Overseerr problem and must not be reported as "re-link Plex".
+            val response = plexCall { plexKtorService.searchDiscover(plexToken, title, plexMediaType) }
             
             // 2. Iterate and match
             val allResults = response.mediaContainer.searchResults
@@ -148,6 +216,10 @@ class WatchlistRepositoryImpl(
             }
             
             ratingKey
+        } catch (e: PlexTokenRejected) {
+            // A revoked token must not be flattened into "no match found" — that would
+            // turn the actionable re-link prompt into "Could not find Plex ratingKey".
+            throw e
         } catch (e: Exception) {
             println("WatchlistRepository: Failed to find Plex ratingKey for TMDB ID $tmdbId: ${e.message}")
             e.printStackTrace()
@@ -156,17 +228,14 @@ class WatchlistRepositoryImpl(
     }
 
     override suspend fun removeFromWatchlist(tmdbId: Int, mediaType: MediaType, ratingKey: String?): Result<Unit> {
-        return safeApiCall {
-            val isJellyseerr = authRepository.getIsJellyseerr().first()
-            if (isJellyseerr) {
+        return runWatchlistWrite(
+            onJellyseerr = {
                 jellyseerrKtorService.removeFromWatchlist(tmdbId)
-            } else {
-                val plexToken = securityManager.retrieveSecureData("plex_token") 
-                    ?: throw Exception("Plex token not found")
-                
+            },
+            onPlex = { plexToken ->
                 val plexMediaType = if (mediaType == MediaType.TV) "show" else "movie"
                 val finalRatingKey = ratingKey ?: findPlexRatingKey(plexToken, tmdbId, plexMediaType)
-                
+
                 if (finalRatingKey != null) {
                     println("WatchlistRepository: Removing from Plex watchlist with ratingKey $finalRatingKey")
                     try {
@@ -182,6 +251,10 @@ class WatchlistRepositoryImpl(
                     throw Exception("Could not find Plex ratingKey for TMDB ID $tmdbId")
                 }
             }
-        }
+        )
+    }
+
+    private companion object {
+        const val PLEX_TOKEN_KEY = "plex_token"
     }
 }

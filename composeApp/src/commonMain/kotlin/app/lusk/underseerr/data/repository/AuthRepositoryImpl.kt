@@ -1,5 +1,6 @@
 package app.lusk.underseerr.data.repository
 
+import app.lusk.underseerr.data.auth.SessionRefresher
 import app.lusk.underseerr.data.preferences.PreferencesManager
 import app.lusk.underseerr.data.remote.api.AuthKtorService
 import app.lusk.underseerr.data.remote.api.PlexKtorService
@@ -18,6 +19,8 @@ import io.ktor.client.call.body
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Implementation of AuthRepository for authentication operations.
@@ -30,13 +33,23 @@ class AuthRepositoryImpl(
     private val settingsKtorService: app.lusk.underseerr.data.remote.api.SettingsKtorService,
     private val securityManager: SecurityManager,
     private val preferencesManager: PreferencesManager,
-    private val database: app.lusk.underseerr.data.local.UnderseerrDatabase
+    private val sessionCleaner: app.lusk.underseerr.data.auth.SessionCleaner
 ) : AuthRepository {
     
     companion object {
         private const val API_KEY_STORAGE_KEY = "underseerr_api_key"
         private const val SESSION_STORAGE_KEY = "underseerr_session"
+
+        /**
+         * Placeholder written by builds that predate session-cookie storage.
+         * It is not a credential: a device carrying it has to sign in again.
+         */
+        const val LEGACY_NO_API_KEY_MARKER = SessionRefresher.LEGACY_NO_API_KEY_MARKER
     }
+
+    /** Guards the one-shot legacy cleanup below. */
+    private val legacyMarkerMutex = kotlinx.coroutines.sync.Mutex()
+    private var legacyMarkerHandled = false
     
     override suspend fun validateServerUrl(url: String, allowHttp: Boolean): Result<ServerInfo> {
         val cleanUrl = url.trim()
@@ -119,32 +132,15 @@ class AuthRepositoryImpl(
         }
     }
     
+    /**
+     * Exchanges a Plex token for an Overseerr session.
+     *
+     * Every token reaching here is untrusted input: `underseerr://auth?token=…`
+     * is an exported, BROWSABLE deep link, so the string can come from any web
+     * page or installed app. Only the server may decide whether a token is
+     * valid — there is deliberately no locally recognised token.
+     */
     override suspend fun authenticateWithPlex(plexToken: String): Result<UserProfile> {
-        // Debug Bypass
-        if (plexToken == "debug_token_12345") {
-            println("AuthRepositoryImpl: Debug token detected. Bypassing authentication.")
-            val dummyUser = UserProfile(
-                id = 1,
-                email = "debug@example.com",
-                displayName = "Debug User",
-                avatar = null,
-                requestCount = 0,
-                permissions = app.lusk.underseerr.domain.model.Permissions(
-                    canRequest = true,
-                    canManageRequests = true,
-                    canViewRequests = true,
-                    isAdmin = true
-                ),
-                rawPermissions = 2L,
-                isPlexUser = true
-            )
-            val debugKey = "debug_session_key_12345"
-            securityManager.storeSecureData(API_KEY_STORAGE_KEY, debugKey)
-            preferencesManager.setUserId(1)
-            println("AuthRepositoryImpl: Stored dummy user ID 1 and debug API key.")
-            return Result.success(dummyUser)
-        }
-
         return try {
             // Call Plex authentication endpoint
             val result = safeApiCall {
@@ -159,19 +155,13 @@ class AuthRepositoryImpl(
                     // Store Plex token for direct Plex API access
                     securityManager.storeSecureData("plex_token", plexToken)
                     
-                    // Manually extract session cookie if present
-                    val setCookieHeader = response.headers["Set-Cookie"]
-                    println("AuthRepositoryImpl: Set-Cookie Header: $setCookieHeader")
-                    
-                    if (setCookieHeader != null) {
-                        val cookieValue = setCookieHeader.split(";").firstOrNull()
-                        if (cookieValue != null) {
-                             println("AuthRepositoryImpl: Storing cookie: $cookieValue")
-                             securityManager.storeSecureData("cookie_auth_token", cookieValue)
-                        }
+                    // Extract session cookie (shared with SessionRefresher so login
+                    // and refresh always store the cookie in the same shape)
+                    val cookieValue = SessionRefresher.extractSessionCookie(response)
+                    if (cookieValue != null) {
+                        securityManager.storeSecureData("cookie_auth_token", cookieValue)
                     } else {
                         println("AuthRepositoryImpl: WARNING - No Set-Cookie header found!")
-                        // Fallback: Check if we have a raw cookie list
                     }
                     
                     // Overseerr typically returns session cookie, so we don't always have an API key
@@ -213,12 +203,8 @@ class AuthRepositoryImpl(
                     val apiUserProfile: app.lusk.underseerr.data.remote.model.ApiUserProfile = response.body()
                     
                     // Store session cookie
-                    val setCookieHeader = response.headers["Set-Cookie"]
-                    if (setCookieHeader != null) {
-                        val cookieValue = setCookieHeader.split(";").firstOrNull()
-                        if (cookieValue != null) {
-                             securityManager.storeSecureData("cookie_auth_token", cookieValue)
-                        }
+                    SessionRefresher.extractSessionCookie(response)?.let { cookieValue ->
+                        securityManager.storeSecureData("cookie_auth_token", cookieValue)
                     }
                     
                     // Store session marker and user ID
@@ -248,12 +234,8 @@ class AuthRepositoryImpl(
                     val apiUserProfile: app.lusk.underseerr.data.remote.model.ApiUserProfile = response.body()
 
                     // Store session cookie
-                    val setCookieHeader = response.headers["Set-Cookie"]
-                    if (setCookieHeader != null) {
-                        val cookieValue = setCookieHeader.split(";").firstOrNull()
-                        if (cookieValue != null) {
-                            securityManager.storeSecureData("cookie_auth_token", cookieValue)
-                        }
+                    SessionRefresher.extractSessionCookie(response)?.let { cookieValue ->
+                        securityManager.storeSecureData("cookie_auth_token", cookieValue)
                     }
 
                     // Store session marker and user ID
@@ -321,33 +303,72 @@ class AuthRepositoryImpl(
         }
     }
     
+    /**
+     * The stored session, as a projection of what is on disk.
+     *
+     * Reading session state must stay free of side effects. This flow is cold
+     * and collected by several screens at once (every `AuthViewModel` collects
+     * `isAuthenticated()`, which maps over this), and it re-emits whenever the
+     * stored user id changes — so anything destructive placed in the `map` would
+     * run once per collector and again on every re-collection. The one piece of
+     * cleanup that is genuinely needed runs exactly once, in [clearLegacySessionMarkerOnce].
+     */
     override fun getStoredSession(): Flow<UnderseerrSession?> {
-        return preferencesManager.getUserId().map { userId ->
-            if (userId != null) {
-                val apiKey = securityManager.retrieveSecureData(API_KEY_STORAGE_KEY)
-                
-                // If we have the legacy "no_api_key" placeholder, force a re-login
-                // because we need to properly establish session cookies.
-                if (apiKey == "no_api_key") {
-                    // Log.d("AuthRepositoryImpl", "Found legacy 'no_api_key' placeholder. Forcing logout to refresh session.")
-                    logout() 
-                    return@map null
-                }
+        return preferencesManager.getUserId()
+            .onStart { clearLegacySessionMarkerOnce() }
+            .map { userId -> projectSession(userId) }
+    }
 
-                val serverUrl = preferencesManager.getServerUrl().first()
-                if (apiKey != null && serverUrl != null) {
-                    UnderseerrSession(
-                        userId = userId,
-                        apiKey = apiKey,
-                        serverUrl = serverUrl,
-                        expiresAt = null
-                    )
-                } else {
-                    null
+    /**
+     * Pure projection of stored state onto a session. No side effects: reading
+     * whether the user is signed in must never mutate anything.
+     */
+    private suspend fun projectSession(userId: Int?): UnderseerrSession? {
+        if (userId == null) return null
+
+        // The legacy placeholder is not a session: those devices have no usable
+        // cookie and must sign in again, whether or not the migration has run.
+        val apiKey = securityManager.retrieveSecureData(API_KEY_STORAGE_KEY)
+        if (apiKey == null || apiKey == LEGACY_NO_API_KEY_MARKER) return null
+
+        val serverUrl = preferencesManager.getServerUrl().first() ?: return null
+        return UnderseerrSession(
+            userId = userId,
+            apiKey = apiKey,
+            serverUrl = serverUrl,
+            expiresAt = null
+        )
+    }
+
+    /**
+     * Migrates a device off the legacy `"no_api_key"` placeholder, at most once
+     * per process.
+     *
+     * Such a device is signed out already as far as [getStoredSession] is
+     * concerned; this drops the leftovers (credentials, auth preferences and the
+     * account-scoped Room cache) so the next account to sign in on the device is
+     * not served the previous one's data. It is not routed through [logout]
+     * because there is no server session to end — the placeholder means no
+     * cookie was ever stored — and a network call has no business running when a
+     * screen merely reads the session state.
+     */
+    private suspend fun clearLegacySessionMarkerOnce() {
+        if (legacyMarkerHandled) return
+        legacyMarkerMutex.withLock {
+            if (legacyMarkerHandled) return
+            if (securityManager.retrieveSecureData(API_KEY_STORAGE_KEY) == LEGACY_NO_API_KEY_MARKER) {
+                try {
+                    sessionCleaner.clear()
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    // Don't latch the flag: a cancelled wipe must be retried next launch.
+                    throw e
+                } catch (e: Exception) {
+                    // Reading the session must not fail because the cleanup did.
+                    // The projection above keeps this device signed out regardless.
+                    println("AuthRepositoryImpl: legacy session cleanup failed: ${e.message}")
                 }
-            } else {
-                null
             }
+            legacyMarkerHandled = true
         }
     }
     
@@ -396,16 +417,9 @@ class AuthRepositoryImpl(
             // Ignore errors during logout API call
         }
         
-        // Clear stored credentials
-        securityManager.clearSecureData()
-        preferencesManager.clearAuthData()
-        
-        // Clear local database (cache, requests, users, etc.)
-        try {
-            database.clearAllTables()
-        } catch (e: Exception) {
-            println("AuthRepositoryImpl: Failed to clear database: ${e.message}")
-        }
+        // Credentials + local cache, in one place shared with the involuntary
+        // sign-out in SessionRefresher so the two can't drift.
+        sessionCleaner.clear()
     }
     
     override fun isAuthenticated(): Flow<Boolean> {

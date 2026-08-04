@@ -1,6 +1,5 @@
 package app.lusk.underseerr.di
 
-import app.lusk.underseerr.data.security.MemorySecurityManager
 import app.lusk.underseerr.domain.security.SecurityManager
 import app.lusk.underseerr.domain.security.WebPushKeyManager
 import app.lusk.underseerr.domain.sync.SyncScheduler

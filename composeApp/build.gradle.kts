@@ -51,7 +51,9 @@ kotlin {
         }
 
         defaultConfigs {
-            buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN, "DEBUG", "true")
+            // No DEBUG field on purpose: BuildKonfig emits one value for the whole
+            // compilation and cannot see the Android debug/release variant, so it always
+            // reported "debug". Use AppConfig.isDebug, which resolves per build.
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_PROD", getEnv("CLOUDFLARE_WORKER_ENDPOINT_PROD"))
             buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "WORKER_ENDPOINT_STAGING", getEnv("CLOUDFLARE_WORKER_ENDPOINT_STAGING"))
             // App version - single source of truth is gradle/libs.versions.toml
