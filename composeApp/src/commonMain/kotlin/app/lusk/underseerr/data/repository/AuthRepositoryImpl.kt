@@ -316,24 +316,28 @@ class AuthRepositoryImpl(
     override fun getStoredSession(): Flow<UnderseerrSession?> {
         return preferencesManager.getUserId()
             .onStart { clearLegacySessionMarkerOnce() }
-            .map { userId ->
-                if (userId == null) return@map null
+            .map { userId -> projectSession(userId) }
+    }
 
-                val apiKey = securityManager.retrieveSecureData(API_KEY_STORAGE_KEY)
+    /**
+     * Pure projection of stored state onto a session. No side effects: reading
+     * whether the user is signed in must never mutate anything.
+     */
+    private suspend fun projectSession(userId: Int?): UnderseerrSession? {
+        if (userId == null) return null
 
-                // The legacy placeholder is not a session: these devices have no
-                // usable cookie, so they must sign in again. Reported as "no
-                // session" whether or not the cleanup below has run yet.
-                if (apiKey == null || apiKey == LEGACY_NO_API_KEY_MARKER) return@map null
+        // The legacy placeholder is not a session: those devices have no usable
+        // cookie and must sign in again, whether or not the migration has run.
+        val apiKey = securityManager.retrieveSecureData(API_KEY_STORAGE_KEY)
+        if (apiKey == null || apiKey == LEGACY_NO_API_KEY_MARKER) return null
 
-                val serverUrl = preferencesManager.getServerUrl().first() ?: return@map null
-                UnderseerrSession(
-                    userId = userId,
-                    apiKey = apiKey,
-                    serverUrl = serverUrl,
-                    expiresAt = null
-                )
-            }
+        val serverUrl = preferencesManager.getServerUrl().first() ?: return null
+        return UnderseerrSession(
+            userId = userId,
+            apiKey = apiKey,
+            serverUrl = serverUrl,
+            expiresAt = null
+        )
     }
 
     /**

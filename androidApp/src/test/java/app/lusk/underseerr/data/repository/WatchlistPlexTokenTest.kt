@@ -119,14 +119,14 @@ class WatchlistPlexTokenTest {
 
     @Test
     fun `Plex writes still work when the token is present`() = runBlocking {
-        stored[PLEX_TOKEN_KEY] = "a-live-token"
+        stored[PLEX_TOKEN_KEY] = LIVE_TOKEN
         val repo = repository(isJellyseerr = false)
 
         assertTrue(repo.addToWatchlist(603, MediaType.MOVIE, "5d77").isSuccess)
         assertTrue(repo.removeFromWatchlist(603, MediaType.MOVIE, "5d77").isSuccess)
 
-        coVerify(exactly = 1) { plexKtorService.addToWatchlist("a-live-token", "5d77") }
-        coVerify(exactly = 1) { plexKtorService.removeFromWatchlist("a-live-token", "5d77") }
+        coVerify(exactly = 1) { plexKtorService.addToWatchlist(LIVE_TOKEN, "5d77") }
+        coVerify(exactly = 1) { plexKtorService.removeFromWatchlist(LIVE_TOKEN, "5d77") }
     }
 
     // --- the revocation the user actually hits first --------------------------
@@ -136,15 +136,10 @@ class WatchlistPlexTokenTest {
     // Without mapping that 401 the first attempt shows a raw HTTP error and only a
     // second attempt gets the actionable message.
 
-    private fun unauthorized(): ClientRequestException {
-        val response = mockk<HttpResponse>(relaxed = true)
-        every { response.status } returns HttpStatusCode.Unauthorized
-        return ClientRequestException(response, "Unauthorized")
-    }
 
     @Test
     fun `a 401 from plex on add asks the user to reconnect, not for a raw HTTP error`() = runBlocking {
-        stored[PLEX_TOKEN_KEY] = "a-revoked-token"
+        stored[PLEX_TOKEN_KEY] = REVOKED_TOKEN
         coEvery { plexKtorService.addToWatchlist(any(), any()) } throws unauthorized()
 
         val result = repository(isJellyseerr = false).addToWatchlist(603, MediaType.MOVIE, "5d77")
@@ -156,14 +151,14 @@ class WatchlistPlexTokenTest {
 
     @Test
     fun `a 401 from plex on remove asks the user to reconnect`() = runBlocking {
-        stored[PLEX_TOKEN_KEY] = "a-revoked-token"
+        stored[PLEX_TOKEN_KEY] = REVOKED_TOKEN
         coEvery { plexKtorService.removeFromWatchlist(any(), any()) } throws unauthorized()
 
         val result = repository(isJellyseerr = false).removeFromWatchlist(1399, MediaType.TV, "5d9c")
 
         val error = assertInstanceOf(Result.Error::class.java, result).error
         assertInstanceOf(AppError.PlexReauthRequired::class.java, error)
-        coVerify(exactly = 1) { plexKtorService.removeFromWatchlist("a-revoked-token", "5d9c") }
+        coVerify(exactly = 1) { plexKtorService.removeFromWatchlist(REVOKED_TOKEN, "5d9c") }
     }
 
     /**
@@ -173,7 +168,7 @@ class WatchlistPlexTokenTest {
      */
     @Test
     fun `a 401 while looking up the ratingKey is not flattened into a not-found error`() = runBlocking {
-        stored[PLEX_TOKEN_KEY] = "a-revoked-token"
+        stored[PLEX_TOKEN_KEY] = REVOKED_TOKEN
         coEvery { plexKtorService.searchDiscover(any(), any(), any()) } throws unauthorized()
 
         val result = repository(isJellyseerr = false).addToWatchlist(603, MediaType.MOVIE, ratingKey = null)
@@ -190,7 +185,7 @@ class WatchlistPlexTokenTest {
      */
     @Test
     fun `a non-401 plex failure is not reported as a Plex re-link`() = runBlocking {
-        stored[PLEX_TOKEN_KEY] = "a-live-token"
+        stored[PLEX_TOKEN_KEY] = LIVE_TOKEN
         coEvery { plexKtorService.addToWatchlist(any(), any()) } throws RuntimeException("boom")
 
         val result = repository(isJellyseerr = false).addToWatchlist(603, MediaType.MOVIE, "5d77")
@@ -224,6 +219,15 @@ class WatchlistPlexTokenTest {
 
     private companion object {
         const val PLEX_TOKEN_KEY = "plex_token"
+        const val LIVE_TOKEN = "a-live-token"
+        const val REVOKED_TOKEN = "a-revoked-token"
         const val REAUTH_MESSAGE = "Reconnect your Plex account to manage your watchlist."
     }
+}
+
+/** A 401 as Ktor surfaces it; file-scoped since it needs no fixture state. */
+private fun unauthorized(): ClientRequestException {
+    val response = mockk<HttpResponse>(relaxed = true)
+    every { response.status } returns HttpStatusCode.Unauthorized
+    return ClientRequestException(response, "Unauthorized")
 }

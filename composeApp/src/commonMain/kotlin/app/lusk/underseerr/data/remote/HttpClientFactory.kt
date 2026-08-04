@@ -136,17 +136,85 @@ class HttpClientFactory(
     }
 
     /** Resolves the configured base URL onto relative requests and attaches credentials. */
-    private fun installRequestDecoration(client: HttpClient) {
-        client.requestPipeline.intercept(io.ktor.client.request.HttpRequestPipeline.State) {
-            // 1. Initial resolution
-            var baseUrl = try {
-                 preferencesManager.getServerUrl().first()?.trim() ?: ""
-            } catch (e: Exception) { "" }
-
-            // 2. Determine if this is an API request that needs a server URL
-            // If the URL is currently targeting localhost, it means we're making a relative API call
-            val isApiRequest = context.url.host == "localhost" || context.url.host.isEmpty()
+    /** Rewrites a relative request onto the configured server, preserving any sub-path. */
+    private fun applyBaseUrl(builder: io.ktor.client.request.HttpRequestBuilder, baseUrl: String) {
+        // 4. Apply Base URL if found
+        if (baseUrl.isNotEmpty()) {
+            val currentHost = builder.url.host
+            val isRelative = currentHost == "localhost" || 
+                            currentHost == "127.0.0.1" || 
+                            currentHost == "10.0.2.2" || 
+                            currentHost.isEmpty()
             
+            if (isRelative) {
+                try {
+                    val newBase = io.ktor.http.Url(baseUrl)
+                    
+                    // Apply protocol, host, and port
+                    builder.url.protocol = newBase.protocol
+                    builder.url.host = newBase.host
+                    builder.url.port = newBase.port
+                
+                    // Handle sub-paths in the base URL (e.g. https://domain.com/overseerr)
+                    val baseSegments = newBase.segments.filter { it.isNotEmpty() }
+                    if (baseSegments.isNotEmpty()) {
+                        val originalSegments = builder.url.pathSegments.filter { it.isNotEmpty() }
+                        builder.url.pathSegments = baseSegments + originalSegments
+                    }
+                    
+                    // Let Ktor handle Host header automatically unless we have a reason to force it
+                    builder.headers.remove("Host") 
+                    
+                    debugLog { "HttpClient: [SUCCESS] Request targeting: ${builder.url.buildString()}" }
+                } catch (e: Exception) {
+                    debugLog { "HttpClient: [ERROR] Failed to apply Base URL '$baseUrl': ${e.message}" }
+                }
+            } else {
+                 debugLog { "HttpClient: [PASS] Already targeting external host: ${builder.url.host}" }
+            }
+        } else {
+            debugLog { "HttpClient: [CRITICAL] No Base URL found for ${builder.url.buildString()}. This request will likely fail to localhost." }
+        }
+        
+        // 5. Apply Credentials - Read fresh from Secure Storage
+        // ONLY apply Overseerr credentials to requests targeting our server
+    }
+
+    /** Attaches Overseerr credentials, and never leaks them to a third-party host. */
+    private suspend fun applyCredentials(builder: io.ktor.client.request.HttpRequestBuilder, baseUrl: String) {
+        val isOverseerrRequest = !builder.url.host.contains("plex.tv") && baseUrl.isNotEmpty() && builder.url.host == io.ktor.http.Url(baseUrl).host
+        
+        if (isOverseerrRequest) {
+            val apiKey = securityManager.retrieveSecureData("underseerr_api_key")
+            
+            if (!apiKey.isNullOrEmpty() && 
+                apiKey != "SESSION_COOKIE" && 
+                apiKey != "no_api_key" && 
+                !apiKey.contains("@")
+            ) {
+                builder.headers["X-Api-Key"] = apiKey
+            } else {
+                // If no API key, check for session cookie from SecurityManager
+                val cookie = securityManager.retrieveSecureData("cookie_auth_token")
+                if (!cookie.isNullOrEmpty()) {
+                     builder.headers["Cookie"] = cookie
+                }
+            }
+        } else {
+            // For non-Overseerr requests (like Plex), do NOT send our credentials
+            // This prevents bleeding API keys or Overseerr cookies to external sites
+        }
+    }
+
+    /**
+     * Waits up to three seconds for the server URL when a relative API call needs it.
+     * First login races the ViewModels: a request can be issued before DataStore has
+     * published the URL. Returns the initial value untouched when no wait is needed.
+     */
+    private suspend fun awaitBaseUrl(initial: String, isApiRequest: Boolean): String {
+        var baseUrl = initial
+        if (baseUrl.isNotEmpty() || !isApiRequest) return baseUrl
+
             // 3. Identify if we have ANY authentication data (API key or Session Cookie)
             val existingApiKey = securityManager.retrieveSecureData("underseerr_api_key")
             val existingCookie = securityManager.retrieveSecureData("cookie_auth_token")
@@ -155,7 +223,6 @@ class HttpClientFactory(
 
             // 4. Retry Loop: ALWAYS wait for URL if making an API request and URL is empty
             // This handles the race condition during first login where ViewModels start before DataStore propagates
-            if (baseUrl.isEmpty() && isApiRequest) {
                 debugLog { "HttpClient: URL missing for API request (Auth present: $hasAuthData). Starting recovery efforts..." }
                 
                 var retries = 0
@@ -193,70 +260,24 @@ class HttpClientFactory(
                 if (baseUrl.isEmpty()) {
                     debugLog { "HttpClient: Failed to recover Base URL after 3s. Request will fail." }
                 }
-            }
+        return baseUrl
+    }
+
+    private fun installRequestDecoration(client: HttpClient) {
+        client.requestPipeline.intercept(io.ktor.client.request.HttpRequestPipeline.State) {
+            // 1. Initial resolution
+            var baseUrl = try {
+                 preferencesManager.getServerUrl().first()?.trim() ?: ""
+            } catch (e: Exception) { "" }
+
+            // 2. Determine if this is an API request that needs a server URL
+            // If the URL is currently targeting localhost, it means we're making a relative API call
+            val isApiRequest = context.url.host == "localhost" || context.url.host.isEmpty()
             
-            // 4. Apply Base URL if found
-            if (baseUrl.isNotEmpty()) {
-                val currentHost = context.url.host
-                val isRelative = currentHost == "localhost" || 
-                                currentHost == "127.0.0.1" || 
-                                currentHost == "10.0.2.2" || 
-                                currentHost.isEmpty()
-                
-                if (isRelative) {
-                    try {
-                        val newBase = io.ktor.http.Url(baseUrl)
-                        
-                        // Apply protocol, host, and port
-                        context.url.protocol = newBase.protocol
-                        context.url.host = newBase.host
-                        context.url.port = newBase.port
-                    
-                        // Handle sub-paths in the base URL (e.g. https://domain.com/overseerr)
-                        val baseSegments = newBase.segments.filter { it.isNotEmpty() }
-                        if (baseSegments.isNotEmpty()) {
-                            val originalSegments = context.url.pathSegments.filter { it.isNotEmpty() }
-                            context.url.pathSegments = baseSegments + originalSegments
-                        }
-                        
-                        // Let Ktor handle Host header automatically unless we have a reason to force it
-                        context.headers.remove("Host") 
-                        
-                        debugLog { "HttpClient: [SUCCESS] Request targeting: ${context.url.buildString()}" }
-                    } catch (e: Exception) {
-                        debugLog { "HttpClient: [ERROR] Failed to apply Base URL '$baseUrl': ${e.message}" }
-                    }
-                } else {
-                     debugLog { "HttpClient: [PASS] Already targeting external host: ${context.url.host}" }
-                }
-            } else {
-                debugLog { "HttpClient: [CRITICAL] No Base URL found for ${context.url.buildString()}. This request will likely fail to localhost." }
-            }
-            
-            // 5. Apply Credentials - Read fresh from Secure Storage
-            // ONLY apply Overseerr credentials to requests targeting our server
-            val isOverseerrRequest = !context.url.host.contains("plex.tv") && baseUrl.isNotEmpty() && context.url.host == io.ktor.http.Url(baseUrl).host
-            
-            if (isOverseerrRequest) {
-                val apiKey = securityManager.retrieveSecureData("underseerr_api_key")
-                
-                if (!apiKey.isNullOrEmpty() && 
-                    apiKey != "SESSION_COOKIE" && 
-                    apiKey != "no_api_key" && 
-                    !apiKey.contains("@")
-                ) {
-                    context.headers["X-Api-Key"] = apiKey
-                } else {
-                    // If no API key, check for session cookie from SecurityManager
-                    val cookie = securityManager.retrieveSecureData("cookie_auth_token")
-                    if (!cookie.isNullOrEmpty()) {
-                         context.headers["Cookie"] = cookie
-                    }
-                }
-            } else {
-                // For non-Overseerr requests (like Plex), do NOT send our credentials
-                // This prevents bleeding API keys or Overseerr cookies to external sites
-            }
+            baseUrl = awaitBaseUrl(baseUrl, isApiRequest)
+
+            applyBaseUrl(context, baseUrl)
+            applyCredentials(context, baseUrl)
         }
     }
 
