@@ -187,6 +187,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.robolectric)
+    // Robolectric pins bcprov 1.81, which carries a critical GOST-28147 CVE.
+    // Robolectric hard-requires the library (excluding it fails class loading),
+    // so pull the patched release onto the test classpath instead.
+    testImplementation(libs.bouncycastle.bcprov)
     testImplementation(libs.mockwebserver)
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.androidx.datastore)
