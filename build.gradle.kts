@@ -54,54 +54,53 @@ apply(from = "gradle/verify-app-version.gradle.kts")
 
 // Force upgrade vulnerable transitive dependencies across all subprojects
 subprojects {
-    configurations.configureEach {
-        // AGP resolves Lint itself through `androidLintTool`, and lint ships its own
-        // Kotlin. Forcing the project's kotlin-stdlib onto that classpath makes AGP 9.3
-        // fail to construct detectors ("Can't initialize detector InferredThreadDetector").
-        // Lint's own classpaths are not shipped in the app, so leave them unpinned.
-        if (name == "androidLintTool" || name.endsWith("LintChecksClasspath")) {
-            return@configureEach
+    // AGP resolves Lint itself through `androidLintTool`, and lint ships its own Kotlin.
+    // Forcing the project's kotlin-stdlib onto that classpath makes AGP 9.3 fail to
+    // construct detectors ("Can't initialize detector InferredThreadDetector"). Nothing
+    // on lint's own classpaths is shipped in the app, so leave them unpinned.
+    configurations
+        .matching { it.name != "androidLintTool" && !it.name.endsWith("LintChecksClasspath") }
+        .configureEach {
+            resolutionStrategy {
+                // Netty vulnerabilities - upgrade to patched versions
+                force("io.netty:netty-codec:4.2.16.Final")
+                force("io.netty:netty-codec-http:4.2.16.Final")
+                force("io.netty:netty-codec-http2:4.2.16.Final")
+                force("io.netty:netty-common:4.2.16.Final")
+                force("io.netty:netty-handler:4.2.16.Final")
+                force("io.netty:netty-buffer:4.2.16.Final")
+                force("io.netty:netty-transport:4.2.16.Final")
+                force("io.netty:netty-resolver:4.2.16.Final")
+            
+                // Protobuf vulnerabilities - CVE for DoS
+                force("com.google.protobuf:protobuf-java:4.34.0")
+                force("com.google.protobuf:protobuf-kotlin:4.34.0")
+                force("com.google.protobuf:protobuf-java-util:4.34.0")
+            
+                // JDOM2 XXE vulnerability
+                force("org.jdom:jdom2:2.0.6.1")
+            
+                // jose4j DoS via compressed JWE
+                force("org.bitbucket.b_c:jose4j:0.9.6")
+            
+                // Commons Lang3 uncontrolled recursion
+                force("org.apache.commons:commons-lang3:3.20.0")
+
+                // Play Services Basement - MAID vulnerability (CVE-2022-2390)
+                force("com.google.android.gms:play-services-basement:18.10.0")
+            
+                // Kotlin stdlib - Information Exposure (SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744)
+                // Android Test Platform pulls old kotlin-stdlib, force to project version
+                force("org.jetbrains.kotlin:kotlin-stdlib:2.4.10")
+                force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.10")
+                force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.10")
+
+                // Guava - Insecure use of temporary directory (CVE-2023-2976)
+                force("com.google.guava:guava:33.0.0-android")
+
+                // AndroidX Concurrent - resolve conflict between runtime (1.1.0) and test deps (1.2.0)
+                force("androidx.concurrent:concurrent-futures:1.2.0")
+                force("androidx.concurrent:concurrent-futures-ktx:1.2.0")
+            }
         }
-        resolutionStrategy {
-            // Netty vulnerabilities - upgrade to patched versions
-            force("io.netty:netty-codec:4.2.16.Final")
-            force("io.netty:netty-codec-http:4.2.16.Final")
-            force("io.netty:netty-codec-http2:4.2.16.Final")
-            force("io.netty:netty-common:4.2.16.Final")
-            force("io.netty:netty-handler:4.2.16.Final")
-            force("io.netty:netty-buffer:4.2.16.Final")
-            force("io.netty:netty-transport:4.2.16.Final")
-            force("io.netty:netty-resolver:4.2.16.Final")
-            
-            // Protobuf vulnerabilities - CVE for DoS
-            force("com.google.protobuf:protobuf-java:4.34.0")
-            force("com.google.protobuf:protobuf-kotlin:4.34.0")
-            force("com.google.protobuf:protobuf-java-util:4.34.0")
-            
-            // JDOM2 XXE vulnerability
-            force("org.jdom:jdom2:2.0.6.1")
-            
-            // jose4j DoS via compressed JWE
-            force("org.bitbucket.b_c:jose4j:0.9.6")
-            
-            // Commons Lang3 uncontrolled recursion
-            force("org.apache.commons:commons-lang3:3.20.0")
-
-            // Play Services Basement - MAID vulnerability (CVE-2022-2390)
-            force("com.google.android.gms:play-services-basement:18.10.0")
-            
-            // Kotlin stdlib - Information Exposure (SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744)
-            // Android Test Platform pulls old kotlin-stdlib, force to project version
-            force("org.jetbrains.kotlin:kotlin-stdlib:2.4.10")
-            force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.10")
-            force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.10")
-
-            // Guava - Insecure use of temporary directory (CVE-2023-2976)
-            force("com.google.guava:guava:33.0.0-android")
-
-            // AndroidX Concurrent - resolve conflict between runtime (1.1.0) and test deps (1.2.0)
-            force("androidx.concurrent:concurrent-futures:1.2.0")
-            force("androidx.concurrent:concurrent-futures-ktx:1.2.0")
-        }
-    }
 }
