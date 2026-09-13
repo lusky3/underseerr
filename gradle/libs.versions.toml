@@ -9,12 +9,12 @@ appVersionCode = "10"
 appVersionName = "1.0.8"
 
 # SDK Versions
-compileSdk = "36"
+compileSdk = "37"
 minSdk = "26"
 targetSdk = "36"
 
 # Core
-agp = "9.1.0"
+agp = "9.3.0"
 kotlin = "2.4.10"
 ksp = "2.3.4"
 coreKtx = "1.18.0"
@@ -27,7 +27,7 @@ activityCompose = "1.13.0"
 navigationCompose = "2.9.2"
 
 # Lifecycle
-lifecycle = "2.10.0"
+lifecycle = "2.11.0"
 
 # Dependency Injection
 hilt = "2.59.2"
@@ -80,7 +80,7 @@ paging = "3.4.2"
 billing = "9.1.0"
 
 # Sentry
-sentry = "8.37.1"
+sentry = "8.50.0"
 
 [libraries]
 # Core

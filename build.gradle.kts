@@ -55,6 +55,13 @@ apply(from = "gradle/verify-app-version.gradle.kts")
 // Force upgrade vulnerable transitive dependencies across all subprojects
 subprojects {
     configurations.configureEach {
+        // AGP resolves Lint itself through `androidLintTool`, and lint ships its own
+        // Kotlin. Forcing the project's kotlin-stdlib onto that classpath makes AGP 9.3
+        // fail to construct detectors ("Can't initialize detector InferredThreadDetector").
+        // Lint's own classpaths are not shipped in the app, so leave them unpinned.
+        if (name == "androidLintTool" || name.endsWith("LintChecksClasspath")) {
+            return@configureEach
+        }
         resolutionStrategy {
             // Netty vulnerabilities - upgrade to patched versions
             force("io.netty:netty-codec:4.2.16.Final")
@@ -85,9 +92,9 @@ subprojects {
             
             // Kotlin stdlib - Information Exposure (SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744)
             // Android Test Platform pulls old kotlin-stdlib, force to project version
-            force("org.jetbrains.kotlin:kotlin-stdlib:2.3.20")
-            force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.20")
-            force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.20")
+            force("org.jetbrains.kotlin:kotlin-stdlib:2.4.10")
+            force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.10")
+            force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.10")
 
             // Guava - Insecure use of temporary directory (CVE-2023-2976)
             force("com.google.guava:guava:33.0.0-android")
