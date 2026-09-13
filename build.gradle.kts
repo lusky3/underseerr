@@ -26,6 +26,10 @@ sonar {
 }
 
 buildscript {
+    // Netty reaches the build twice: here on the buildscript classpath (AGP pulls it
+    // in) and again for the subprojects below. Both pins move together.
+    val nettyVersion = "4.2.17.Final"
+    val nettyReason = "Fixes security vulnerabilities"
     dependencies {
         constraints {
             classpath("org.apache.commons:commons-compress:1.27.1") {
@@ -35,9 +39,9 @@ buildscript {
                 because("Fixes Denial of Service vulnerability")
             }
             // Fix transitive vulnerabilities in AGP (Netty, JDOM, Jose4j, Guava)
-            classpath("io.netty:netty-codec:4.2.16.Final") { because("Fixes security vulnerabilities") }
-            classpath("io.netty:netty-codec-http2:4.2.16.Final") { because("Fixes security vulnerabilities") }
-            classpath("io.netty:netty-handler:4.2.16.Final") { because("Fixes security vulnerabilities") }
+            classpath("io.netty:netty-codec:$nettyVersion") { because(nettyReason) }
+            classpath("io.netty:netty-codec-http2:$nettyVersion") { because(nettyReason) }
+            classpath("io.netty:netty-handler:$nettyVersion") { because(nettyReason) }
             classpath("org.jdom:jdom2:2.0.6.1") { because("Fixes XXE vulnerability") }
             classpath("org.bitbucket.b_c:jose4j:0.9.6") { because("Fixes DoS vulnerability") }
             classpath("com.google.guava:guava:33.0.0-android") { because("Fixes insecure temp dir") }
@@ -54,6 +58,8 @@ apply(from = "gradle/verify-app-version.gradle.kts")
 
 // Force upgrade vulnerable transitive dependencies across all subprojects
 subprojects {
+    val nettyVersion = "4.2.17.Final"
+
     // AGP resolves Lint itself through `androidLintTool`, and lint ships its own Kotlin.
     // Forcing the project's kotlin-stdlib onto that classpath makes AGP 9.3 fail to
     // construct detectors ("Can't initialize detector InferredThreadDetector"). Nothing
@@ -63,14 +69,14 @@ subprojects {
         .configureEach {
             resolutionStrategy {
                 // Netty vulnerabilities - upgrade to patched versions
-                force("io.netty:netty-codec:4.2.16.Final")
-                force("io.netty:netty-codec-http:4.2.16.Final")
-                force("io.netty:netty-codec-http2:4.2.16.Final")
-                force("io.netty:netty-common:4.2.16.Final")
-                force("io.netty:netty-handler:4.2.16.Final")
-                force("io.netty:netty-buffer:4.2.16.Final")
-                force("io.netty:netty-transport:4.2.16.Final")
-                force("io.netty:netty-resolver:4.2.16.Final")
+                force("io.netty:netty-codec:$nettyVersion")
+                force("io.netty:netty-codec-http:$nettyVersion")
+                force("io.netty:netty-codec-http2:$nettyVersion")
+                force("io.netty:netty-common:$nettyVersion")
+                force("io.netty:netty-handler:$nettyVersion")
+                force("io.netty:netty-buffer:$nettyVersion")
+                force("io.netty:netty-transport:$nettyVersion")
+                force("io.netty:netty-resolver:$nettyVersion")
             
                 // Protobuf vulnerabilities - CVE for DoS
                 force("com.google.protobuf:protobuf-java:4.34.0")

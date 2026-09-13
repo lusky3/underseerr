@@ -111,7 +111,8 @@ android {
 
 configurations.all {
     resolutionStrategy {
-        force("io.netty:netty-codec-http:4.2.13.Final")
+        // Netty is pinned for every subproject in the root build script; a duplicate
+        // pin here just gives Dependabot a second place to miss.
         force("org.apache.commons:commons-lang3:3.20.0")
         force("org.apache.httpcomponents:httpclient:4.5.14")
     }
