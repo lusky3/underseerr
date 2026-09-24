@@ -97,9 +97,9 @@ subprojects {
             
                 // Kotlin stdlib - Information Exposure (SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744)
                 // Android Test Platform pulls old kotlin-stdlib, force to project version
-                force("org.jetbrains.kotlin:kotlin-stdlib:2.4.10")
-                force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.10")
-                force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.10")
+                force("org.jetbrains.kotlin:kotlin-stdlib:2.4.20")
+                force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.20")
+                force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.20")
 
                 // Guava - Insecure use of temporary directory (CVE-2023-2976)
                 force("com.google.guava:guava:33.0.0-android")
