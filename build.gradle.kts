@@ -93,7 +93,7 @@ subprojects {
                 force("org.apache.commons:commons-lang3:3.20.0")
 
                 // Play Services Basement - MAID vulnerability (CVE-2022-2390)
-                force("com.google.android.gms:play-services-basement:18.10.0")
+                force("com.google.android.gms:play-services-basement:18.12.0")
             
                 // Kotlin stdlib - Information Exposure (SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744)
                 // Android Test Platform pulls old kotlin-stdlib, force to project version
