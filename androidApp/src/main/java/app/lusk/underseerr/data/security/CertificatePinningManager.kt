@@ -2,10 +2,10 @@ package app.lusk.underseerr.data.security
 
 import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
-import java.security.cert.CertificateException
-import java.security.cert.X509Certificate
-
+import java.security.KeyStore
 import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
 /**
@@ -29,55 +29,19 @@ class CertificatePinningManager {
                 val certificatePinner = CertificatePinner.Builder()
                     // Example: .add(hostname, "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
                     .build()
-                
+
                 builder.certificatePinner(certificatePinner)
             }
         }
 
-        // Enforce HTTPS only
+        // Delegate to the platform's default hostname verifier, which implements
+        // RFC 2818 hostname matching (including wildcard rules) against the
+        // certificate actually presented in the session.
         builder.hostnameVerifier(HostnameVerifier { hostname, session ->
-            // Verify hostname matches certificate
-            val peerCertificates = session.peerCertificates
-            if (peerCertificates.isEmpty()) {
-                return@HostnameVerifier false
-            }
-            
-            val cert = peerCertificates[0] as? X509Certificate
-            cert?.let {
-                validateCertificate(hostname, it)
-            } ?: false
+            HttpsURLConnection.getDefaultHostnameVerifier().verify(hostname, session)
         })
 
         return builder
-    }
-
-    /**
-     * Validates that the certificate is valid for the given hostname.
-     */
-    private fun validateCertificate(hostname: String, certificate: X509Certificate): Boolean {
-        return try {
-            // Check certificate validity period
-            certificate.checkValidity()
-            
-            // Check if hostname matches certificate subject
-            val subjectDN = certificate.subjectX500Principal.name
-            val subjectAltNames = certificate.subjectAlternativeNames
-            
-            // Check CN in subject DN
-            val cnMatch = subjectDN.contains("CN=$hostname", ignoreCase = true) ||
-                         subjectDN.contains("CN=*.", ignoreCase = true)
-            
-            // Check Subject Alternative Names
-            val sanMatch = subjectAltNames?.any { altName ->
-                val name = altName[1] as? String
-                name?.equals(hostname, ignoreCase = true) == true ||
-                name?.startsWith("*.", ignoreCase = false) == true
-            } ?: false
-            
-            cnMatch || sanMatch
-        } catch (e: Exception) {
-            false
-        }
     }
 
     /**
@@ -93,24 +57,19 @@ class CertificatePinningManager {
     }
 
     /**
-     * Creates a trust manager that validates certificates.
+     * Returns the platform's default X509TrustManager, which validates the full
+     * certificate chain against the system trust store (issuer signatures,
+     * validity period, and revocation where supported by the platform).
      */
     fun createTrustManager(): X509TrustManager {
-        return object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
-                throw CertificateException("Client authentication not supported")
-            }
+        val trustManagerFactory = TrustManagerFactory.getInstance(
+            TrustManagerFactory.getDefaultAlgorithm()
+        )
+        trustManagerFactory.init(null as KeyStore?)
 
-            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
-                // Validate server certificate chain
-                chain?.forEach { cert ->
-                    cert.checkValidity()
-                }
-            }
-
-            override fun getAcceptedIssuers(): Array<X509Certificate> {
-                return arrayOf()
-            }
-        }
+        return trustManagerFactory.trustManagers
+            .filterIsInstance<X509TrustManager>()
+            .firstOrNull()
+            ?: throw IllegalStateException("No X509TrustManager available from the platform")
     }
 }
