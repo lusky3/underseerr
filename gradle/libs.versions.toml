@@ -40,7 +40,7 @@ firebaseMessaging = "25.0.1"
 kotlinxSerialization = "1.10.0"
 
 # Database
-room = "2.8.4"
+room = "2.8.5"
 sqlite = "2.6.2"
 datastore = "1.2.1"
 workmanager = "2.11.2"
