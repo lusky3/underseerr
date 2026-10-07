@@ -104,6 +104,9 @@ android {
             isReturnDefaultValues = true
             all {
                 it.useJUnitPlatform()
+                // Robolectric 4.17 reaches into jdk.internal.access.SharedSecrets while
+                // setting up the sandbox; the JDK's module system refuses without this.
+                it.jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
             }
         }
     }

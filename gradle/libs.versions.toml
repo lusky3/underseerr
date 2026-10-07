@@ -71,7 +71,7 @@ espresso = "3.7.0"
 kotest = "6.1.5"
 mockk = "1.14.11"
 turbine = "1.2.1"
-robolectric = "4.16.1"
+robolectric = "4.17"
 mockwebserver = "5.3.2"
 
 # Other
