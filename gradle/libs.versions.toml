@@ -59,7 +59,7 @@ biometric = "1.4.0-alpha02"
 security = "1.1.0"
 
 # Coroutines
-coroutines = "1.10.2"
+coroutines = "1.11.0"
 datetime = "0.7.1"
 
 # Testing
