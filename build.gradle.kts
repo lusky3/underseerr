@@ -28,7 +28,7 @@ sonar {
 buildscript {
     // Netty reaches the build twice: here on the buildscript classpath (AGP pulls it
     // in) and again for the subprojects below. Both pins move together.
-    val nettyVersion = "4.2.17.Final"
+    val nettyVersion = "4.2.18.Final"
     val nettyReason = "Fixes security vulnerabilities"
     dependencies {
         constraints {
