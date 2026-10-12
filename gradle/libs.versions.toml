@@ -52,7 +52,7 @@ koin = "4.2.2"
 buildkonfig = "0.17.1"
 
 # Image Loading
-coil = "3.6.2"
+coil = "3.6.3"
 
 # Security
 biometric = "1.4.0-alpha02"
