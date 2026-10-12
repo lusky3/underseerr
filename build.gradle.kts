@@ -27,8 +27,9 @@ sonar {
 
 buildscript {
     // Netty reaches the build twice: here on the buildscript classpath (AGP pulls it
-    // in) and again for the subprojects below. Both pins move together.
-    val nettyVersion = "4.2.17.Final"
+    // in) and again for the subprojects below. Both read `netty` from the version
+    // catalog, so there is one value for Dependabot to move.
+    val nettyVersion = libs.versions.netty.get()
     val nettyReason = "Fixes security vulnerabilities"
     dependencies {
         constraints {
@@ -58,7 +59,8 @@ apply(from = "gradle/verify-app-version.gradle.kts")
 
 // Force upgrade vulnerable transitive dependencies across all subprojects
 subprojects {
-    val nettyVersion = "4.2.17.Final"
+    // Same catalog entry as the buildscript pin above.
+    val nettyVersion = rootProject.libs.versions.netty.get()
 
     // AGP resolves Lint itself through `androidLintTool`, and lint ships its own Kotlin.
     // Forcing the project's kotlin-stdlib onto that classpath makes AGP 9.3 fail to
@@ -77,6 +79,10 @@ subprojects {
                 force("io.netty:netty-buffer:$nettyVersion")
                 force("io.netty:netty-transport:$nettyVersion")
                 force("io.netty:netty-resolver:$nettyVersion")
+                // gRPC (via the Unified Test Platform) pulls these at 4.1.x; without a pin
+                // they stay a major behind the rest of netty on the same classpath.
+                force("io.netty:netty-codec-socks:$nettyVersion")
+                force("io.netty:netty-handler-proxy:$nettyVersion")
             
                 // Protobuf vulnerabilities - CVE for DoS
                 force("com.google.protobuf:protobuf-java:4.36.2")

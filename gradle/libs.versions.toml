@@ -82,7 +82,13 @@ billing = "9.1.0"
 # Sentry
 sentry = "8.50.0"
 
+# Netty -- not a direct dependency. AGP and the test toolchain pull it in
+# transitively; build.gradle.kts pins every netty module to this version.
+netty = "4.2.18.Final"
+
 [libraries]
+# Version source for the netty pins in build.gradle.kts (not declared as a dependency).
+netty-codec-http = { group = "io.netty", name = "netty-codec-http", version.ref = "netty" }
 # Core
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-bundle = { group = "org.jetbrains.androidx.core", name = "core-bundle", version.ref = "coreBundle" }
