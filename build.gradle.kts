@@ -61,6 +61,18 @@ apply(from = "gradle/verify-app-version.gradle.kts")
 subprojects {
     // Same catalog entry as the buildscript pin above.
     val nettyVersion = rootProject.libs.versions.netty.get()
+    val bouncyCastleVersion = rootProject.libs.versions.bouncycastle.get()
+
+    // BouncyCastle arrives at 1.79 through lint itself and the Unified Test Platform.
+    // Unlike the kotlin-stdlib pin below, it is safe on lint's classpath (lintDebug
+    // passes with it), so this one covers every configuration.
+    configurations.configureEach {
+        resolutionStrategy {
+            force("org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion")
+            force("org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion")
+            force("org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion")
+        }
+    }
 
     // AGP resolves Lint itself through `androidLintTool`, and lint ships its own Kotlin.
     // Forcing the project's kotlin-stdlib onto that classpath makes AGP 9.3 fail to
