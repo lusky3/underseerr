@@ -31,6 +31,10 @@ buildscript {
     // catalog, so there is one value for Dependabot to move.
     val nettyVersion = libs.versions.netty.get()
     val nettyReason = "Fixes security vulnerabilities"
+    // AGP itself pulls BouncyCastle 1.79-1.83; same catalog entry as the
+    // subprojects pin further down.
+    val bouncyCastleVersion = libs.versions.bouncycastle.get()
+    val bouncyCastleReason = "Fixes GOST-28147 and timing-channel advisories"
     dependencies {
         constraints {
             classpath("org.apache.commons:commons-compress:1.27.1") {
@@ -46,6 +50,9 @@ buildscript {
             classpath("org.jdom:jdom2:2.0.6.1") { because("Fixes XXE vulnerability") }
             classpath("org.bitbucket.b_c:jose4j:0.9.6") { because("Fixes DoS vulnerability") }
             classpath("com.google.guava:guava:33.0.0-android") { because("Fixes insecure temp dir") }
+            classpath("org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
+            classpath("org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
+            classpath("org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
         }
     }
 }
