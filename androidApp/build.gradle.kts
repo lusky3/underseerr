@@ -112,15 +112,6 @@ android {
     }
 }
 
-configurations.all {
-    resolutionStrategy {
-        // Netty is pinned for every subproject in the root build script; a duplicate
-        // pin here just gives Dependabot a second place to miss.
-        force("org.apache.commons:commons-lang3:3.20.0")
-        force("org.apache.httpcomponents:httpclient:4.5.14")
-    }
-}
-
 dependencies {
     implementation(project(":composeApp"))
     implementation(libs.kotlinx.serialization.json)

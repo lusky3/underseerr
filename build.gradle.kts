@@ -70,16 +70,32 @@ subprojects {
     val nettyVersion = rootProject.libs.versions.netty.get()
     val bouncyCastleVersion = rootProject.libs.versions.bouncycastle.get()
 
-    // BouncyCastle arrives at 1.79 through lint itself and the Unified Test Platform.
-    // Unlike the kotlin-stdlib pin below, it is safe on lint's classpath (lintDebug
-    // passes with it), so this one covers every configuration.
+    // Pins that are safe on every configuration, lint's own classpaths included
+    // (lintDebug passes with them). Lint and the Unified Test Platform pull older
+    // copies of each, which is where the remaining tooling advisories came from.
     configurations.configureEach {
         resolutionStrategy {
             force("org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion")
             force("org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion")
             force("org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion")
+            // Commons Lang3 uncontrolled recursion
+            force("org.apache.commons:commons-lang3:3.20.0")
+            // HttpClient XSS in URI normalization (CVE-2020-13956)
+            force("org.apache.httpcomponents:httpclient:4.5.14")
         }
     }
+
+    // Lint-check jars bring guava 31.1-android, below the CVE-2023-2976 fix. A floor
+    // rather than a force: one of these classpaths already resolves 33.6.0-jre, and
+    // lint's own classpath runs the -jre flavour, so pinning one exact guava here
+    // would downgrade or mismatch it.
+    configurations
+        .matching { it.name.endsWith("LintChecksClasspath") }
+        .configureEach {
+            dependencyConstraints.add(
+                project.dependencies.constraints.create("com.google.guava:guava:32.0.0-android")
+            )
+        }
 
     // AGP resolves Lint itself through `androidLintTool`, and lint ships its own Kotlin.
     // Forcing the project's kotlin-stdlib onto that classpath makes AGP 9.3 fail to
@@ -114,9 +130,6 @@ subprojects {
                 // jose4j DoS via compressed JWE
                 force("org.bitbucket.b_c:jose4j:0.9.6")
             
-                // Commons Lang3 uncontrolled recursion
-                force("org.apache.commons:commons-lang3:3.20.0")
-
                 // Play Services Basement - MAID vulnerability (CVE-2022-2390)
                 force("com.google.android.gms:play-services-basement:18.12.0")
             
