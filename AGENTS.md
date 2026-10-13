@@ -75,7 +75,7 @@ A reasoning tool to help break down complex problems into step-by-step logical p
 
 ### Use `Context7` for
 
-- **Library Documentation**: Get official documentation for Android libraries (Retrofit, Room, Hilt, etc.)
+- **Library Documentation**: Get official documentation for the libraries this project uses (Ktor, Room, Koin, etc.)
 - **API References**: Look up specific API methods and their usage
 - **Code Examples**: Find real-world code examples from official documentation
 - **Version-Specific Info**: Get documentation for specific library versions
@@ -143,7 +143,7 @@ Use mobile-dev: android_start_emulator (to start it)
 ```text
 Use mobile-dev: android_install_apk
 - serial: <device-id>
-- apkPath: app/build/outputs/apk/debug/app-debug.apk
+- apkPath: androidApp/build/outputs/apk/debug/androidApp-debug.apk
 - options: { replace: true }
 ```
 
@@ -151,7 +151,7 @@ Use mobile-dev: android_install_apk
 
 ```text
 Use mcp-android: start_app
-- package_name: com.example.overseerr_client
+- package_name: app.lusk.underseerr.debug
 - device_id: <device-id> (optional, uses first device if not specified)
 - wait: true
 ```
@@ -160,7 +160,7 @@ Use mcp-android: start_app
 
 ```text
 Use mcp-android: stop_app
-- package_name: com.example.overseerr_client
+- package_name: app.lusk.underseerr.debug
 - device_id: <device-id> (optional)
 ```
 
@@ -168,7 +168,7 @@ Use mcp-android: stop_app
 
 ```text
 Use mcp-android: clear_app_data
-- package_name: com.example.overseerr_client
+- package_name: app.lusk.underseerr.debug
 - device_id: <device-id> (optional)
 ```
 
@@ -222,7 +222,7 @@ Use mcp-android: click
 
 # Click by resource ID
 Use mcp-android: click
-- selector: "com.example.overseerr_client:id/login_button"
+- selector: "app.lusk.underseerr.debug:id/login_button"
 - selector_type: "resource_id"
 
 # Long click
@@ -281,7 +281,7 @@ Use mcp-android: scroll_to
 Use mobile-dev: android_logcat
 - serial: <device-id>
 - lines: 100
-- filter: "*:E" (for errors only, or "com.example.overseerr_client:*" for app logs)
+- filter: "*:E" (for errors only, or "app.lusk.underseerr.debug:*" for app logs)
 ```
 
 **Screen control:**
@@ -385,11 +385,11 @@ Use mcp-android: get_device_status
 
 ```text
 Use Context7: resolve-library-id
-- libraryName: "retrofit" (or "jetpack compose", "hilt", "room", etc.)
+- libraryName: "ktor" (or "jetpack compose", "koin", "room", etc.)
 - query: "your question about the library"
 
 Then use Context7: query-docs
-- libraryId: "/square/retrofit" (from resolve-library-id result)
+- libraryId: "/ktorio/ktor" (from resolve-library-id result)
 - query: "how to make POST requests with JSON body"
 ```
 
@@ -430,9 +430,9 @@ Use Augments: get_framework_context
 - Use `Context7` to look up documentation for:
   - Kotlinx Serialization (data models)
   - Android Keystore (security)
-  - Retrofit and OkHttp (networking)
+  - Ktor client (networking; OkHttp engine on Android)
   - Room Database (local storage)
-  - Hilt/Dagger (dependency injection)
+  - Koin (dependency injection)
 - Use `Augments: get_framework_examples` for:
   - MVVM architecture patterns
   - Kotlin Coroutines and Flow
@@ -587,7 +587,7 @@ Use `android_logcat` to monitor app behavior and catch errors:
 ```text
 Use mobile-dev: android_logcat
 - serial: <device-id>
-- filter: "com.example.overseerr_client:*"
+- filter: "app.lusk.underseerr.debug:*"
 ```
 
 ### 7. Automate Testing Flows
@@ -686,26 +686,27 @@ When using UI interaction commands, you can select elements by:
 
 ### Package Name
 
-The app package name should be: `com.example.overseerr_client` (or your chosen package name)
+The application ID is `app.lusk.underseerr`. Debug builds add the `.debug` suffix (`app.lusk.underseerr.debug`), so use that ID when launching or inspecting a locally installed debug APK.
 
-### Minimum SDK
+### SDK Levels
 
-API 26 (Android 8.0) - ensure test devices meet this requirement
+- Minimum SDK: API 26 (Android 8.0) - ensure test devices meet this requirement
+- Target SDK: API 36 (Android 16)
+- Compile SDK: API 37
 
-### Target SDK
-
-API 35 (Android 15) - test on latest Android versions when possible
+All three are defined in `gradle/libs.versions.toml`.
 
 ### Build Outputs
 
-- Debug APK: `app/build/outputs/apk/debug/app-debug.apk`
-- Release APK: `app/build/outputs/apk/release/app-release.apk`
-- App Bundle: `app/build/outputs/bundle/release/app-release.aab`
+- Debug APK: `androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+- Release APK: `androidApp/build/outputs/apk/release/androidApp-release.apk`
+- App Bundle: `androidApp/build/outputs/bundle/release/androidApp-release.aab`
 
 ### Test Directories
 
-- Unit tests: `app/src/test/`
-- Instrumented tests: `app/src/androidTest/`
+- Android unit tests (JUnit Platform, Kotest, Robolectric): `androidApp/src/test/`
+- Shared tests: `composeApp/src/commonTest/`
+- `androidApp/src/test_legacy/` is outside every Gradle source set, so Gradle does not compile or run the tests in it.
 
 ### Commit Message Style
 
@@ -794,7 +795,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 
    ```text
    Context7: query-docs
-   - libraryId: "/square/retrofit"
+   - libraryId: "/ktorio/ktor"
    - query: "debugging network requests and responses"
    ```
 
@@ -802,7 +803,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 
    ```text
    Augments: get_framework_examples
-   - framework: "retrofit"
+   - framework: "ktor"
    - pattern: "error-handling"
    ```
 
@@ -821,7 +822,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
    ```text
    mcp-android: connect_device
    mcp-android: start_app
-   - package_name: com.example.overseerr_client
+   - package_name: app.lusk.underseerr.debug
    ```
 
 2. **Navigate and Interact**:
@@ -893,8 +894,8 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 
 When implementing features, use Context7 to get documentation for these key libraries:
 
-- **Networking**: `retrofit`, `okhttp`, `kotlinx-serialization`
-- **Dependency Injection**: `hilt`, `dagger`
+- **Networking**: `ktor`, `kotlinx-serialization`
+- **Dependency Injection**: `koin`
 - **Database**: `room`, `datastore`
 - **UI**: `jetpack-compose`, `compose-material3`, `compose-navigation`
 - **Image Loading**: `coil`
