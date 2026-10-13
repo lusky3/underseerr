@@ -25,6 +25,16 @@ data class ChangelogEntry(
 object AppChangelog {
     val entries: List<ChangelogEntry> = listOf(
         ChangelogEntry(
+            versionCode = 11,
+            versionName = "1.0.9",
+            title = "Security & Library Updates",
+            changes = listOf(
+                "🛡️ Security hardening across the app's dependencies and build tooling",
+                "📦 Updated core Android libraries, including Compose, Kotlin, image loading and networking",
+                "🐛 Bug fixes and stability improvements"
+            )
+        ),
+        ChangelogEntry(
             versionCode = 10,
             versionName = "1.0.8",
             title = "Sign-In Reliability & Security",
