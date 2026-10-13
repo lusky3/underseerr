@@ -706,7 +706,7 @@ All three are defined in `gradle/libs.versions.toml`.
 
 - Android unit tests (JUnit Platform, Kotest, Robolectric): `androidApp/src/test/`
 - Shared tests: `composeApp/src/commonTest/`
-- `androidApp/src/test_legacy/` is not part of any Gradle source set and is never compiled or run.
+- `androidApp/src/test_legacy/` is outside every Gradle source set, so Gradle does not compile or run the tests in it.
 
 ### Commit Message Style
 
