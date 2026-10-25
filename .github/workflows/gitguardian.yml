@@ -15,7 +15,7 @@ permissions:
 jobs:
   scanning:
     name: GitGuardian Secret Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Skip for Dependabot PRs (no access to secrets)
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:

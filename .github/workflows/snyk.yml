@@ -34,7 +34,7 @@ jobs:
       contents: read          # for actions/checkout to fetch code
       security-events: write  # for uploading SARIF results to Code Scanning
       actions: read           # required for private repos
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment: staging
     
     env:

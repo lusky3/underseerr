@@ -21,7 +21,7 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: ./pro-backend
@@ -30,7 +30,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: pro-backend/package-lock.json
       - name: Install Dependencies
@@ -41,7 +41,7 @@ jobs:
   deploy-staging:
     needs: check
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || inputs.environment == 'staging'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment: staging
     defaults:
       run:
@@ -51,7 +51,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: pro-backend/package-lock.json
       - name: Install Dependencies
@@ -76,7 +76,7 @@ jobs:
   deploy-production:
     needs: check
     if: inputs.environment == 'production' || (startsWith(github.ref, 'refs/heads/release/') && github.event_name == 'push')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment: production
     defaults:
       run:
@@ -86,7 +86,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: pro-backend/package-lock.json
       - name: Install Dependencies
