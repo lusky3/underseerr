@@ -48,7 +48,7 @@ buildscript {
             classpath("io.netty:netty-codec-http2:$nettyVersion") { because(nettyReason) }
             classpath("io.netty:netty-handler:$nettyVersion") { because(nettyReason) }
             classpath("org.jdom:jdom2:2.0.6.1") { because("Fixes XXE vulnerability") }
-            classpath("org.bitbucket.b_c:jose4j:0.9.6") { because("Fixes DoS vulnerability") }
+            classpath("org.bitbucket.b_c:jose4j:0.9.7") { because("Fixes DoS vulnerability") }
             classpath("com.google.guava:guava:33.0.0-android") { because("Fixes insecure temp dir") }
             classpath("org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
             classpath("org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
@@ -128,16 +128,16 @@ subprojects {
                 force("org.jdom:jdom2:2.0.6.1")
             
                 // jose4j DoS via compressed JWE
-                force("org.bitbucket.b_c:jose4j:0.9.6")
+                force("org.bitbucket.b_c:jose4j:0.9.7")
             
                 // Play Services Basement - MAID vulnerability (CVE-2022-2390)
                 force("com.google.android.gms:play-services-basement:18.12.0")
             
                 // Kotlin stdlib - Information Exposure (SNYK-JAVA-ORGJETBRAINSKOTLIN-2393744)
                 // Android Test Platform pulls old kotlin-stdlib, force to project version
-                force("org.jetbrains.kotlin:kotlin-stdlib:2.4.20")
-                force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.20")
-                force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.20")
+                force("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+                force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.21")
+                force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.21")
 
                 // Guava - Insecure use of temporary directory (CVE-2023-2976)
                 force("com.google.guava:guava:33.0.0-android")
