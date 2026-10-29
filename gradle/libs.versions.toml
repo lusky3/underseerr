@@ -17,7 +17,7 @@ targetSdk = "36"
 agp = "9.4.1"
 kotlin = "2.4.21"
 ksp = "2.3.4"
-coreKtx = "1.18.0"
+coreKtx = "1.19.1"
 coreBundle = "1.1.0-alpha03"
 
 # Compose
