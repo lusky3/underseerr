@@ -66,6 +66,7 @@ datetime = "0.7.1"
 junit = "4.13.2"
 junitJupiter = "5.13.4"
 bouncycastle = "1.85"
+guava = "33.7.1-android"
 junitExt = "1.3.0"
 espresso = "3.7.0"
 kotest = "6.2.5"
@@ -89,6 +90,7 @@ netty = "4.2.18.Final"
 [libraries]
 # Version source for the netty pins in build.gradle.kts (not declared as a dependency).
 netty-codec-http = { group = "io.netty", name = "netty-codec-http", version.ref = "netty" }
+guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 # Core
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-bundle = { group = "org.jetbrains.androidx.core", name = "core-bundle", version.ref = "coreBundle" }

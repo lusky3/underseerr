@@ -34,6 +34,7 @@ buildscript {
     // AGP itself pulls BouncyCastle 1.79-1.83; same catalog entry as the
     // subprojects pin further down.
     val bouncyCastleVersion = libs.versions.bouncycastle.get()
+    val guavaVersion = libs.versions.guava.get()
     val bouncyCastleReason = "Fixes GOST-28147 and timing-channel advisories"
     dependencies {
         constraints {
@@ -49,7 +50,7 @@ buildscript {
             classpath("io.netty:netty-handler:$nettyVersion") { because(nettyReason) }
             classpath("org.jdom:jdom2:2.0.6.1") { because("Fixes XXE vulnerability") }
             classpath("org.bitbucket.b_c:jose4j:0.9.7") { because("Fixes DoS vulnerability") }
-            classpath("com.google.guava:guava:33.0.0-android") { because("Fixes insecure temp dir") }
+            classpath("com.google.guava:guava:$guavaVersion") { because("Fixes insecure temp dir") }
             classpath("org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
             classpath("org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
             classpath("org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
@@ -69,6 +70,7 @@ subprojects {
     // Same catalog entry as the buildscript pin above.
     val nettyVersion = rootProject.libs.versions.netty.get()
     val bouncyCastleVersion = rootProject.libs.versions.bouncycastle.get()
+    val guavaVersion = rootProject.libs.versions.guava.get()
 
     // Pins that are safe on every configuration, lint's own classpaths included
     // (lintDebug passes with them). Lint and the Unified Test Platform pull older
@@ -140,7 +142,7 @@ subprojects {
                 force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.21")
 
                 // Guava - Insecure use of temporary directory (CVE-2023-2976)
-                force("com.google.guava:guava:33.0.0-android")
+                force("com.google.guava:guava:$guavaVersion")
 
                 // AndroidX Concurrent - resolve conflict between runtime (1.1.0) and test deps (1.2.0)
                 force("androidx.concurrent:concurrent-futures:1.2.0")
