@@ -49,7 +49,7 @@ buildscript {
             classpath("io.netty:netty-handler:$nettyVersion") { because(nettyReason) }
             classpath("org.jdom:jdom2:2.0.6.1") { because("Fixes XXE vulnerability") }
             classpath("org.bitbucket.b_c:jose4j:0.9.7") { because("Fixes DoS vulnerability") }
-            classpath("com.google.guava:guava:33.0.0-android") { because("Fixes insecure temp dir") }
+            classpath("com.google.guava:guava:33.7.1-android") { because("Fixes insecure temp dir") }
             classpath("org.bouncycastle:bcprov-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
             classpath("org.bouncycastle:bcpkix-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
             classpath("org.bouncycastle:bcutil-jdk18on:$bouncyCastleVersion") { because(bouncyCastleReason) }
@@ -93,7 +93,7 @@ subprojects {
         .matching { it.name.endsWith("LintChecksClasspath") }
         .configureEach {
             dependencyConstraints.add(
-                project.dependencies.constraints.create("com.google.guava:guava:32.0.0-android")
+                project.dependencies.constraints.create("com.google.guava:guava:33.7.1-android")
             )
         }
 
@@ -140,7 +140,7 @@ subprojects {
                 force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.21")
 
                 // Guava - Insecure use of temporary directory (CVE-2023-2976)
-                force("com.google.guava:guava:33.0.0-android")
+                force("com.google.guava:guava:33.7.1-android")
 
                 // AndroidX Concurrent - resolve conflict between runtime (1.1.0) and test deps (1.2.0)
                 force("androidx.concurrent:concurrent-futures:1.2.0")
