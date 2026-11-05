@@ -1,10 +1,13 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "app.lusk.underseerr",
-    "sha256_cert_fingerprints": [
-      "27:53:30:FF:44:15:C7:52:99:66:50:10:DE:D5:66:08:D3:2F:E2:81:30:44:A3:42:9A:82:41:A6:4A:21:EB:9E"
-    ]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.lusk.underseerr",
+      "sha256_cert_fingerprints": [
+        "58:41:ED:34:B7:F8:FE:E4:C0:0E:F9:AD:8B:D3:B2:4E:E5:C9:F2:9D:36:C4:59:03:3E:99:DC:F9:F6:59:92:BE",
+        "27:53:30:FF:44:15:C7:52:99:66:50:10:DE:D5:66:08:D3:2F:E2:81:30:44:A3:42:9A:82:41:A6:4A:21:EB:9E"
+      ]
+    }
   }
-}]
+]
