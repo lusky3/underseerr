@@ -25,6 +25,16 @@ data class ChangelogEntry(
 object AppChangelog {
     val entries: List<ChangelogEntry> = listOf(
         ChangelogEntry(
+            versionCode = 12,
+            versionName = "1.0.10",
+            title = "Link Verification & Library Updates",
+            changes = listOf(
+                "🔗 Fixed verification of Underseerr web links so they open in the app",
+                "📦 Updated core Android libraries, including networking, Kotlin and the build toolchain",
+                "🐛 Bug fixes and stability improvements"
+            )
+        ),
+        ChangelogEntry(
             versionCode = 11,
             versionName = "1.0.9",
             title = "Security & Library Updates",
