@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination
+import app.lusk.underseerr.util.Metrics
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -87,6 +88,14 @@ fun UnderseerrNavHost(
                 // rescue the user (reason is a conflated StateFlow).
                 popUpTo(0) { inclusive = true }
             }
+        }
+    }
+
+    // One screen_view per destination change. screenNameFor keeps only the route's
+    // class name, so IDs in the route arguments never reach analytics.
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow.collect { entry ->
+            screenNameFor(entry.destination.route)?.let { Metrics.trackScreen(it) }
         }
     }
 

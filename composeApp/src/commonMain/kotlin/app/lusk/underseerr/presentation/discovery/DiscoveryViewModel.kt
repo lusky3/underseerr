@@ -356,6 +356,7 @@ class DiscoveryViewModel(
                 _uiEvent.emit("Request submitted successfully")
                 requestViewModel.refreshRequests()
             } else if (result is Result.Error) {
+                Metrics.trackMediaRequestFailed(mediaType.name.lowercase())
                 _uiEvent.emit("Failed to submit request: ${result.error.message}")
             }
         }

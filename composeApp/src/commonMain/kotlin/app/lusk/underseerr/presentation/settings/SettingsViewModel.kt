@@ -59,6 +59,9 @@ class SettingsViewModel(
     private val _biometricEnabled = MutableStateFlow(false)
     val biometricEnabled: StateFlow<Boolean> = _biometricEnabled.asStateFlow()
 
+    private val _analyticsEnabled = MutableStateFlow(true)
+    val analyticsEnabled: StateFlow<Boolean> = _analyticsEnabled.asStateFlow()
+
     private val _isBiometricAvailable = MutableStateFlow(false)
     val isBiometricAvailable: StateFlow<Boolean> = _isBiometricAvailable.asStateFlow()
     
@@ -254,6 +257,12 @@ class SettingsViewModel(
                 _biometricEnabled.value = it
             }
         }
+
+        viewModelScope.launch {
+            settingsRepository.getAnalyticsEnabled().collect {
+                _analyticsEnabled.value = it
+            }
+        }
         
         viewModelScope.launch {
             settingsRepository.getDefaultMovieQualityProfile().collect {
@@ -388,6 +397,14 @@ class SettingsViewModel(
         }
     }
     
+    fun setAnalyticsEnabled(enabled: Boolean) {
+        // Apply immediately so collection stops before the preference write returns.
+        app.lusk.underseerr.util.Metrics.setEnabled(enabled)
+        viewModelScope.launch {
+            settingsRepository.setAnalyticsEnabled(enabled)
+        }
+    }
+
     fun setBiometricEnabled(enabled: Boolean) {
         if (enabled && !_isBiometricAvailable.value) {
             // Cannot enable if not available

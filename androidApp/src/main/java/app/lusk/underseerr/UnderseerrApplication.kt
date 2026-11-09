@@ -1,7 +1,9 @@
 package app.lusk.underseerr
 
 import android.app.Application
+import app.lusk.underseerr.data.analytics.FirebaseAnalyticsBackend
 import app.lusk.underseerr.di.initKoin
+import app.lusk.underseerr.util.Metrics
 import app.lusk.underseerr.util.PlatformContext
 import io.sentry.android.core.SentryAndroid
 import org.koin.android.ext.koin.androidContext
@@ -18,6 +20,9 @@ open class UnderseerrApplication : Application() {
         // Initialize Sentry only if DSN is configured
         // This allows the open source version to run without Sentry
         initSentryIfConfigured()
+
+        // Events are sent only while the user has analytics enabled in Settings.
+        Metrics.backend = FirebaseAnalyticsBackend(this)
         
         initKoin(PlatformContext(this)) {
             androidLogger()
