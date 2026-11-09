@@ -22,6 +22,8 @@ private class RecordingBackend : AnalyticsBackend {
     }
 }
 
+private const val SEARCH = "search"
+
 class MetricsAnalyticsTest : StringSpec({
     val backend = RecordingBackend()
 
@@ -51,9 +53,9 @@ class MetricsAnalyticsTest : StringSpec({
     }
 
     "screens reach the backend" {
-        Metrics.trackScreen("search")
+        Metrics.trackScreen(SEARCH)
 
-        backend.screens shouldBe listOf("search")
+        backend.screens shouldBe listOf(SEARCH)
     }
 
     "nothing is sent while analytics is disabled" {
@@ -74,13 +76,7 @@ class MetricsAnalyticsTest : StringSpec({
         Metrics.setEnabled(true)
         backend.enabled shouldBe true
         Metrics.trackSearch()
-        backend.events shouldBe listOf("search" to emptyMap<String, String>())
+        backend.events shouldBe listOf(SEARCH to emptyMap<String, String>())
     }
 
-    "timing and gauge metrics are never sent" {
-        Metrics.trackApiResponseTime("/api/v1/request", 120L)
-        Metrics.trackActiveRequests(3)
-
-        backend.events.shouldBeEmpty()
-    }
 })

@@ -53,11 +53,4 @@ object Metrics {
         log("media_request_failed", mapOf("media_type" to mediaType))
     fun trackSearch() = log("search")
     fun trackIssueReported() = log("issue_reported")
-
-    // Not sent: per-call timing is high volume and belongs in Sentry performance traces.
-    @Suppress("UNUSED_PARAMETER")
-    fun trackApiResponseTime(endpoint: String, durationMs: Long) = Unit
-
-    @Suppress("UNUSED_PARAMETER")
-    fun trackActiveRequests(count: Int) = Unit
 }
