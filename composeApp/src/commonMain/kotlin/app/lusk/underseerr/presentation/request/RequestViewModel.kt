@@ -1,5 +1,6 @@
 package app.lusk.underseerr.presentation.request
 
+import app.lusk.underseerr.util.Metrics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.lusk.underseerr.domain.model.MediaRequest
@@ -72,10 +73,12 @@ class RequestViewModel(
             _error.value = null
             when (val result = requestRepository.requestMovie(movieId, qualityProfile, rootFolder)) {
                 is Result.Success -> {
+                    Metrics.trackMediaRequest("movie")
                     _requestState.value = RequestState.Success(result.data)
                     checkForReviewPrompt()
                 }
                 is Result.Error -> {
+                    Metrics.trackMediaRequestFailed("movie")
                     _requestState.value = RequestState.Error(result.error.message)
                     _error.value = result.error.message
                 }
@@ -90,10 +93,12 @@ class RequestViewModel(
             _error.value = null
             when (val result = requestRepository.requestTvShow(tvShowId, seasons, qualityProfile, rootFolder)) {
                 is Result.Success -> {
+                    Metrics.trackMediaRequest("tv")
                     _requestState.value = RequestState.Success(result.data)
                     checkForReviewPrompt()
                 }
                 is Result.Error -> {
+                    Metrics.trackMediaRequestFailed("tv")
                     _requestState.value = RequestState.Error(result.error.message)
                     _error.value = result.error.message
                 }
