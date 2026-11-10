@@ -95,7 +95,10 @@ fun UnderseerrNavHost(
     // class name, so IDs in the route arguments never reach analytics.
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.collect { entry ->
-            screenNameFor(entry.destination.route)?.let { Metrics.trackScreen(it) }
+            // The main-tab host is skipped: its tabs report themselves as they settle.
+            screenNameFor(entry.destination.route)
+                ?.takeIf { it != MAIN_TABS_SCREEN }
+                ?.let { Metrics.trackScreen(it) }
         }
     }
 

@@ -30,6 +30,8 @@ import app.lusk.underseerr.presentation.settings.SettingsViewModel
 import app.lusk.underseerr.presentation.settings.TrialPromptType
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.CancellationException
+import app.lusk.underseerr.navigation.mainTabScreenName
+import app.lusk.underseerr.util.Metrics
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -62,6 +64,14 @@ fun MainTabsScreen(
     }
 
     // Sync ViewModel -> Pager via explicit commands
+    // One screen_view per settled tab, including the one shown when returning from
+    // another screen (the effect restarts whenever this screen re-enters composition).
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            mainTabScreenName(page)?.let { Metrics.trackScreen(it) }
+        }
+    }
+
     LaunchedEffect(Unit) {
         mainViewModel.navCommand.collectLatest { index ->
             try {

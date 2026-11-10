@@ -1,5 +1,6 @@
 package app.lusk.underseerr.data.repository
 
+import app.lusk.underseerr.util.Metrics
 import app.lusk.underseerr.data.mapper.toDomain
 import app.lusk.underseerr.data.mapper.toEntity
 import app.lusk.underseerr.data.remote.toAppError
@@ -156,7 +157,7 @@ class IssueRepositoryImpl(
             problemEpisode = problemEpisode
         )
         issueService.createIssue(request).toDomain()
-    }
+    }.also { if (it is Result.Success) Metrics.trackIssueReported() }
     
     override suspend fun addComment(issueId: Int, message: String): Result<Issue> = safeApiCall {
         issueService.addComment(issueId, message).toDomain()

@@ -22,4 +22,13 @@ class ScreenNameTest : StringSpec({
         screenNameFor(null) shouldBe null
         screenNameFor("") shouldBe null
     }
+
+    "main tabs get their own screen names" {
+        mainTabScreenName(0) shouldBe "home"
+        mainTabScreenName(1) shouldBe "requests"
+        mainTabScreenName(2) shouldBe "issues"
+        mainTabScreenName(3) shouldBe "profile"
+        mainTabScreenName(4) shouldBe null
+        MAIN_TABS_SCREEN shouldBe screenNameFor("$prefix.MainTabs")
+    }
 })
