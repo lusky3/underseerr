@@ -78,7 +78,8 @@ class ComplimentaryAccessTest {
     }
 
     @Test
-    fun `a granted window becomes the COMPLIMENTARY tier with its end date`() = runBlocking {
+    fun `a granted window becomes the COMPLIMENTARY tier, even for a user who never started a trial`() = runBlocking {
+        assertNull(preferences.getTrialStartDate().first())
         val until = nowMillis() + DAY
         serverGrants(until)
 
@@ -89,16 +90,6 @@ class ComplimentaryAccessTest {
         assertEquals(SubscriptionTier.COMPLIMENTARY, status.tier)
         assertEquals(until, status.expiresAt)
         assertTrue(status.hasHostedAccess)
-    }
-
-    @Test
-    fun `a user who never started a trial gets access`() = runBlocking {
-        assertNull(preferences.getTrialStartDate().first())
-        serverGrants(nowMillis() + DAY)
-
-        repository.syncComplimentaryAccess()
-
-        assertEquals(SubscriptionTier.COMPLIMENTARY, tier())
     }
 
     @Test
