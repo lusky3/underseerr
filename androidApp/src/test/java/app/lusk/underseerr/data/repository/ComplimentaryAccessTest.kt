@@ -18,6 +18,10 @@ import java.io.File
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -141,6 +145,17 @@ class ComplimentaryAccessTest {
 
         assertEquals(SubscriptionTier.PREMIUM, tier())
         assertTrue(preferences.getIsPremium().first())
+    }
+
+    @Test
+    fun `a collector that stays open sees access end at the deadline`() = runBlocking {
+        preferences.setComplimentaryUntil(nowMillis() + 400L)
+
+        val tiers = withTimeout(5_000L) {
+            repository.getSubscriptionStatus().map { it.tier }.take(2).toList()
+        }
+
+        assertEquals(listOf(SubscriptionTier.COMPLIMENTARY, SubscriptionTier.FREE), tiers)
     }
 
     private companion object {

@@ -155,13 +155,17 @@ class SettingsViewModel(
             subscriptionRepository.getSubscriptionStatus().collect { status ->
                 _subscriptionStatus.value = status
 
-                // A cached FREE tier must not switch the hosted relay off while the server
-                // is granting everyone access. If the check succeeds the preference changes
-                // and this collector re-emits as COMPLIMENTARY, so there is nothing to do now.
-                if (status.tier == app.lusk.underseerr.domain.model.SubscriptionTier.FREE &&
-                    subscriptionRepository.syncComplimentaryAccess().getOrDefault(false)
-                ) {
-                    // handled on the next emission
+                // A cached FREE tier must not change saved settings on the strength of stale
+                // data. Ask the server first: if it grants access the preference changes and
+                // this collector re-emits as COMPLIMENTARY; if the check itself fails the
+                // answer is unknown, so leave the saved choice alone until it can be settled.
+                val freeTierCheck = if (status.tier == app.lusk.underseerr.domain.model.SubscriptionTier.FREE) {
+                    subscriptionRepository.syncComplimentaryAccess()
+                } else {
+                    null
+                }
+                if (freeTierCheck != null && (freeTierCheck.isFailure || freeTierCheck.getOrThrow())) {
+                    // granted (re-emits shortly) or undecided (try again next time)
                 } else when (status.tier) {
                     app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> {
                         // Race guard complete — trial tier is confirmed
