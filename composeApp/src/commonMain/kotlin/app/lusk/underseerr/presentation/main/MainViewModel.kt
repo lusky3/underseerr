@@ -32,6 +32,9 @@ class MainViewModel(
     val isUpdateAvailable: StateFlow<Boolean> = _isUpdateAvailable.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            settingsRepository.getAnalyticsEnabled().collect { app.lusk.underseerr.util.Metrics.setEnabled(it) }
+        }
         checkForChangelog()
         checkForUpdate()
     }

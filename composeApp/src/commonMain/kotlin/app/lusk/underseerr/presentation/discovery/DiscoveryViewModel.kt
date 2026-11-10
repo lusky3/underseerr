@@ -356,6 +356,7 @@ class DiscoveryViewModel(
                 _uiEvent.emit("Request submitted successfully")
                 requestViewModel.refreshRequests()
             } else if (result is Result.Error) {
+                Metrics.trackMediaRequestFailed(mediaType.name.lowercase())
                 _uiEvent.emit("Failed to submit request: ${result.error.message}")
             }
         }
@@ -373,9 +374,11 @@ class DiscoveryViewModel(
                 
                 val result = requestRepository.requestTvShow(tvShowId, seasons = allSeasons, qualityProfile = profile)
                 if (result is Result.Success) {
+                    Metrics.trackMediaRequest("tv")
                     _uiEvent.emit("Request submitted for all seasons")
                     requestViewModel.refreshRequests()
                 } else if (result is Result.Error) {
+                    Metrics.trackMediaRequestFailed("tv")
                     _uiEvent.emit("Failed to submit request: ${result.error.message}")
                 }
             } else {

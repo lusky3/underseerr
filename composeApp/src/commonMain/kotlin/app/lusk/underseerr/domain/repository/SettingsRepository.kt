@@ -76,6 +76,11 @@ interface SettingsRepository {
      * Set biometric authentication enabled status.
      */
     suspend fun setBiometricEnabled(enabled: Boolean)
+
+    /** Whether anonymous usage analytics are on. Defaults to true. */
+    fun getAnalyticsEnabled(): Flow<Boolean>
+
+    suspend fun setAnalyticsEnabled(enabled: Boolean)
     
     /**
      * Get current server URL.

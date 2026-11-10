@@ -202,6 +202,7 @@ class AuthViewModel(
                     _authState.value = AuthState.Authenticated
                 }
                 is Result.Error -> {
+                    Metrics.trackLoginFailed("plex")
                     logger.e("AuthViewModel", "Authentication failed: ${result.error.message}")
                     _authState.value = AuthState.Error(result.error.message)
                 }
@@ -226,6 +227,7 @@ class AuthViewModel(
                     _authState.value = AuthState.Authenticated
                 }
                 is Result.Error -> {
+                    Metrics.trackLoginFailed("local")
                     logger.e("AuthViewModel", "Local login failed: ${result.error.message}")
                     _authState.value = AuthState.Error(result.error.message)
                 }
@@ -248,6 +250,7 @@ class AuthViewModel(
                     _authState.value = AuthState.Authenticated
                 }
                 is Result.Error -> {
+                    Metrics.trackLoginFailed("jellyfin")
                     logger.e("AuthViewModel", "Jellyfin login failed: ${result.error.message}")
                     _authState.value = AuthState.Error(result.error.message)
                 }
@@ -265,10 +268,12 @@ class AuthViewModel(
             _authState.value = AuthState.Authenticating
             when (val result = authRepository.authenticateWithApiKey(apiKey)) {
                 is Result.Success -> {
+                    Metrics.trackLogin("api_key")
                     logger.d("AuthViewModel", "API key verification successful!")
                     _authState.value = AuthState.Authenticated
                 }
                 is Result.Error -> {
+                    Metrics.trackLoginFailed("api_key")
                     logger.e("AuthViewModel", "API key verification failed: ${result.error.message}")
                     _authState.value = AuthState.Error(result.error.message)
                 }

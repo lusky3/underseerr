@@ -101,6 +101,13 @@ class SettingsRepositoryImpl(
     override fun getBiometricEnabled(): Flow<Boolean> =
         preferencesManager.getBiometricEnabled()
     
+    override fun getAnalyticsEnabled(): Flow<Boolean> =
+        preferencesManager.getAnalyticsEnabled()
+
+    override suspend fun setAnalyticsEnabled(enabled: Boolean) {
+        preferencesManager.setAnalyticsEnabled(enabled)
+    }
+
     override suspend fun setBiometricEnabled(enabled: Boolean) {
         preferencesManager.setBiometricEnabled(enabled)
     }

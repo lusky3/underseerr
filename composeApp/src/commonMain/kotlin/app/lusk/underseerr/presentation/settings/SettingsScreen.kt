@@ -52,6 +52,7 @@ fun SettingsScreen(
 
     val notificationSettings by viewModel.notificationSettings.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
+    val analyticsEnabled by viewModel.analyticsEnabled.collectAsState()
     val defaultMovieProfile by viewModel.defaultMovieProfile.collectAsState()
     val defaultTvProfile by viewModel.defaultTvProfile.collectAsState()
     val movieProfiles by viewModel.movieProfiles.collectAsState()
@@ -331,6 +332,19 @@ fun SettingsScreen(
             
             HorizontalDivider()
             
+            // Privacy Section
+            SettingsSectionHeader(title = "Privacy")
+
+            SettingsSwitchItem(
+                title = "Share usage analytics",
+                subtitle = "Anonymous screen and feature usage, sent to Firebase Analytics. " +
+                    "Never includes your server, searches or account. Crash reports are separate.",
+                checked = analyticsEnabled,
+                onCheckedChange = { viewModel.setAnalyticsEnabled(it) }
+            )
+
+            HorizontalDivider()
+
             // Subscription Section
             SettingsSectionHeader(title = "Subscription")
             

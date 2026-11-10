@@ -65,6 +65,7 @@ class PreferencesManager(
         val LAST_SEEN_VERSION_CODE = intPreferencesKey("last_seen_version_code")
         val TRIAL_PROMPT_DISMISSED_AT = longPreferencesKey("trial_prompt_dismissed_at")
         val HAS_USED_TRIAL = booleanPreferencesKey("has_used_trial")
+        val ANALYTICS_ENABLED = booleanPreferencesKey("analytics_enabled")
     }
     
     /**
@@ -160,6 +161,20 @@ class PreferencesManager(
         }
     }
     
+    // Usage analytics opt-out (on by default, matching the privacy policy)
+
+    suspend fun setAnalyticsEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferenceKeys.ANALYTICS_ENABLED] = enabled
+        }
+    }
+
+    fun getAnalyticsEnabled(): Flow<Boolean> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.ANALYTICS_ENABLED] ?: true
+        }
+    }
+
     // Notification Settings
     
     suspend fun setNotificationsEnabled(enabled: Boolean) {
