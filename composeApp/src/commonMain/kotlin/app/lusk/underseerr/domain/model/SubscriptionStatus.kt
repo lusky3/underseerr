@@ -8,7 +8,10 @@ import kotlinx.serialization.Serializable
 enum class SubscriptionTier {
     FREE,
     TRIAL,
-    PREMIUM
+    PREMIUM,
+
+    /** Free for everyone for a limited period, granted by the server. May end early. */
+    COMPLIMENTARY
 }
 
 /**
@@ -20,4 +23,7 @@ data class SubscriptionStatus(
     val expiresAt: Long? = null
 ) {
     val isPremium: Boolean get() = tier == SubscriptionTier.PREMIUM
+
+    /** Whether the hosted notification relay is available: any tier except FREE. */
+    val hasHostedAccess: Boolean get() = tier != SubscriptionTier.FREE
 }

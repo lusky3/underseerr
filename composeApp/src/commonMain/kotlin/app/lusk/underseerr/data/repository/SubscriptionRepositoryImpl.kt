@@ -8,6 +8,8 @@ import app.lusk.underseerr.util.nowMillis
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -74,29 +76,56 @@ class SubscriptionRepositoryImpl(
         return securityManager.retrieveSecureData(SECURE_PREMIUM_EXPIRES_AT)?.toLongOrNull()
     }
 
+    private class StatusInputs(
+        val isPremium: Boolean,
+        val trialStartDate: Long?,
+        val premiumExpiresAt: Long?,
+        val complimentaryUntil: Long?
+    )
+
+    private fun statusAt(now: Long, inputs: StatusInputs): SubscriptionStatus {
+        val trialDuration = 30L * 24 * 60 * 60 * 1000 // 30 days in ms
+        val trialStartDate = inputs.trialStartDate
+        val complimentaryUntil = inputs.complimentaryUntil
+        return when {
+            inputs.isPremium -> SubscriptionStatus(
+                tier = SubscriptionTier.PREMIUM,
+                expiresAt = inputs.premiumExpiresAt
+            )
+            // Cached from the server; the date bounds how long a stale value can apply offline.
+            complimentaryUntil != null && now <= complimentaryUntil -> SubscriptionStatus(
+                tier = SubscriptionTier.COMPLIMENTARY,
+                expiresAt = complimentaryUntil
+            )
+            trialStartDate != null && (now - trialStartDate) < trialDuration -> SubscriptionStatus(
+                tier = SubscriptionTier.TRIAL,
+                expiresAt = trialStartDate + trialDuration
+            )
+            else -> SubscriptionStatus(tier = SubscriptionTier.FREE)
+        }
+    }
+
     override fun getSubscriptionStatus(): Flow<SubscriptionStatus> {
         return combine(
             preferencesManager.getIsPremium(),
             preferencesManager.getTrialStartDate(),
-            preferencesManager.getPremiumExpiresAt()
-        ) { isPremium, trialStartDate, premiumExpiresAt ->
+            preferencesManager.getPremiumExpiresAt(),
+            preferencesManager.getComplimentaryUntil()
+        ) { isPremium, trialStartDate, premiumExpiresAt, complimentaryUntil ->
             // In a production app, we could double check against SecurityManager here,
             // but for reactive Flow, DataStore is sufficient for UI.
-            val now = nowMillis()
-            val trialDuration = 30L * 24 * 60 * 60 * 1000 // 30 days in ms
-            
-            when {
-                isPremium -> SubscriptionStatus(
-                    tier = SubscriptionTier.PREMIUM,
-                    expiresAt = premiumExpiresAt
-                )
-                trialStartDate != null && (now - trialStartDate) < trialDuration -> {
-                    SubscriptionStatus(
-                        tier = SubscriptionTier.TRIAL,
-                        expiresAt = trialStartDate + trialDuration
-                    )
-                }
-                else -> SubscriptionStatus(tier = SubscriptionTier.FREE)
+            StatusInputs(isPremium, trialStartDate, premiumExpiresAt, complimentaryUntil)
+        }.transformLatest { inputs ->
+            val status = statusAt(nowMillis(), inputs)
+            emit(status)
+
+            // Nothing else changes when the free window closes, so a collector that stays
+            // open (Settings left on screen) would keep showing hosted access. Re-evaluate
+            // at the deadline; a new emission from the preferences cancels this wait.
+            val until = status.expiresAt
+            if (status.tier == SubscriptionTier.COMPLIMENTARY && until != null) {
+                delay((until - nowMillis()).coerceAtLeast(0L) + 1L)
+                emit(statusAt(nowMillis(), inputs))
             }
         }
     }
@@ -117,6 +146,22 @@ class SubscriptionRepositoryImpl(
             } else {
                 Result.failure(Exception("Not logged in"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun syncComplimentaryAccess(): Result<Boolean> {
+        return try {
+            val userResult = authRepository.getCurrentUser()
+            if (userResult !is app.lusk.underseerr.domain.model.Result.Success) {
+                return Result.failure(Exception("Not logged in"))
+            }
+            val response = subscriptionKtorService.checkSubscriptionStatus(userResult.data.id.toString())
+            val until = if (response.isComplimentary) response.complimentaryUntil else null
+            // Clearing is deliberate: when the server stops granting access, so does the app.
+            preferencesManager.setComplimentaryUntil(until)
+            Result.success(until != null)
         } catch (e: Exception) {
             Result.failure(e)
         }

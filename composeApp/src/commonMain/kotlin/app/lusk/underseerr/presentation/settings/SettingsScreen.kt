@@ -357,6 +357,7 @@ fun SettingsScreen(
                         if (days != null) "Trial Active (— $days day${if (days == 1) "" else "s"} remaining)"
                         else "Trial Active (30 Days)"
                     }
+                    app.lusk.underseerr.domain.model.SubscriptionTier.COMPLIMENTARY -> complimentarySubtitle(subscriptionStatus.expiresAt)
                     app.lusk.underseerr.domain.model.SubscriptionTier.FREE -> "Free Version"
                 },
                 onClick = {
@@ -364,8 +365,8 @@ fun SettingsScreen(
                         app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> {
                             // Trial is active — no Play subscription to restore
                         }
-                        app.lusk.underseerr.domain.model.SubscriptionTier.PREMIUM -> {
-                            // Already premium, nothing to do
+                        app.lusk.underseerr.domain.model.SubscriptionTier.PREMIUM, app.lusk.underseerr.domain.model.SubscriptionTier.COMPLIMENTARY -> {
+                            // Nothing to restore or start: access is already active
                         }
                         app.lusk.underseerr.domain.model.SubscriptionTier.FREE -> {
                             viewModel.restorePurchases()
@@ -428,7 +429,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { 
-                                        if (subscriptionStatus.isPremium || subscriptionStatus.tier == app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL) {
+                                        if (subscriptionStatus.hasHostedAccess) {
                                             selectedType = "HOSTED"
                                             isCustom = false 
                                         } else {
@@ -441,7 +442,7 @@ fun SettingsScreen(
                                 RadioButton(
                                     selected = selectedType == "HOSTED",
                                     onClick = { 
-                                        if (subscriptionStatus.isPremium || subscriptionStatus.tier == app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL) {
+                                        if (subscriptionStatus.hasHostedAccess) {
                                             selectedType = "HOSTED"
                                             isCustom = false 
                                         } else {
@@ -453,7 +454,7 @@ fun SettingsScreen(
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text("Default (Hosted)")
-                                        if (!subscriptionStatus.isPremium && subscriptionStatus.tier != app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL) {
+                                        if (!subscriptionStatus.hasHostedAccess) {
                                             Icon(
                                                 imageVector = Icons.Default.Lock,
                                                 contentDescription = "Premium",

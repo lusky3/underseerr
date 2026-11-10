@@ -37,6 +37,8 @@ jobs:
         run: npm ci
       - name: Type Check
         run: npx tsc --noEmit
+      - name: Unit Tests
+        run: npm test
 
   deploy-staging:
     needs: check

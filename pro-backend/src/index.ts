@@ -6,7 +6,11 @@ export interface Env {
     // Optional: Secret for webhook authorization
     WEBHOOK_SECRET?: string;
     MODE?: string;
+    // Optional: YYYY-MM-DD. Everyone gets hosted notifications through the end of that day (UTC).
+    FREE_ACCESS_UNTIL?: string;
 }
+
+import { complimentaryUntil } from './access';
 
 // Minimal JWT signing for Google Auth (FCM)
 async function getAccessToken(serviceAccountJson: string): Promise<string> {
@@ -91,10 +95,13 @@ interface AccessStatus {
     isTrial: boolean;
     expiresAt: number | null;
     trialExpiresAt: number | null;
+    /** True when access comes from the FREE_ACCESS_UNTIL window rather than a license or trial. */
+    isComplimentary: boolean;
+    complimentaryUntil: number | null;
 }
 
 /** Checks both paid licenses and active trials. Returns the most permissive active access. */
-async function checkAccess(userId: string, db: D1Database): Promise<AccessStatus> {
+async function checkAccess(userId: string, db: D1Database, freeAccessUntil?: string): Promise<AccessStatus> {
     const now = Date.now();
 
     // 1. Check paid license
@@ -103,26 +110,32 @@ async function checkAccess(userId: string, db: D1Database): Promise<AccessStatus
     ).bind(userId, now).first();
 
     if (license) {
-        return { isPremium: true, isTrial: false, expiresAt: license.expires_at as number, trialExpiresAt: null };
+        return { isPremium: true, isTrial: false, expiresAt: license.expires_at as number, trialExpiresAt: null, isComplimentary: false, complimentaryUntil: null };
     }
 
-    // 2. Check active trial
+    // 2. Complimentary window for everyone (a paid license above keeps its own expiry)
+    const freeUntil = complimentaryUntil(freeAccessUntil, now);
+    if (freeUntil !== null) {
+        return { isPremium: false, isTrial: false, expiresAt: freeUntil, trialExpiresAt: null, isComplimentary: true, complimentaryUntil: freeUntil };
+    }
+
+    // 3. Check active trial
     const trial = await db.prepare(
         "SELECT trial_end FROM trials WHERE user_id = ? AND trial_end > ?"
     ).bind(userId, now).first();
 
     if (trial) {
-        return { isPremium: false, isTrial: true, expiresAt: trial.trial_end as number, trialExpiresAt: trial.trial_end as number };
+        return { isPremium: false, isTrial: true, expiresAt: trial.trial_end as number, trialExpiresAt: trial.trial_end as number, isComplimentary: false, complimentaryUntil: null };
     }
 
-    return { isPremium: false, isTrial: false, expiresAt: null, trialExpiresAt: null };
+    return { isPremium: false, isTrial: false, expiresAt: null, trialExpiresAt: null, isComplimentary: false, complimentaryUntil: null };
 }
 
 /** Legacy alias used by webhook gating — returns hasAccess for both premium and trial. */
-async function checkLicense(userId: string, db: D1Database): Promise<{ isPremium: boolean, expiresAt: number | null }> {
-    const access = await checkAccess(userId, db);
-    // Grant access if premium OR in active trial
-    return { isPremium: access.isPremium || access.isTrial, expiresAt: access.expiresAt };
+async function checkLicense(userId: string, db: D1Database, freeAccessUntil?: string): Promise<{ isPremium: boolean, expiresAt: number | null }> {
+    const access = await checkAccess(userId, db, freeAccessUntil);
+    // Grant access if premium, in an active trial, or inside the complimentary window
+    return { isPremium: access.isPremium || access.isTrial || access.isComplimentary, expiresAt: access.expiresAt };
 }
 
 export default {
@@ -163,12 +176,14 @@ export default {
                 const userId = url.searchParams.get("userId");
                 if (!userId) return new Response("Missing userId", { status: 400 });
 
-                const access = await checkAccess(userId, env.DB);
+                const access = await checkAccess(userId, env.DB, env.FREE_ACCESS_UNTIL);
                 return new Response(JSON.stringify({
                     isPremium: access.isPremium,
                     isTrial: access.isTrial,
                     expiresAt: access.expiresAt,
                     trialExpiresAt: access.trialExpiresAt,
+                    isComplimentary: access.isComplimentary,
+                    complimentaryUntil: access.complimentaryUntil,
                 }), { headers: { 'Content-Type': 'application/json' } });
             }
 
@@ -313,7 +328,7 @@ export default {
                     }
 
                     // 3. Check if that user has an active premium subscription
-                    const status = await checkLicense(mapping.user_id as string, env.DB);
+                    const status = await checkLicense(mapping.user_id as string, env.DB, env.FREE_ACCESS_UNTIL);
                     if (!status.isPremium) {
                         return new Response("Premium subscription required for hosted notifications", { status: 402 });
                     }
@@ -394,7 +409,7 @@ export default {
 
                         if (!mapping) return new Response("User context not found for token", { status: 403 });
 
-                        const status = await checkLicense(mapping.user_id as string, env.DB);
+                        const status = await checkLicense(mapping.user_id as string, env.DB, env.FREE_ACCESS_UNTIL);
                         if (!status.isPremium) return new Response("Premium required", { status: 402 });
                     }
                     // --- END GATING ---

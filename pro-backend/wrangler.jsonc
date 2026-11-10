@@ -14,13 +14,15 @@
         }
     ],
     "vars": {
-        "MODE": "PRO"
+        "MODE": "PRO",
+        "FREE_ACCESS_UNTIL": "2027-12-31"
     },
     "env": {
         "staging": {
             "name": "underseerr-pro-api-staging",
             "vars": {
-                "MODE": "STAGING"
+                "MODE": "STAGING",
+                "FREE_ACCESS_UNTIL": "2027-12-31"
             },
             "kv_namespaces": [
                 {
@@ -39,7 +41,8 @@
         "production": {
             "name": "underseerr-pro-api-prod",
             "vars": {
-                "MODE": "PRO"
+                "MODE": "PRO",
+                "FREE_ACCESS_UNTIL": "2027-12-31"
             },
             "kv_namespaces": [
                 {
