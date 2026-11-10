@@ -141,12 +141,25 @@ class SettingsViewModel(
             }
         }
 
+        // Keeps the cached complimentary window in step with the server, including
+        // when it is switched off early.
+        viewModelScope.launch {
+            subscriptionRepository.syncComplimentaryAccess()
+        }
+
         // Single authoritative subscription + trial lifecycle collector.
         viewModelScope.launch {
             subscriptionRepository.getSubscriptionStatus().collect { status ->
                 _subscriptionStatus.value = status
 
-                when (status.tier) {
+                // A cached FREE tier must not switch the hosted relay off while the server
+                // is granting everyone access. If the check succeeds the preference changes
+                // and this collector re-emits as COMPLIMENTARY, so there is nothing to do now.
+                if (status.tier == app.lusk.underseerr.domain.model.SubscriptionTier.FREE &&
+                    subscriptionRepository.syncComplimentaryAccess().getOrDefault(false)
+                ) {
+                    // handled on the next emission
+                } else when (status.tier) {
                     app.lusk.underseerr.domain.model.SubscriptionTier.TRIAL -> {
                         // Race guard complete — trial tier is confirmed
                         _trialJustStarted = false
@@ -211,7 +224,9 @@ class SettingsViewModel(
                             }
                         }
                     }
-                    app.lusk.underseerr.domain.model.SubscriptionTier.PREMIUM -> {
+                    app.lusk.underseerr.domain.model.SubscriptionTier.PREMIUM,
+                    app.lusk.underseerr.domain.model.SubscriptionTier.COMPLIMENTARY -> {
+                        _trialJustStarted = false
                         _trialDaysRemaining.value = null
                         _showTrialPrompt.value = null
                     }

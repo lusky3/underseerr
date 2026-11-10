@@ -14,7 +14,9 @@ data class SubscriptionResponse(
     val isPremium: Boolean,
     val isTrial: Boolean = false,
     val expiresAt: Long? = null,
-    val trialExpiresAt: Long? = null
+    val trialExpiresAt: Long? = null,
+    val isComplimentary: Boolean = false,
+    val complimentaryUntil: Long? = null
 )
 
 @Serializable

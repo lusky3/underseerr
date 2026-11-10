@@ -18,6 +18,13 @@ interface SubscriptionRepository {
     suspend fun refreshSubscriptionStatus(): Result<SubscriptionStatus>
 
     /**
+     * Asks the server whether free access is currently granted to everyone and
+     * caches the answer. Leaves premium state untouched. Returns whether
+     * complimentary access is active, or a failure if the server could not be reached.
+     */
+    suspend fun syncComplimentaryAccess(): Result<Boolean>
+
+    /**
      * Initiates a purchase for premium subscription.
      */
     suspend fun purchasePremium(isYearly: Boolean = false): Result<Unit>

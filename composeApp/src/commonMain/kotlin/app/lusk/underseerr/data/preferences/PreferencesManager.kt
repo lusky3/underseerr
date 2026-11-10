@@ -65,6 +65,7 @@ class PreferencesManager(
         val LAST_SEEN_VERSION_CODE = intPreferencesKey("last_seen_version_code")
         val TRIAL_PROMPT_DISMISSED_AT = longPreferencesKey("trial_prompt_dismissed_at")
         val HAS_USED_TRIAL = booleanPreferencesKey("has_used_trial")
+        val COMPLIMENTARY_UNTIL = longPreferencesKey("complimentary_until")
     }
     
     /**
@@ -495,6 +496,22 @@ class PreferencesManager(
             } else {
                 preferences.remove(PreferenceKeys.TRIAL_START_DATE)
             }
+        }
+    }
+
+    suspend fun setComplimentaryUntil(until: Long?) {
+        dataStore.edit { preferences ->
+            if (until != null) {
+                preferences[PreferenceKeys.COMPLIMENTARY_UNTIL] = until
+            } else {
+                preferences.remove(PreferenceKeys.COMPLIMENTARY_UNTIL)
+            }
+        }
+    }
+
+    fun getComplimentaryUntil(): Flow<Long?> {
+        return dataStore.data.map { preferences ->
+            preferences[PreferenceKeys.COMPLIMENTARY_UNTIL]
         }
     }
 

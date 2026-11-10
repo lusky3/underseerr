@@ -78,8 +78,9 @@ class SubscriptionRepositoryImpl(
         return combine(
             preferencesManager.getIsPremium(),
             preferencesManager.getTrialStartDate(),
-            preferencesManager.getPremiumExpiresAt()
-        ) { isPremium, trialStartDate, premiumExpiresAt ->
+            preferencesManager.getPremiumExpiresAt(),
+            preferencesManager.getComplimentaryUntil()
+        ) { isPremium, trialStartDate, premiumExpiresAt, complimentaryUntil ->
             // In a production app, we could double check against SecurityManager here,
             // but for reactive Flow, DataStore is sufficient for UI.
             val now = nowMillis()
@@ -89,6 +90,11 @@ class SubscriptionRepositoryImpl(
                 isPremium -> SubscriptionStatus(
                     tier = SubscriptionTier.PREMIUM,
                     expiresAt = premiumExpiresAt
+                )
+                // Cached from the server; the date bounds how long a stale value can apply offline.
+                complimentaryUntil != null && now <= complimentaryUntil -> SubscriptionStatus(
+                    tier = SubscriptionTier.COMPLIMENTARY,
+                    expiresAt = complimentaryUntil
                 )
                 trialStartDate != null && (now - trialStartDate) < trialDuration -> {
                     SubscriptionStatus(
@@ -117,6 +123,22 @@ class SubscriptionRepositoryImpl(
             } else {
                 Result.failure(Exception("Not logged in"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun syncComplimentaryAccess(): Result<Boolean> {
+        return try {
+            val userResult = authRepository.getCurrentUser()
+            if (userResult !is app.lusk.underseerr.domain.model.Result.Success) {
+                return Result.failure(Exception("Not logged in"))
+            }
+            val response = subscriptionKtorService.checkSubscriptionStatus(userResult.data.id.toString())
+            val until = if (response.isComplimentary) response.complimentaryUntil else null
+            // Clearing is deliberate: when the server stops granting access, so does the app.
+            preferencesManager.setComplimentaryUntil(until)
+            Result.success(until != null)
         } catch (e: Exception) {
             Result.failure(e)
         }
