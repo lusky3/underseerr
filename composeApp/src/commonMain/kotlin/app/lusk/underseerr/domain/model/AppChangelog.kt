@@ -25,6 +25,16 @@ data class ChangelogEntry(
 object AppChangelog {
     val entries: List<ChangelogEntry> = listOf(
         ChangelogEntry(
+            versionCode = 13,
+            versionName = "1.0.11",
+            title = "Free Push Notifications & Privacy Controls",
+            changes = listOf(
+                "🔔 Hosted push notifications are free for everyone through Dec 31, 2027 (may end sooner, subject to capacity)",
+                "📊 Anonymous usage analytics to help improve the app. You can turn it off in Settings → Privacy",
+                "🐛 Bug fixes and stability improvements"
+            )
+        ),
+        ChangelogEntry(
             versionCode = 12,
             versionName = "1.0.10",
             title = "Link Verification & Library Updates",
