@@ -31,7 +31,7 @@ object AppChangelog {
             changes = listOf(
                 "🔔 Hosted push notifications are free for everyone through Dec 31, 2027 (may end sooner, subject to capacity)",
                 "📊 Anonymous usage analytics to help improve the app. You can turn it off in Settings → Privacy",
-                "🐛 Bug fixes and stability improvements"
+                "🐛 Assorted bug fixes and reliability improvements"
             )
         ),
         ChangelogEntry(
