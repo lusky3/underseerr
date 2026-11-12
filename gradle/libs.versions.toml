@@ -60,7 +60,7 @@ security = "1.1.0"
 
 # Coroutines
 coroutines = "1.11.0"
-datetime = "0.7.1"
+datetime = "0.8.0"
 
 # Testing
 junit = "4.13.2"
